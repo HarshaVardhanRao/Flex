@@ -1,11 +1,15 @@
 from django.shortcuts import render,redirect
 from django.contrib.auth import authenticate,login,logout
+from .forms import ProjectForm,LeetCodeForm,ForignLanguageForm
+from django.contrib.auth.decorators import login_required
+from .models import *
+
 
 def CustomLogin(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
+        rollno = request.POST.get('rollno').lower()
         password = request.POST.get('password')
-        user = authenticate(username=username, password=password)
+        user = authenticate(roll_no=rollno, password=password)
         print(user)
         if user is not None:
             login(request, user)
@@ -24,7 +28,7 @@ def dashboard(request):
 
 def  register(request):
     if request.method == 'POST':
-        rollno = request.POST.get('rollno')
+        rollno = request.POST.get('rollno').lower()
         password = request.POST.get('password')
         first_name = request.POST.get('first_name')
         is_staff = True if request.POST.get('role') == 'staff' else False
@@ -33,3 +37,42 @@ def  register(request):
         user.save()
         return redirect('login')
     return render(request, 'register.html')
+
+
+
+@login_required
+def create_project(request):
+    if request.method == 'POST':
+        form = ProjectForm(request.POST)
+        if form.is_valid():
+            project = form.save(commit=False)
+            project.student = request.user.student
+            project.save()
+            return redirect('dashboard') 
+    else:
+        form = ProjectForm()
+    return render(request, 'dashboard.html', {'form': form})
+
+def add_certification(request):
+    if request.method == 'POST':
+        form = ForignLanguageForm(request.POST)
+        if form.is_valid():
+            cert = form.save(commit=False)
+            cert.student = request.user.student
+            cert.save()
+            return redirect('dashboard')  
+    else:
+        form = ForignLanguageForm()
+    return render(request, 'dashboard.html', {'form': form})
+
+def updateLeetCode(request):#subject to change,if we pass int in URL , view will change
+    if request.method == 'POST':
+        form = LeetCodeForm(request.POST)
+        if form.is_valid():
+            Leet = form.save(commit=False)
+            Leet.student = request.user.student
+            Leet.save()
+            return redirect('dashboard') 
+    else:
+        form = LeetCodeForm()
+    return render(request, 'dashboard.html', {'form': form})
