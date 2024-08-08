@@ -17,7 +17,7 @@ class ForignLanguages(models.Model):
     rollno = models.ForeignKey(student,on_delete=models.CASCADE)
     source = models.CharField(max_length=50)
     title = models.CharField(max_length=255)
-    #certificate = models.FileField(upload_to='')
+    certificate = models.FileField(upload_to='certificates/',null=True)
     TECHNICAL = 'technical'
     FOREIGN_LANGUAGE = 'foreign_language'
     CATEGORY_CHOICES = [

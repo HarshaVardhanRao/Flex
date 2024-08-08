@@ -4,7 +4,6 @@ from .forms import ProjectForm,LeetCodeForm,ForignLanguageForm
 from django.contrib.auth.decorators import login_required
 from .models import *
 
-
 def CustomLogin(request):
     if request.method == 'POST':
         rollno = request.POST.get('rollno').lower()
@@ -16,6 +15,7 @@ def CustomLogin(request):
             return redirect('dashboard')
     return render(request, 'login.html')
 
+@login_required
 def CustomLogout(request):
     logout(request)
     return redirect('/')
@@ -38,8 +38,6 @@ def  register(request):
         return redirect('login')
     return render(request, 'register.html')
 
-
-
 @login_required
 def create_project(request):
     if request.method == 'POST':
@@ -53,6 +51,7 @@ def create_project(request):
         form = ProjectForm()
     return render(request, 'dashboard.html', {'form': form})
 
+@login_required
 def add_certification(request):
     if request.method == 'POST':
         form = ForignLanguageForm(request.POST)
@@ -65,6 +64,7 @@ def add_certification(request):
         form = ForignLanguageForm()
     return render(request, 'dashboard.html', {'form': form})
 
+@login_required
 def updateLeetCode(request):#subject to change,if we pass int in URL , view will change
     if request.method == 'POST':
         form = LeetCodeForm(request.POST)
@@ -76,3 +76,10 @@ def updateLeetCode(request):#subject to change,if we pass int in URL , view will
     else:
         form = LeetCodeForm()
     return render(request, 'dashboard.html', {'form': form})
+
+@login_required
+def UpdateLeet(request,count):
+    Leet = LeetCode.objects.get(studenr=request.user)
+    Leet.TotalProblems = count
+    Leet.save()
+    return redirect('dashboard')
