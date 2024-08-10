@@ -3,53 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
-    <style>
-        *{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-size: 1.2rem;
-        }
-
-        body{
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        form{
-            display: flex;
-            flex-direction: column;
-        }
-        input[type="text"], input[type="password"], input[type="submit"]{
-            margin-bottom: 1rem;
-            padding: 0.5rem;
-            outline: none;
-            border-radius: 10px;
-            border: 2px solid rgb(50, 156, 255);
-        }
-
-        input[type="submit"]{
-            width: fit-content;
-            background-color: rgb(0, 126, 243);
-            color: white;
-            cursor: pointer;
-        }
-    </style>
+    <title>Student Registration</title>
 </head>
 <body>
-    <form action="{% url 'register' %}" method="post">
+    <h2>Student Registration</h2>
+    
+    <form method="post">
         {% csrf_token %}
-        <label for="username">Username</label>
-        <input type="text" name="username" id="username">
-        <label for="password">Password</label>
-        <input type="password" name="password" id="password">
-        <input type="submit" value="Register">
+
+        <div>
+            <label for="rollno">Roll No:</label>
+            <input type="text" name="rollno" id="rollno" required>
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" name="password" id="password1" required>
+        </div>
+        
+        <div>
+            <label for="password2">Confirm Password:</label>
+            <input type="password" name="password2" id="password2" required>
+        </div>
+        
+        <div>
+            <label for="first_name">First Name:</label>
+            <input type="text" name="first_name" id="first_name" required>
+        </div>
+        
+        <div>
+            <label for="last_name">Last Name:</label>
+            <input type="text" name="last_name" id="last_name">
+        </div>
+        
+        <div>
+            <label for="dept">Department:</label>
+            <input type="text" name="dept" id="dept" required>
+        </div>
+        
+        <div>
+            <label for="section">Section:</label>
+            <input type="text" name="section" id="section" required>
+        </div>
+        
+        <button type="submit">Register</button>
     </form>
-    <a href="{% url 'login' %}">Login</a>
 </body>
 </html>

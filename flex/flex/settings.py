@@ -71,6 +71,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'flex.wsgi.application'
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+
 AUTH_USER_MODEL = 'flexapp.student'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases

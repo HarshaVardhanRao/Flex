@@ -7,4 +7,5 @@ urlpatterns = [
     path('logout', views.CustomLogout, name="logout"),
     path('dashboard', views.dashboard, name="dashboard"),
     path('updateLeet/<int:count>',views.UpdateLeet, name="updateLeet"),
+    path('register', views.register, name="register"),
 ]
