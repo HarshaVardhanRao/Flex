@@ -14,28 +14,33 @@
 
 <body>
 
-    <div class="blur">
-        <form action="" id="project-form">
-            <h2>Add a Project</h2>
-            <hr>
-            <label for="project-name">Project Name</label>
-            <input type="text" name="project-name" id="project-name">
-            <label for="description">Description</label>
-            <textarea name="description" id="description" cols="30" rows="10"></textarea>
-            <label for="status">Status</label>
-            <select name="status" id="status">
-                <option value="Completed">Completed</option>
-                <option value="Pending">Pending</option>
-                <option value="Completed">Completed</option>
-            </select>
-            <input type="submit" value="Create">
-            <button><i class="bi bi-x"></i></button>
+    <div class="blur" style="display: none;">
+        <form action="{% url 'create_project' %}" method="POST" id="project-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div id="form-content">
+                <h2>Add a Project</h2>
+                <hr>
+                {{ project_form.as_p }} <!-- Render the project form fields -->
+                <input type="submit" value="Create" class="btn btn-primary">
+                <button type="button" class="btn btn-secondary" onclick="remove_form()"><i class="bi bi-x"></i></button>
+            </div>
+        </form>
+
+        <form action="{% url 'add_certification' %}" method="POST" id="certification-form" enctype="multipart/form-data" style="display: none;">
+            {% csrf_token %}
+            <div id="form-content-certification">
+                <h2>Add a Certification</h2>
+                <hr>
+                {{ certification_form.as_p }} <!-- Render the certification form fields -->
+                <input type="submit" value="Add Certification" class="btn btn-primary">
+                <button type="button" class="btn btn-secondary" onclick="remove_form()"><i class="bi bi-x"></i></button>
+            </div>
         </form>
     </div>
 
     <header>
         <img src="https://scontent.fhyd11-2.fna.fbcdn.net/v/t39.30808-1/361317258_253495350768664_5192694073866053488_n.jpg?stp=c3.0.200.200a_dst-jpg_p200x200&_nc_cat=103&ccb=1-7&_nc_sid=f4b9fd&_nc_ohc=aXU8seHafWQQ7kNvgHIYt6H&_nc_ht=scontent.fhyd11-2.fna&oh=00_AYBaa8ace-Ku4fdDqQ_41DkiBnb7sb18L1jcJvS_H2SdOA&oe=66BA82BA"
-            alt="">
+            alt="Profile Image">
         <div class="title">
             <h1>MITS - FLEX</h1>
         </div>
@@ -61,27 +66,17 @@
                 <h2 id="projects">Projects</h2>
                 <hr>
                 <ul class="multiple">
+                    <!-- Example project list items -->
                     <li>
                         <h5><a href="#">Github</a></h5>
-                        <p>This is a github Project</p>
+                        <p>This is a GitHub project</p>
                         <p>Status: Pending</p>
                         <a href="#"><i class="bi bi-github"></i></a>
                     </li>
                     <hr>
-                    <li>
-                        <h5><a href="#">Github</a></h5>
-                        <p>This is a github Project</p>
-                        <p>Status: Pending</p>
-                    </li>
-                    <hr>
-                    <li>
-                        <h5><a href="#">Github</a></h5>
-                        <p>This is a github Project</p>
-                        <p>Status: Pending</p>
-                    </li>
-                    <hr>
+                    <!-- More list items -->
                 </ul>
-                <button class="btn btn-primary" data-category="projects" onclick="return new_item(this);">
+                <button class="btn btn-primary" data-category="projects" onclick="new_item(this);">
                     <i class="bi bi-plus"></i>
                     Project
                 </button>
@@ -90,6 +85,7 @@
                 <h2 id="languages">Foreign Languages</h2>
                 <hr>
                 <ul class="multiple">
+                    <!-- Example language list items -->
                     <li>
                         <h5><a href="#">Github</a></h5>
                         <p>Provider: Coursera</p>
@@ -97,20 +93,9 @@
                         <a href="#">Click here to go to course</a>
                     </li>
                     <hr>
-                    <li>
-                        <h5><a href="#">Github</a></h5>
-                        <p>This is a github Project</p>
-                        <p>Status: Pending</p>
-                    </li>
-                    <hr>
-                    <li>
-                        <h5><a href="#">Github</a></h5>
-                        <p>This is a github Project</p>
-                        <p>Status: Pending</p>
-                    </li>
-                    <hr>
+                    <!-- More list items -->
                 </ul>
-                <button class="btn btn-primary" data-category="languages" onclick="return new_item(this);">
+                <button class="btn btn-primary" data-category="languages" onclick="new_item(this);">
                     <i class="bi bi-plus"></i>
                     Language
                 </button>
@@ -119,26 +104,16 @@
                 <h2 id="technical">Technical Certifications</h2>
                 <hr>
                 <ul class="multiple">
+                    <!-- Example certification list items -->
                     <li>
                         <h5><a href="#">Github</a></h5>
-                        <p>This is a github Project</p>
+                        <p>This is a GitHub project</p>
                         <p>Status: Pending</p>
                     </li>
                     <hr>
-                    <li>
-                        <h5><a href="#">Github</a></h5>
-                        <p>This is a github Project</p>
-                        <p>Status: Pending</p>
-                    </li>
-                    <hr>
-                    <li>
-                        <h5><a href="#">Github</a></h5>
-                        <p>This is a github Project</p>
-                        <p>Status: Pending</p>
-                    </li>
-                    <hr>
+                    <!-- More list items -->
                 </ul>
-                <button class="btn btn-primary" data-category="certificates" onclick="return new_item(this);">
+                <button class="btn btn-primary" data-category="certificates" onclick="new_item(this);">
                     <i class="bi bi-plus"></i>
                     Certification
                 </button>
@@ -153,102 +128,61 @@
         const toggleSwitch = document.getElementById('themeToggle');
         const icon = document.querySelector('#themeToggle i');
         const body = document.body;
-        const allElements = document.querySelectorAll('*'); // Select all elements
-        console.log(allElements);
+        const allElements = document.querySelectorAll('*');
         const blur = document.querySelector('.blur');
-        const projectform = blur.children[0];
-        toggleSwitch.addEventListener('click', () => {
-            // Toggle the light theme class on the body
-            const formAll = document.querySelectorAll('input, select, textarea, option');
-            body.classList.toggle('light-theme');
+        const formContent = document.getElementById('form-content');
+        const formContentCertification = document.getElementById('form-content-certification');
 
-            // Add or remove the light theme class from all elements
+        toggleSwitch.addEventListener('click', () => {
+            body.classList.toggle('light-theme');
             allElements.forEach(element => {
                 element.classList.toggle('light-theme', body.classList.contains('light-theme'));
             });
-
-            formAll.forEach(element => {
-                element.classList.toggle('light-theme', body.classList.contains('light-theme'));
-            })
             icon.classList.toggle('bi-moon-fill');
             icon.classList.toggle('bi-brightness-high-fill');
-
         });
 
         function remove_form() {
             blur.style.animationDirection = "reverse";
             blur.classList.add('blur-animation');
-            projectform.style.animationDirection = "reverse";
-            projectform.classList.add('scale-animation');
+            formContent.classList.add('scale-animation');
+            formContentCertification.classList.add('scale-animation');
             setTimeout(() => {
                 blur.classList.remove('blur-animation');
-                projectform.classList.remove('scale-animation');
+                formContent.classList.remove('scale-animation');
+                formContentCertification.classList.remove('scale-animation');
                 blur.style.display = 'none';
             }, 500);
         }
 
         function new_item(element) {
-            category = element.dataset.category;
+            const category = element.dataset.category;
             blur.style.animationDirection = "normal";
             blur.style.display = 'flex';
             blur.classList.add('blur-animation');
             if (category === 'projects') {
-                projectform.innerHTML = `<h2>Add a Project</h2>
+                formContent.style.display = 'block';
+                formContentCertification.style.display = 'none';
+                formContent.innerHTML = `<h2>Add a Project</h2>
                 <hr>
-                <label for="project-name">Project Name</label>
-                <input type="text" name="project-name" id="project-name">
-                <label for="description">Description</label>
-                <textarea name="description" id="description" cols="30" rows="10"></textarea>
-                <label for="status">Status</label>
-                <select name="status" id="status">
-                    <option value="Completed">Completed</option>
-                    <option value="Pending">Pending</option>
-                </select>
-                <label for='github'>Github Link</label>
-                <input type="text" name="github" id="github">
-                <input type="submit" value="Create">
-                <button type="button" onclick="return remove_form()"><i class="bi bi-x"></i></button>`
-            }
-            else if (category === 'languages') {
-                projectform.innerHTML = `<h2>Add a Language</h2>
+                {{ project_form.as_p }}
+                <input type="submit" value="Create" class="btn btn-primary">
+                <button type="button" class="btn btn-secondary" onclick="remove_form()"><i class="bi bi-x"></i></button>`;
+            } else if (category === 'languages') {
+                formContent.style.display = 'none';
+                formContentCertification.style.display = 'block';
+                formContentCertification.innerHTML = `<h2>Add a Certification</h2>
                 <hr>
-                <label for="language-name">Language</label>
-                <input type="text" name="language-name" id="language-name">
-                <label for="provider">Provider</label>
-                <input type="text" name="provider" id="provider">
-                <label for="status">Status</label>
-                <select name="status" id="status">
-                    <option value="Completed">Completed</option>
-                    <option value="Pending">Pending</option>
-                </select>
-                <label for='course-link'>Course Link</label>
-                <input type="text" name="course-link" id="course-link">
-                <input type="submit" value="Create">
-                <button type="button" onclick="return remove_form()"><i class="bi bi-x"></i></button>`
+                {{ certification_form.as_p }}
+                <input type="submit" value="Add Certification" class="btn btn-primary">
+                <button type="button" class="btn btn-secondary" onclick="remove_form()"><i class="bi bi-x"></i></button>`;
             }
-            else if (category === 'certificates') {
-                projectform.innerHTML = `<h2>Add a Certificate</h2>
-                <hr>
-                <label for="course-name">Course Name</label>
-                <input type="text" name="course-name" id="course-name">
-                <label for="provider">Provider</label>
-                <input type="text" name="provider" id="provider">
-                <label for="status">Status</label>
-                <select name="status" id="status">
-                    <option value="Completed">Completed</option>
-                    <option value="Pending">Pending</option>
-                </select>
-                <label for='course-link'>Course Link</label>
-                <input type="text" name="course-link" id="course-link">
-                <input type="submit" value="Create">
-                <button type="button" onclick="return remove_form()"><i class="bi bi-x"></i></button>`
-            }
-            projectform.style.animationDirection = "normal";
-            console.log(projectform)
-            projectform.classList.add('scale-animation');
+            formContent.classList.add('scale-animation');
+            formContentCertification.classList.add('scale-animation');
             setTimeout(() => {
                 blur.classList.remove('blur-animation');
-                projectform.classList.remove('scale-animation');
+                formContent.classList.remove('scale-animation');
+                formContentCertification.classList.remove('scale-animation');
             }, 500);
         }
     </script>

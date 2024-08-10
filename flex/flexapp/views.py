@@ -1,9 +1,71 @@
 from django.shortcuts import render,redirect
 from django.contrib.auth import authenticate,login,logout
-from .forms import ProjectForm,LeetCodeForm,ForignLanguageForm
+from .forms import ProjectsForm,LeetCodeForm,ForignLanguagesForm
 from django.contrib.auth.decorators import login_required
 from .models import *
 import logging
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from .forms import ProjectsForm, LeetCodeForm, ForignLanguagesForm
+from .models import Projects, ForignLanguages
+
+@login_required
+def dashboard(request):
+    if request.method == 'POST':
+        if 'project-form' in request.POST:
+            project_form = ProjectsForm(request.POST)  # Ensure 'ProjectsForm' matches form class in forms.py
+            if project_form.is_valid():
+                project = project_form.save(commit=False)
+                project.rollno = request.user  # Assuming `request.user` is the student
+                project.save()
+                return redirect('dashboard')
+            else:
+                print(project_form.errors)  # For debugging
+        elif 'certification-form' in request.POST:
+            certification_form = ForignLanguagesForm(request.POST, request.FILES)  # Include request.FILES for file uploads
+            if certification_form.is_valid():
+                cert = certification_form.save(commit=False)
+                cert.rollno = request.user  # Assuming `request.user` is the student
+                cert.save()
+                return redirect('dashboard')
+            else:
+                print(certification_form.errors)  # For debugging
+    else:
+        project_form = ProjectsForm()
+        certification_form = ForignLanguagesForm()
+
+    context = {
+        'project_form': project_form,
+        'certification_form': certification_form,
+    }
+
+    return render(request, 'dashboard.html', context)
+
+@login_required
+def create_project(request):
+    if request.method == 'POST':
+        form = ProjectsForm(request.POST)
+        if form.is_valid():
+            project = form.save(commit=False)
+            project.rollno = request.user  # Ensure `rollno` is set to `request.user`
+            project.save()
+            return redirect('dashboard') 
+    else:
+        form = ProjectsForm()
+    return render(request, 'dashboard.html', {'form': form})
+
+@login_required
+def add_certification(request):
+    if request.method == 'POST':
+        form = ForignLanguagesForm(request.POST, request.FILES)  # Include request.FILES for file uploads
+        if form.is_valid():
+            cert = form.save(commit=False)
+            cert.rollno = request.user  # Ensure `rollno` is set to `request.user`
+            cert.save()
+            return redirect('dashboard')  
+    else:
+        form = ForignLanguagesForm()
+    return render(request, 'dashboard.html', {'form': form})
 
 def CustomLogin(request):
     if request.method == 'POST':
@@ -21,14 +83,6 @@ def CustomLogin(request):
 def CustomLogout(request):
     logout(request)
     return redirect('/')
-
-def dashboard(request):
-    if request.user.is_authenticated:
-        return render(request, 'dashboard.html')
-    else:
-        return redirect('/')
-
-
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -79,50 +133,3 @@ def register(request):
             return render(request, 'register.html', {'error': str(e)})
 
     return render(request, 'register.html')
-
-
-@login_required
-def create_project(request):
-    if request.method == 'POST':
-        form = ProjectForm(request.POST)
-        if form.is_valid():
-            project = form.save(commit=False)
-            project.student = request.user.student
-            project.save()
-            return redirect('dashboard') 
-    else:
-        form = ProjectForm()
-    return render(request, 'dashboard.html', {'form': form})
-
-@login_required
-def add_certification(request):
-    if request.method == 'POST':
-        form = ForignLanguageForm(request.POST)
-        if form.is_valid():
-            cert = form.save(commit=False)
-            cert.student = request.user.student
-            cert.save()
-            return redirect('dashboard')  
-    else:
-        form = ForignLanguageForm()
-    return render(request, 'dashboard.html', {'form': form})
-
-@login_required
-def updateLeetCode(request):#subject to change,if we pass int in URL , view will change
-    if request.method == 'POST':
-        form = LeetCodeForm(request.POST)
-        if form.is_valid():
-            Leet = form.save(commit=False)
-            Leet.student = request.user.student
-            Leet.save()
-            return redirect('dashboard') 
-    else:
-        form = LeetCodeForm()
-    return render(request, 'dashboard.html', {'form': form})
-
-@login_required
-def UpdateLeet(request,count):
-    Leet = LeetCode.objects.get(studenr=request.user)
-    Leet.TotalProblems = count
-    Leet.save()
-    return redirect('dashboard')
