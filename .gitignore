@@ -1,2 +1,6 @@
 venv/
 _pycache_/
+*.pyc
+flex/flexapp/__pycache__/
+flex/flex/__pycache__/
+flex/flexapp/migrations/__pycache__/

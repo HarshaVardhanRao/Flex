@@ -43,6 +43,146 @@ body {
 	}
 }
 
+.blur {
+	height: 100vh;
+	width: 100vw;
+	position: fixed;
+	top: 0;
+	left: 0;
+	// transition: all 500ms ease-in-out;
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 10;
+	display: none;
+	form {
+		aspect-ratio: 7.5;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		position: relative;
+		padding: 1.5rem;
+		border-radius: 10px;
+		background-color: $primary-light; // Dark background for form
+		box-shadow: 0px 4px 12px $shadow-color; // Shadow for form
+		// transition: all 500ms ease-in-out;
+		&.light-theme {
+			background-color: $light-primary-light; // Light background for form
+			box-shadow: 0px 2px 4px $light-shadow-color; // Subtle shadow in light theme
+		}
+
+		input[type="text"],
+		input[type="email"],
+		input[type="password"],
+		textarea,
+		select {
+			padding: 0.3rem;
+			border: 1px solid $accent-color; // Border color
+			border-radius: 5px;
+			background-color: transparent; // Transparent background
+			color: $text-color; // Text color
+			font-size: 1rem;
+			transition: border-color 0.3s, background-color 0.3s;
+
+			&::placeholder {
+				color: $text-color; // Placeholder text color
+				opacity: 0.7; // Slightly transparent
+			}
+
+			&:focus {
+				outline: none; // Remove default outline
+				border-color: $dark-accent-color; // Darker border on focus
+				background-color: rgba(
+					241,
+					196,
+					15,
+					0.1
+				); // Light background on focus
+			}
+
+			&.light-theme {
+				border-color: $light-accent-color; // Light border color
+				color: black; // Dark text color in light theme
+
+				&::placeholder {
+					color: $light-text-color; // Light theme placeholder color
+				}
+
+				&:focus {
+					border-color: $light-button-hover-bg-color; // Darker border on focus in light theme
+					background-color: rgba(
+						0,
+						0,
+						0,
+						0.1
+					); // Slightly darker background on focus
+				}
+			}
+		}
+
+		input[type="submit"] {
+			background-color: $button-bg-color; // Button background color
+			color: $button-text-color; // Button text color
+			border: none;
+			border-radius: 5px;
+			padding: 0.75rem;
+			font-size: 1rem;
+			cursor: pointer;
+			transition: background-color 0.3s;
+
+			&:hover {
+				background-color: $button-hover-bg-color; // Button hover color
+			}
+
+			&.light-theme {
+				background-color: $light-button-bg-color; // Light theme button background
+				color: $light-button-text-color; // Light theme button text color
+			}
+		}
+
+		button {
+			position: absolute;
+			height: 2.5rem;
+			width: 2.5rem;
+			aspect-ratio: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			outline: none;
+			border: none;
+			top: -1rem;
+			right: -1rem;
+			background-color: $button-bg-color;
+			border-radius: 50%;
+			transition: background-color 200ms linear;
+			i {
+				font-size: 2rem;
+				color: $button-text-color;
+				transition: color 200ms linear;
+				&.light-theme {
+					color: $light-button-text-color;
+				}
+				&.light-theme:hover {
+					color: $button-text-color;
+				}
+				&:hover {
+					color: $light-button-text-color;
+				}
+			}
+			&:hover {
+				background-color: red;
+			}
+			&.light-theme {
+				background-color: $light-button-bg-color;
+			}
+			&.light-theme:hover {
+				background-color: red;
+			}
+		}
+	}
+}
+
 header {
 	background-color: $primary-light; // Dark header background
 	color: $text-color; // Light text color
@@ -284,6 +424,7 @@ i {
 	position: absolute;
 	bottom: 1vh;
 	right: 1vw;
+	z-index: 10;
 	button {
 		background-color: $dark-accent-color;
 		height: 7vh;
@@ -296,7 +437,8 @@ i {
 		i {
 			color: black;
 			font-size: 1.8rem;
-			&.light-theme{
+			font-weight: 1000;
+			&.light-theme {
 				color: white;
 			}
 		}
@@ -315,4 +457,42 @@ i {
 	&.light-theme {
 		color: $light-text-color; // Dark text for light theme
 	}
+	@media screen and (max-width: 768px) {
+		position: fixed;
+	}
+}
+
+option {
+	background-color: $primary-light;
+	&.light-theme {
+		background-color: $light-primary-color;
+		color: $primary-color; // Light background for options
+	}
+}
+@keyframes blur {
+	from {
+		backdrop-filter: blur(0px);
+	}
+	to {
+		backdrop-filter: blur(8px);
+	}
+}
+
+@keyframes scaleani {
+	0% {
+		transform: scale(0.8);
+		opacity: 0;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+.blur-animation {
+	animation: blur 500ms ease-in-out;
+	animation-fill-mode: forwards;
+}
+.scale-animation {
+	animation: scaleani 500ms ease-in-out;
+	animation-fill-mode: forwards;
 }
