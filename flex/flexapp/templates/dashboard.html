@@ -161,6 +161,7 @@
 
         function new_item(element) {
             const category = element.dataset.category;
+            console.log(category);
             blur.style.animationDirection = "normal";
             blur.style.display = 'flex';
             blur.classList.add('blur-animation');
@@ -173,16 +174,16 @@
                 <input type="submit" value="Create" class="btn btn-primary">
                 <button type="button" class="btn btn-secondary" onclick="remove_form()"><i class="bi bi-x"></i></button>`;
             } else if (category === 'ForignLanguages') {
-                formContent.style.display = 'none';
-                formContentCertification.style.display = 'block';
+                formContent.style.display = 'block';
+                formContentCertification.style.display = 'none';
                 formContentCertification.innerHTML = `<h2>Add a Certification</h2>
                 <hr>
                 {{ certification_form.as_p }}
                 <input type="submit" value="Add Certification" class="btn btn-primary">
                 <button type="button" class="btn btn-secondary" onclick="remove_form()"><i class="bi bi-x"></i></button>`;
             }else if (category === 'Technical') {
-                formContent.style.display = 'none';
-                formContentCertification.style.display = 'block';
+                formContent.style.display = 'block';
+                formContentCertification.style.display = 'none';
                 formContentCertification.innerHTML = `<h2>Add a Certification</h2>
                 <hr>
                 {{ certification_form.as_p }}
