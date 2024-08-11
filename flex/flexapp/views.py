@@ -70,6 +70,15 @@ def dashboard(request):
         easy_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Easy'), 0)
         medium_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Medium'), 0)
         hard_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Hard'), 0)
+
+        total_problems = easy_count + medium_count + hard_count
+        leet_user = LeetCode.objects.get_or_create(rollno = request.user)[0]
+        leet_user.TotalProblems = total_problems
+        leet_user.easy = easy_count
+        leet_user.medium = medium_count
+        leet_user.hard = hard_count
+        leet_user.save()
+
     else:
         easy_count = medium_count = hard_count = 0 
 
