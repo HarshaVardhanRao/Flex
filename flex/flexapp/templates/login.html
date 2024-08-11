@@ -1,42 +1,59 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="{% static 'css/style.min.css' %}" />
+		<title>Login</title>
+	</head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{% static 'css/style.min.css' %}">
-    <title>Login</title>
-</head>
+	<body>
+		<header>
+			<h1>MITS - FLEX</h1>
+		</header>
 
-<body>
-    <header>
-        <h1>MITS - FLEX</h1>
-    </header>
+		<main>
+			<div class="card">
+				<div class="card-body">
+					<h5 class="card-title">Login</h5>
+					<form method="GET">
+						<div class="mb-3">
+							<label for="rollno" class="form-label"
+								>Roll Number</label
+							>
+							<input
+								type="text"
+								class="form-control"
+								id="rollno"
+								name="rollno"
+								required
+							/>
+						</div>
+						<div class="mb-3">
+							<label for="password" class="form-label"
+								>Password</label
+							>
+							<input
+								type="password"
+								class="form-control"
+								name="password"
+								id="password"
+								required
+							/>
+						</div>
+						<button type="submit" class="btn">Login</button>
+					</form>
+					<p class="mt-3 text-center">
+						Don't have an account?
+						<a href="{% url 'register' %}">Register here</a>
+					</p>
+				</div>
+			</div>
+		</main>
 
-    <main>
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Login</h5>
-                <form method="get">
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Roll Number</label>
-                        <input type="text" class="form-control" id="email" name="rollno" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" name="password" id="password" required>
-                    </div>
-                    <button type="submit" class="btn">Login</button>
-                </form>
-                <p class="mt-3 text-center">Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
-            </div>
-        </div>
-    </main>
-
-    <script>
-        // Theme toggle functionality can be added here if needed
-    </script>
-</body>
-
+		<script>
+			// Theme toggle functionality can be added here if needed
+		</script>
+	</body>
 </html>

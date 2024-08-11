@@ -16,32 +16,10 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def dashboard(request):
-    if request.method == 'POST':
-        if 'project-form' in request.POST:
-            project_form = ProjectsForm(request.POST)
-            if project_form.is_valid():
-                project = project_form.save(commit=False)
-                project.rollno = request.user  
-                project.save()
-                return redirect('dashboard')
-            else:
-                print(project_form.errors) 
-        elif 'certification-form' in request.POST:
-            certification_form = ForignLanguagesForm(request.POST, request.FILES)
-            if certification_form.is_valid():
-                cert = certification_form.save(commit=False)
-                cert.rollno = request.user 
-                cert.save()
-                return redirect('dashboard')
-            else:
-                print(certification_form.errors) 
-    else:
-        project_form = ProjectsForm()
-        certification_form = ForignLanguagesForm()
     
     projects = Projects.objects.filter(rollno=request.user)
-    Tech_certifications = ForignLanguages.objects.filter(rollno=request.user, category="TECHNICAL")
-    For_lang = ForignLanguages.objects.filter(rollno=request.user, category="FOREIGN_LANGUAGE")
+    Tech_certifications = ForignLanguages.objects.filter(rollno=request.user, category="Technical")
+    For_lang = ForignLanguages.objects.filter(rollno=request.user, category="Foreign Language")
 
     
     username = request.user.leetcode_user
@@ -70,15 +48,6 @@ def dashboard(request):
         easy_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Easy'), 0)
         medium_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Medium'), 0)
         hard_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Hard'), 0)
-
-        total_problems = easy_count + medium_count + hard_count
-        leet_user = LeetCode.objects.get_or_create(rollno = request.user)[0]
-        leet_user.TotalProblems = total_problems
-        leet_user.easy = easy_count
-        leet_user.medium = medium_count
-        leet_user.hard = hard_count
-        leet_user.save()
-
     else:
         easy_count = medium_count = hard_count = 0 
 
@@ -86,40 +55,42 @@ def dashboard(request):
         'projects': projects,
         'Technical': Tech_certifications,
         'Foreign_languages': For_lang,
-        'project_form': project_form,
-        'certification_form': certification_form,
         'easy_count': easy_count,
         'medium_count': medium_count,
         'hard_count': hard_count,
     }
+
+    print(context)
 
     return render(request, 'dashboard.html', context)
 
 @login_required
 def create_project(request):
     if request.method == 'POST':
-        form = ProjectsForm(request.POST)
-        if form.is_valid():
-            project = form.save(commit=False)
-            project.rollno = request.user 
-            project.save()
-            return redirect('dashboard') 
-    else:
-        form = ProjectsForm()
-    return render(request, 'dashboard.html', {'form': form})
+        rollno = request.user
+        title = request.POST.get('project-name')
+        description = request.POST.get('description')
+        status = request.POST.get('status')
+        github_link = request.POST.get('github')
+        new_project = Projects(rollno=rollno, title=title, description=description, github_link=github_link)
+        new_project.save()
+        return redirect('dashboard')
+    return render(request, 'dashboard.html')
 
 @login_required
 def add_certification(request):
     if request.method == 'POST':
-        form = ForignLanguagesForm(request.POST, request.FILES) 
-        if form.is_valid():
-            cert = form.save(commit=False)
-            cert.rollno = request.user 
-            cert.save()
-            return redirect('dashboard')  
-    else:
-        form = ForignLanguagesForm()
-    return render(request, 'dashboard.html', {'form': form})
+        print("POST")
+        rollno = request.user
+        course_type = request.POST.get('type')
+        title = request.POST.get('course-name')
+        source = request.POST.get('provider')
+        status = request.POST.get('status')
+        course_link = request.POST.get('course-link')
+        new_course = ForignLanguages(rollno=rollno, title=title, source=source, course_link=course_link, category=course_type)
+        new_course.save()
+        return redirect('dashboard')
+    return render(request, 'dashboard.html')
 
 def CustomLogin(request):
     if request.method == 'GET':
