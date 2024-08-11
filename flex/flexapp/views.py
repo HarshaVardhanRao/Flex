@@ -8,35 +8,80 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .forms import ProjectsForm, LeetCodeForm, ForignLanguagesForm
 from .models import Projects, ForignLanguages
+import requests
+from django.http import JsonResponse
+import requests
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
 
 @login_required
 def dashboard(request):
     if request.method == 'POST':
         if 'project-form' in request.POST:
-            project_form = ProjectsForm(request.POST)  # Ensure 'ProjectsForm' matches form class in forms.py
+            project_form = ProjectsForm(request.POST)
             if project_form.is_valid():
                 project = project_form.save(commit=False)
-                project.rollno = request.user  # Assuming `request.user` is the student
+                project.rollno = request.user  
                 project.save()
                 return redirect('dashboard')
             else:
-                print(project_form.errors)  # For debugging
+                print(project_form.errors) 
         elif 'certification-form' in request.POST:
-            certification_form = ForignLanguagesForm(request.POST, request.FILES)  # Include request.FILES for file uploads
+            certification_form = ForignLanguagesForm(request.POST, request.FILES)
             if certification_form.is_valid():
                 cert = certification_form.save(commit=False)
-                cert.rollno = request.user  # Assuming `request.user` is the student
+                cert.rollno = request.user 
                 cert.save()
                 return redirect('dashboard')
             else:
-                print(certification_form.errors)  # For debugging
+                print(certification_form.errors) 
     else:
         project_form = ProjectsForm()
         certification_form = ForignLanguagesForm()
+    
+    projects = Projects.objects.filter(rollno=request.user)
+    Tech_certifications = ForignLanguages.objects.filter(rollno=request.user, category="TECHNICAL")
+    For_lang = ForignLanguages.objects.filter(rollno=request.user, category="FOREIGN_LANGUAGE")
+
+    
+    username = request.user.leetcode_user
+    query = '''
+    {
+        matchedUser(username: "%s") {
+            username
+            submitStats: submitStatsGlobal {
+                acSubmissionNum {
+                    difficulty
+                    count
+                    submissions
+                }
+            }
+        }
+    }
+    ''' % username
+
+    url = 'https://leetcode.com/graphql'
+    response = requests.post(url, json={'query': query})
+
+    if response.status_code == 200:
+        data = response.json()
+        submission_data = data['data']['matchedUser']['submitStats']['acSubmissionNum']
+
+        easy_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Easy'), 0)
+        medium_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Medium'), 0)
+        hard_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Hard'), 0)
+    else:
+        easy_count = medium_count = hard_count = 0 
 
     context = {
+        'projects': projects,
+        'Technical': Tech_certifications,
+        'Foreign_languages': For_lang,
         'project_form': project_form,
         'certification_form': certification_form,
+        'easy_count': easy_count,
+        'medium_count': medium_count,
+        'hard_count': hard_count,
     }
 
     return render(request, 'dashboard.html', context)
@@ -47,7 +92,7 @@ def create_project(request):
         form = ProjectsForm(request.POST)
         if form.is_valid():
             project = form.save(commit=False)
-            project.rollno = request.user  # Ensure `rollno` is set to `request.user`
+            project.rollno = request.user 
             project.save()
             return redirect('dashboard') 
     else:
@@ -57,10 +102,10 @@ def create_project(request):
 @login_required
 def add_certification(request):
     if request.method == 'POST':
-        form = ForignLanguagesForm(request.POST, request.FILES)  # Include request.FILES for file uploads
+        form = ForignLanguagesForm(request.POST, request.FILES) 
         if form.is_valid():
             cert = form.save(commit=False)
-            cert.rollno = request.user  # Ensure `rollno` is set to `request.user`
+            cert.rollno = request.user 
             cert.save()
             return redirect('dashboard')  
     else:
@@ -68,9 +113,9 @@ def add_certification(request):
     return render(request, 'dashboard.html', {'form': form})
 
 def CustomLogin(request):
-    if request.method == 'POST':
-        rollno = request.POST.get('rollno')
-        password = request.POST.get('password')
+    if request.method == 'GET':
+        rollno = request.GET.get('rollno')
+        password = request.GET.get('password')
         print(rollno, password)
         user = authenticate(username=rollno, password=password)
         print(user)
@@ -98,7 +143,7 @@ def register(request):
 
         stu_email = f"{rollno}@mits.ac.in"
         
-        # Create the user
+     
         try:
             user = student.objects.create_user(
                 username=rollno,

@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 
 class student(AbstractUser):
     roll_no = models.CharField(max_length=12)
+    leetcode_user = models.CharField(max_length=58,default="Username")
     DEPT_CHOICES = [
         ("CSE","CSE"),("CAI","CAI"),("CSD","CSD"),("CSM","CSM"),("CSC","CSC"),("CST","CST"),("ECE","ECE"),("EEE","EEE"),("CE","CE"),("ME","ME")
     ]

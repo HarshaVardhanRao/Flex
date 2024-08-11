@@ -49,15 +49,16 @@
     <main>
         <div class="profile border-custom">
             <div class="detail">
-                <p>V Mahesh Kumar</p>
-                <p>22691A05B5</p>
+                <p>{{ request.user.first_name }}</p>
+                <p>{{ request.user.roll_no }}</p>
+                <p>{{ request.user.dept }} - {{ request.user.section }}</p>
             </div>
             <div class="leetcode">
                 <h5>Leetcode Profile</h5>
                 <div class="leetcode-problems">
-                    <div>Easy: 10</div>
-                    <div>Medium: 5</div>
-                    <div>Hard: 2</div>
+                    <div>Easy:{{easy_count}}</div>
+                    <div>Medium:{{medium_count}}</div>
+                    <div>Hard:{{hard_count}}</div>
                 </div>
             </div>
         </div>
@@ -67,13 +68,14 @@
                 <hr>
                 <ul class="multiple">
                     <!-- Example project list items -->
+                    {% for certi in projects %}
                     <li>
-                        <h5><a href="#">Github</a></h5>
-                        <p>This is a GitHub project</p>
-                        <p>Status: Pending</p>
-                        <a href="#"><i class="bi bi-github"></i></a>
+                        <h5><a href="#">{{ certi.title }}</a></h5>
+                        <p>Desripton: {{ certi.description }}</p>
+                        <p><a href="{{ certi.github_link }}">GitHub Link </a></p>
                     </li>
                     <hr>
+                    {% endfor %}
                     <!-- More list items -->
                 </ul>
                 <button class="btn btn-primary" data-category="projects" onclick="new_item(this);">
@@ -86,16 +88,17 @@
                 <hr>
                 <ul class="multiple">
                     <!-- Example language list items -->
+                    {% for certi in Foreign_languages %}
                     <li>
-                        <h5><a href="#">Github</a></h5>
-                        <p>Provider: Coursera</p>
-                        <p>Status: Completed</p>
-                        <a href="#">Click here to go to course</a>
+                        <h5><a href="#">{{ certi.title }}</a></h5>
+                        <p>Provider : {{ certi.source }}</p>
+                        <p>Uploded On: {{ certi.uploaded_at }}</p>
                     </li>
                     <hr>
+                    {% endfor %}
                     <!-- More list items -->
                 </ul>
-                <button class="btn btn-primary" data-category="languages" onclick="new_item(this);">
+                <button class="btn btn-primary" data-category="ForignLanguages" onclick="new_item(this);">
                     <i class="bi bi-plus"></i>
                     Language
                 </button>
@@ -104,16 +107,17 @@
                 <h2 id="technical">Technical Certifications</h2>
                 <hr>
                 <ul class="multiple">
-                    <!-- Example certification list items -->
+                    {% for certi in Technical %}
                     <li>
-                        <h5><a href="#">Github</a></h5>
-                        <p>This is a GitHub project</p>
-                        <p>Status: Pending</p>
+                        <h5><a href="#">{{ certi.title }}</a></h5>
+                        <p>Provider : {{ certi.source }}</p>
+                        <p>Uploded On: {{ certi.uploaded_at }}</p>
                     </li>
                     <hr>
+                    {% endfor %}
                     <!-- More list items -->
                 </ul>
-                <button class="btn btn-primary" data-category="certificates" onclick="new_item(this);">
+                <button class="btn btn-primary" data-category="Technical" onclick="new_item(this);">
                     <i class="bi bi-plus"></i>
                     Certification
                 </button>
@@ -168,7 +172,15 @@
                 {{ project_form.as_p }}
                 <input type="submit" value="Create" class="btn btn-primary">
                 <button type="button" class="btn btn-secondary" onclick="remove_form()"><i class="bi bi-x"></i></button>`;
-            } else if (category === 'languages') {
+            } else if (category === 'ForignLanguages') {
+                formContent.style.display = 'none';
+                formContentCertification.style.display = 'block';
+                formContentCertification.innerHTML = `<h2>Add a Certification</h2>
+                <hr>
+                {{ certification_form.as_p }}
+                <input type="submit" value="Add Certification" class="btn btn-primary">
+                <button type="button" class="btn btn-secondary" onclick="remove_form()"><i class="bi bi-x"></i></button>`;
+            }else if (category === 'Technical') {
                 formContent.style.display = 'none';
                 formContentCertification.style.display = 'block';
                 formContentCertification.innerHTML = `<h2>Add a Certification</h2>
