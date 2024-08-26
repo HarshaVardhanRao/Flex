@@ -117,6 +117,8 @@ def register(request):
         password = request.POST.get('password')
         first_name = request.POST.get('first_name')
         role = request.POST.get('role')
+        deptt = request.POST.get('dept')
+        section = request.POST.get('section')
         is_staff = role == 'staff'
 
         logging.debug(f"Received data: rollno={rollno}, password={password}, first_name={first_name}, role={role}")
@@ -129,7 +131,10 @@ def register(request):
                 username=rollno,
                 roll_no=rollno,
                 is_staff=is_staff,
-                first_name=first_name
+                first_name=first_name,
+                dept=deptt,
+                section=section,
+                leetcode_user=rollno,
             )
             logging.debug(f"User created: {user}")
 
