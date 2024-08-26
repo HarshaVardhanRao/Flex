@@ -39,8 +39,8 @@ $light-shadow-color: rgba(0, 0, 0, 0.1); // Subtle black shadow for light theme
 		background: $primary-color;
 
 		&.light-theme {
-            background: $light-primary-color;
-        }
+			background: $light-primary-color;
+		}
 	}
 
 	&::-webkit-scrollbar-thumb {
@@ -48,8 +48,8 @@ $light-shadow-color: rgba(0, 0, 0, 0.1); // Subtle black shadow for light theme
 		border-radius: 5px;
 
 		&.light-theme {
-            background-color: $light-accent-color;
-        }
+			background-color: $light-accent-color;
+		}
 	}
 }
 
@@ -435,8 +435,9 @@ i {
 	bottom: 1vh;
 	right: 1vw;
 	z-index: 10;
+
 	button {
-		background-color: $dark-accent-color;
+		background-color: black;
 		height: 7vh;
 		border-radius: 50%;
 		aspect-ratio: 1;
@@ -444,29 +445,43 @@ i {
 		border: 2px solid $shadow-color;
 		box-shadow: 0px 0px 3px 2px $shadow-color;
 		transition: all 200ms ease-in-out;
+
 		i {
-			color: black;
+			background-color: black;
 			font-size: 1.8rem;
+			transition: all 200ms ease-in-out;
 			font-weight: 1000;
+			color: $accent-color;
+
 			&.light-theme {
-				color: white;
+				background-color: white;
 			}
 		}
 
 		&.light-theme {
-			background-color: $light-accent-color;
+			background-color: #fff; // Light theme button background
 		}
 
 		&:hover {
-			// background-color: $accent-color;
 			color: white;
+			background-color: $dark-accent-color;
 			border-color: $accent-color;
 			box-shadow: 0px 0px 10px 3px $accent-color;
+
+			i {
+				background-color: $dark-accent-color;
+			}
+
+			&.light-theme {
+				color: $light-text-color; // Dark text for light theme
+			}
 		}
 	}
+
 	&.light-theme {
 		color: $light-text-color; // Dark text for light theme
 	}
+
 	@media screen and (max-width: 768px) {
 		position: fixed;
 	}
