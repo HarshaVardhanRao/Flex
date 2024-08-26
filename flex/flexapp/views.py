@@ -158,3 +158,6 @@ def register(request):
             return render(request, 'register.html', {'error': str(e)})
 
     return render(request, 'register.html')
+
+def faculty(request):
+    return render(request, 'faculty_dashboard.html')

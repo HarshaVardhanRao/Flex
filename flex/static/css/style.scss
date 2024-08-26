@@ -30,6 +30,27 @@ $light-shadow-color: rgba(0, 0, 0, 0.1); // Subtle black shadow for light theme
 	box-sizing: border-box;
 	font-family: "Arial", sans-serif;
 	transition: background-color 500ms ease-in-out;
+
+	&::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	&::-webkit-scrollbar-track {
+		background: $primary-color;
+
+		&.light-theme {
+            background: $light-primary-color;
+        }
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background-color: $accent-color;
+		border-radius: 5px;
+
+		&.light-theme {
+            background-color: $light-accent-color;
+        }
+	}
 }
 
 body {
@@ -188,7 +209,7 @@ body {
 header {
 	background-color: $primary-light; // Dark header background
 	color: $text-color; // Light text color
-	padding: 1.5rem;
+	padding: 0;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -282,19 +303,6 @@ main {
 
 		&.light-theme {
 			background-color: $light-primary-light; // Light background for list
-		}
-
-		&::-webkit-scrollbar {
-			width: 8px;
-		}
-
-		&::-webkit-scrollbar-track {
-			background: $primary-color;
-		}
-
-		&::-webkit-scrollbar-thumb {
-			background-color: $accent-color;
-			border-radius: 5px;
 		}
 
 		li {
@@ -423,7 +431,7 @@ i {
 }
 
 .form-check-label {
-	position: absolute;
+	position: fixed;
 	bottom: 1vh;
 	right: 1vw;
 	z-index: 10;
