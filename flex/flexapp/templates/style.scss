@@ -327,47 +327,35 @@ main {
 				}
 			}
 
-			& > .buttons {
-				display: flex;
-				gap: 10px;
-			}
-
-			& > .buttons > button {
+			button {
+				position: absolute;
 				width: 2rem;
 				height: 2rem;
-				border-radius: 10px;
+				border-radius: 50%;
 				right: 0;
 				top: -1rem;
-				background-color: transparent;
-				border: none;
-				font-size: 1rem;
-				cursor: pointer;
-				background-color: #1a1a1a;
-				transition: background-color 0.3s;
-				i {
-					color: white;
-					font-size: 1rem;
-					margin-inline: auto;
-					border-radius: 50%;
-					font-weight: 1000;
-				}
-				&.delete i {
-					color: red;
-				}
-				&:hover{
-					background-color: $accent-color;
+				display: flex;
+				align-items: center;
+
+				&.edit {
+					right: 2.5rem;
 				}
 
-				&.light-theme {
-                    background-color: $light-button-bg-color; // Button background for light theme
-                    color: $light-button-text-color; // Button text color for light theme
-                }
+				&.delete {
+					background-color: red;
+					i {
+						background-color: red;
+					}
+				}
+				i {
+					margin-inline: auto;
+				}
 			}
 		}
 	}
 
 	// Button styles
-	& > button {
+	button {
 		background-color: $button-bg-color;
 		color: $button-text-color;
 		border: none;
