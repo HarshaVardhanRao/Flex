@@ -120,6 +120,7 @@ def register(request):
         deptt = request.POST.get('dept')
         section = request.POST.get('section')
         is_staff = role == 'staff'
+        leetcode_user = request.POST.get('leetcode_user')
 
         logging.debug(f"Received data: rollno={rollno}, password={password}, first_name={first_name}, role={role}")
 
@@ -134,7 +135,7 @@ def register(request):
                 first_name=first_name,
                 dept=deptt,
                 section=section,
-                leetcode_user=rollno,
+                leetcode_user=leetcode_user,
             )
             logging.debug(f"User created: {user}")
 
@@ -165,4 +166,5 @@ def register(request):
     return render(request, 'register.html')
 
 def faculty(request):
-    return render(request, 'faculty_dashboard.html')
+    studentData = student.objects.all()
+    return render(request, 'faculty_dashboard.html',{'studentData': studentData})

@@ -29,19 +29,19 @@
                 <div class="radio-group">
                     <div class="radio">
                         <input type="radio" name="year" id="year-1">
-                        <label for="year-1">I</label>
+                        <label for="year-1">1</label>
                     </div>
                     <div class="radio">
                         <input type="radio" name="year" id="year-2">
-                        <label for="year-2">II</label>
+                        <label for="year-2">2</label>
                     </div>
                     <div class="radio">
                         <input type="radio" name="year" id="year-3">
-                        <label for="year-3">III</label>
+                        <label for="year-3">3</label>
                     </div>
                     <div class="radio">
                         <input type="radio" name="year" id="year-4">
-                        <label for="year-4">VI</label>
+                        <label for="year-4">4</label>
                     </div>
                 </div>
                 <label for="student-section">Section:</label>
@@ -75,7 +75,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>#</th>
+                        {% comment %} <th>#</th> {% endcomment %}
                         <th>Roll Number</th>
                         <th>Name</th>
                         <th>Year</th>
@@ -83,153 +83,15 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% for stud in studentData %}
                     <tr>
-                        <td>1</td>
-                        <td>22691A05B5</td>
-                        <td>V Mahesh Kumar</td>
-                        <td>2</td>
-                        <td>B</td>
+                        {% comment %} <td>{{ forloop.counter }}</td> {% endcomment %}
+                        <td>{{ stud.roll_no }}</td>
+                        <td>{{ stud.first_name }}</td>
+                        <td>{{ stud.year }}</td>
+                        <td>{{ stud.section }}</td>
                     </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>22691A0571</td>
-                        <td>Vijapuram Harsha Vardhan</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>22691A0575</td>
-                        <td>K Hemanth Babu</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>1</td>
-                        <td>22691A05B5</td>
-                        <td>V Mahesh Kumar</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>22691A0571</td>
-                        <td>Vijapuram Harsha Vardhan</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>22691A0575</td>
-                        <td>K Hemanth Babu</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>1</td>
-                        <td>22691A05B5</td>
-                        <td>V Mahesh Kumar</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>22691A0571</td>
-                        <td>Vijapuram Harsha Vardhan</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>22691A0575</td>
-                        <td>K Hemanth Babu</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>1</td>
-                        <td>22691A05B5</td>
-                        <td>V Mahesh Kumar</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>22691A0571</td>
-                        <td>Vijapuram Harsha Vardhan</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>22691A0575</td>
-                        <td>K Hemanth Babu</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>1</td>
-                        <td>22691A05B5</td>
-                        <td>V Mahesh Kumar</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>22691A0571</td>
-                        <td>Vijapuram Harsha Vardhan</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>22691A0575</td>
-                        <td>K Hemanth Babu</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>1</td>
-                        <td>22691A05B5</td>
-                        <td>V Mahesh Kumar</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>22691A0571</td>
-                        <td>Vijapuram Harsha Vardhan</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>22691A0575</td>
-                        <td>K Hemanth Babu</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>1</td>
-                        <td>22691A05B5</td>
-                        <td>V Mahesh Kumar</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>22691A0571</td>
-                        <td>Vijapuram Harsha Vardhan</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>22691A0575</td>
-                        <td>K Hemanth Babu</td>
-                        <td>2</td>
-                        <td>B</td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -241,9 +103,12 @@
         const toggleSwitch = document.getElementById("themeToggle");
         const icon = document.querySelector("#themeToggle i");
         const body = document.body;
-        const allElements = document.querySelectorAll("*"); // Select all elements
-        console.log(allElements);
         toggleSwitch.addEventListener("click", () => {
+            // Toggle the light theme class on the body
+            const allElements = document.querySelectorAll("*");
+            const formAll = document.querySelectorAll(
+                "input, select, textarea, option"
+            );
             body.classList.toggle("light-theme");
 
             // Add or remove the light theme class from all elements
@@ -253,8 +118,85 @@
                     body.classList.contains("light-theme")
                 );
             });
+
+            formAll.forEach((element) => {
+                element.classList.toggle(
+                    "light-theme",
+                    body.classList.contains("light-theme")
+                );
+            });
             icon.classList.toggle("bi-moon-fill");
             icon.classList.toggle("bi-brightness-high-fill");
+        });
+        document.addEventListener("DOMContentLoaded", function () {
+            const studentData = [
+                {% for student in studentData %}
+                {
+                    rollNo: "{{ student.roll_no }}",
+                    studName: "{{ student.first_name }}",
+                    year: "{{ student.year }}",
+                    section: "{{ student.section }}",
+                },
+                {% endfor %}
+            ];
+    
+            function filterAndDisplayData() {
+                const rollno = document.getElementById('student-search').value.trim().toLowerCase();
+                const year = document.querySelector('input[name="year"]:checked')?.nextElementSibling.textContent.trim().toLowerCase() || "";
+                const section = document.querySelector('input[name="section"]:checked')?.nextElementSibling.textContent.trim().toLowerCase() || "";
+    
+                let filteredData = studentData;
+    
+                if (rollno !== "") {
+                    filteredData = filteredData.filter(student => student.rollNo.toLowerCase().includes(rollno) || student.studName.toLowerCase().includes(rollno));
+                }
+    
+                if (year != "") {
+                    filteredData = filteredData.filter(student => student.year.toLowerCase() == year);
+                }
+    
+                if (section !== "") {
+                    filteredData = filteredData.filter(student => student.section.toLowerCase() === section);
+                }
+    
+                displayData(filteredData);
+            }
+    
+            function displayData(data) {
+                const tableBody = document.querySelector('tbody');
+                tableBody.innerHTML = "";
+    
+                data.forEach(student => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${student.rollNo}</td>
+                        <td>${student.studName}</td>
+                        <td>${student.year}</td>
+                        <td>${student.section}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+    
+            function reset() {
+                document.getElementById('student-search').value = "";
+                document.querySelectorAll('input[name="year"]').forEach(radio => radio.checked = false);
+                document.querySelectorAll('input[name="section"]').forEach(radio => radio.checked = false);
+                displayData(studentData);
+            }
+    
+            document.getElementById('student-search').addEventListener('input', filterAndDisplayData);
+            document.querySelectorAll('input[name="year"], input[name="section"]').forEach(radio => {
+                radio.addEventListener('change', filterAndDisplayData);
+            });
+    
+            const resetButton = document.querySelector('.reset');
+            resetButton.addEventListener('click', function () {
+                reset();
+            });
+    
+            // Display initial data
+            displayData(studentData);
         });
     </script>
 </body>
