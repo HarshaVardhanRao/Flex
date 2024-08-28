@@ -326,42 +326,30 @@ main {
 					color: $dark-accent-color; // Darker shade for hover effect
 				}
 			}
-
-			& > .buttons {
+			
+			&>.buttons{
 				display: flex;
 				gap: 10px;
 			}
 
-			& > .buttons > button {
-				width: 2rem;
-				height: 2rem;
+			button {
 				border-radius: 10px;
-				right: 0;
-				top: -1rem;
-				background-color: transparent;
 				border: none;
-				font-size: 1rem;
-				cursor: pointer;
+				height: 2rem;
+				width: 2rem;
+				outline: none;
+				display: flex;
+				align-items: center;
 				background-color: #1a1a1a;
-				transition: background-color 0.3s;
+
+				&.light-theme{
+					background-color: lighten(#f39c12, 30%);
+				}
 				i {
 					color: white;
 					font-size: 1rem;
 					margin-inline: auto;
-					border-radius: 50%;
-					font-weight: 1000;
 				}
-				&.delete i {
-					color: red;
-				}
-				&:hover{
-					background-color: $accent-color;
-				}
-
-				&.light-theme {
-                    background-color: $light-button-bg-color; // Button background for light theme
-                    color: $light-button-text-color; // Button text color for light theme
-                }
 			}
 		}
 	}

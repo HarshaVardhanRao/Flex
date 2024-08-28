@@ -13,6 +13,8 @@ from django.http import JsonResponse
 import requests
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+import json
+from django.core import serializers
 
 @login_required
 def dashboard(request):
@@ -20,44 +22,43 @@ def dashboard(request):
     projects = Projects.objects.filter(rollno=request.user)
     Tech_certifications = ForignLanguages.objects.filter(rollno=request.user, category="Technical")
     For_lang = ForignLanguages.objects.filter(rollno=request.user, category="Foreign Language")
-
     
-    username = request.user.leetcode_user
-    query = '''
-    {
-        matchedUser(username: "%s") {
-            username
-            submitStats: submitStatsGlobal {
-                acSubmissionNum {
-                    difficulty
-                    count
-                    submissions
-                }
-            }
-        }
-    }
-    ''' % username
+    # username = request.user.leetcode_user
+    # query = '''
+    # {
+    #     matchedUser(username: "%s") {
+    #         username
+    #         submitStats: submitStatsGlobal {
+    #             acSubmissionNum {
+    #                 difficulty
+    #                 count
+    #                 submissions
+    #             }
+    #         }
+    #     }
+    # }
+    # ''' % username
 
-    url = 'https://leetcode.com/graphql'
-    response = requests.post(url, json={'query': query})
+    # url = 'https://leetcode.com/graphql'
+    # response = requests.post(url, json={'query': query})
 
-    if response.status_code == 200:
-        data = response.json()
-        submission_data = data['data']['matchedUser']['submitStats']['acSubmissionNum']
+    # if response.status_code == 200:
+    #     data = response.json()
+    #     submission_data = data['data']['matchedUser']['submitStats']['acSubmissionNum']
 
-        easy_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Easy'), 0)
-        medium_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Medium'), 0)
-        hard_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Hard'), 0)
-    else:
-        easy_count = medium_count = hard_count = 0 
+    #     easy_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Easy'), 0)
+    #     medium_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Medium'), 0)
+    #     hard_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Hard'), 0)
+    # else:
+    #     easy_count = medium_count = hard_count = 0
 
     context = {
-        'projects': projects,
-        'Technical': Tech_certifications,
-        'Foreign_languages': For_lang,
-        'easy_count': easy_count,
-        'medium_count': medium_count,
-        'hard_count': hard_count,
+        'projects': serializers.serialize('json', projects),
+        'Technical': serializers.serialize('json', Tech_certifications),
+        'Foreign_languages': serializers.serialize('json', For_lang),
+        'easy_count': 20,
+        'medium_count': 35,
+        'hard_count': 7,
     }
 
     print(context)
