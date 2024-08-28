@@ -469,6 +469,6 @@ option.light-theme {
 }
 
 .scale-animation {
-  animation: scaleani 500ms ease-in-out;
+  animation: scaleani 250ms ease-in-out;
   animation-fill-mode: forwards;
 }/*# sourceMappingURL=style.css.map */

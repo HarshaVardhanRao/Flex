@@ -145,6 +145,30 @@
 		const technical_ul = document.querySelector('#technical_certificates');
 		const foreign_languages_ul = document.querySelector('#foreign_languages');
 		document.addEventListener("DOMContentLoaded", () => {
+
+			fetch("https://leetcode.com/graphql", {
+				method: "POST",
+				mode: 'no-cors',
+				headers: {
+				  'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					query: 'query { matchedUser(username: "maheshkumarvmk0") {username submitStats: submitStatsGlobal { acSubmissionNum { difficulty count submissions}}}}'
+			})
+			}).then(response => {
+				console.log(response)
+					if(response.ok) {
+						return response.json();
+					}
+					else{
+						throw new Error("Network response was not ok");
+					}
+				}).then(response => {
+					console.log(response);
+				}).catch(error => {
+					console.log(error);
+				});
+
 			projects.forEach(project => {
 				projects_ul.innerHTML += `<li>
 						<h5><a href="#">${project.fields.title}</a></h5>
@@ -172,7 +196,7 @@
                         <p>Provider : ${technical.fields.source}</p>
                         <p>Uploded On: ${technical.fields.uploaded_at}</p>
                         <div class="buttons">
-                            <button class="edit" onclick="return edit(${technical.pk}, 'techincal')">
+                            <button class="edit" onclick="return edit(${technical.pk}, 'technical')">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <button class="delete" onclick="return delete_item(${technical.pk}, 'technical')">
@@ -400,10 +424,12 @@
 			blur.style.display = "flex";
 			blur.classList.add("blur-animation");
 			if (type === "project"){
+				projectform.action = "{% url 'edit_project' %}";
 				var project = projects.filter(project => project.pk == id)[0];
-				projectform.innerHTML = `<h2>Add a Project</h2>
+				projectform.innerHTML = `<h2>Edit</h2>
 			           <hr>
 			            {% csrf_token %}
+						<input type="hidden" name="id" value="${id}">
 			           <label for="project-name">Project Name</label>
 			           <input type="text" value=${project.fields.title} name="project-name" id="project-name" class="${body.classList.contains("light-theme")
 						? "light-theme"
@@ -423,10 +449,10 @@
 						? "light-theme"
 						: ""
 					}">Completed</option>
-			               <option value="Pending" class="${body.classList.contains("light-theme")
+			               <option value="Initialized" class="${body.classList.contains("light-theme")
 						? "light-theme"
 						: ""
-					}">Pending</option>
+					}">Initialized</option>
 			           </select>
 			           <label for='github'>Github Link</label>
 			           <input type="text" value="${project.fields.github_link}" name="github" id="github" class="${body.classList.contains("light-theme")
@@ -436,7 +462,7 @@
 			           <input type="submit" class="${body.classList.contains("light-theme")
 						? "light-theme"
 						: ""
-					}" value="Create">
+					}" value="Update">
 			           <button type="button" class="${body.classList.contains("light-theme")
 						? "light-theme"
 						: ""
@@ -446,12 +472,13 @@
 					}"></i></button>`;
 			}
 			else if(type === "language"){
+				projectform.action = "{% url 'edit_certification' %}";
 				console.log(id);
 				var language = Foreign_languages.filter(lan => lan.pk == id)[0];
-				projectform.innerHTML = `<h2>Add a Language</h2>
+				projectform.innerHTML = `<h2>Edit</h2>
 			           <hr>
 			            {% csrf_token %}
-                        <input type="hidden" name="type" value="Foreign Language">
+						<input type="hidden" name="id" value="${id}">
                         <label for="course-name">Language</label>
                         <input type="text" value="${language.fields.title}" class="${body.classList.contains("light-theme")
 						? "light-theme"
@@ -484,18 +511,19 @@
 			           <input type="submit" class="${body.classList.contains("light-theme")
 						? "light-theme"
 						: ""
-					}" value="Create">
+					}" value="Update">
 			           <button type="button" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
 						? "light-theme"
 						: ""
 					}"></i></button>`;
 			}
 			else if (type === "technical"){
+				projectform.action = "{% url 'edit_certification' %}";
 				var technical = technicals.filter(skill => skill.pk == id)[0];
-                projectform.innerHTML = `<h2>Add a Certificate</h2>
+                projectform.innerHTML = `<h2>Edit</h2>
                     <hr>
                     {% csrf_token %}
-                    <input type="hidden" name="type" value="Technical">
+						<input type="hidden" name="id" value="${id}">
 			           <label for="course-name">Course Name</label>
 			           <input type="text" value="${technical.fields.title}" class="${body.classList.contains("light-theme")
 						? "light-theme"
@@ -528,7 +556,7 @@
 			           <input type="submit" class="${body.classList.contains("light-theme")
 						? "light-theme"
 						: ""
-					}" value="Create">
+					}" value="Update">
 			           <button type="button" class="${body.classList.contains("light-theme")
 						? "light-theme"
 						: ""
@@ -551,11 +579,11 @@
 			blur.style.animationDirection = "normal";
 			blur.style.display = "flex";
 			blur.classList.add("blur-animation");
+			projectform.method = "GET";
+			projectform.action = `delete_certification/${id}`;
 			if (type == "project") {
+				projectform.action = `delete_project/${id}`; 
 				projectform.innerHTML = `<p>Do you want to delete this project?</p>
-				{% csrf_token %}
-				<input type="hidden" name="type" value="project" />
-				<input type="hidden" name="id" value="${id}" />
 				<input type="submit" class="${body.classList.contains("light-theme")
 						? "light-theme"
 						: ""
@@ -570,10 +598,7 @@
 					}"></i></button>`
 			}
 			else if (type == "language") {
-				projectform.innerHTML = `<p>Do you want to delete this project?</p>
-				{% csrf_token %}
-				<input type="hidden" name="type" value="language" />
-				<input type="hidden" name="id" value="${id}" />
+				projectform.innerHTML = `<p>Do you want to delete this Language?</p>
 				<input type="submit" class="${body.classList.contains("light-theme")
 						? "light-theme"
 						: ""
@@ -588,10 +613,7 @@
 					}"></i></button>`
 			}
 			else if (type == "technical") {
-				projectform.innerHTML = `<p>Do you want to delete this project?</p>
-				{% csrf_token %}
-				<input type="hidden" name="type" value="technical" />
-				<input type="hidden" name="id" value="${id}" />
+				projectform.innerHTML = `<p>Do you want to delete this Certificate?</p>
 				<input type="submit" class="${body.classList.contains("light-theme")
 						? "light-theme"
 						: ""

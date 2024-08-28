@@ -61,7 +61,7 @@ def dashboard(request):
         'hard_count': 7,
     }
 
-    print(context)
+    #print(context)
 
     return render(request, 'dashboard.html', context)
 
@@ -169,3 +169,44 @@ def register(request):
 def faculty(request):
     studentData = student.objects.all()
     return render(request, 'faculty_dashboard.html',{'studentData': studentData})
+
+
+def edit_project(request):
+    if request.method == 'POST':
+        primary_key = request.POST.get('id')
+        title = request.POST.get('project-name')
+        description = request.POST.get('description')
+        status = request.POST.get('status')
+        github_link = request.POST.get('github')
+        print(title, description, status, github_link)
+        project = Projects.objects.get(id=primary_key)
+        project.title = title
+        project.description = description
+        project.status = status
+        project.github_link = github_link
+        project.save()
+        return redirect('dashboard')
+
+def edit_certification(request):
+    if request.method == 'POST':
+        primary_key = request.POST.get('id')
+        source = request.POST.get('provider')
+        title = request.POST.get('course-name')
+        course_link = request.POST.get('course-link')
+        project = ForignLanguages.objects.get(id=primary_key)
+        project.source = source
+        project.title = title
+        project.course_link = course_link
+        project.save()
+        return redirect('dashboard')
+
+
+def delete_project(request,primary_key):
+    project = Projects.objects.get(id=primary_key)
+    project.delete()
+    return redirect('dashboard')
+
+def delete_certification(request,primary_key):
+    project = ForignLanguages.objects.get(id=primary_key)
+    project.delete()
+    return redirect('dashboard')

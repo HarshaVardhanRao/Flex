@@ -49,6 +49,12 @@ class Projects(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     github_link = models.URLField(blank=True)
+    Status_choices = [
+        ("Initialized","Initialized"),
+        ("In_progress","In Progress"),
+        ("completed","Completed"),
+    ]
+    status = models.CharField(max_length=255,choices=Status_choices,default="Initialized")
     def __str__(self):
         return f"{self.rollno} - {self.title}"
 
