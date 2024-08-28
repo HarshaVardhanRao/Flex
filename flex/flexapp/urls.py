@@ -15,4 +15,5 @@ urlpatterns = [
     path('delete_project/<int:primary_key>', views.delete_project,name="delete_project"),
     path('delete_certification/<int:primary_key>', views.delete_certification, name="delete_certification"),
     path('edit_certification', views.edit_certification, name="edit_certification"),
+    path('leetcode', views.leetcode_request, name="leetcode"),
 ]
