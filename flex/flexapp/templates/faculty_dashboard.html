@@ -69,13 +69,13 @@
                 </div>
             </aside>
             <br>
-            <button>Download</button>
+            <button onclick="return downloadData()">Download</button>
         </div>
         <div class="table">
             <table>
                 <thead>
                     <tr>
-                        {% comment %} <th>#</th> {% endcomment %}
+                        <th>#</th>
                         <th>Roll Number</th>
                         <th>Name</th>
                         <th>Year</th>
@@ -83,15 +83,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for stud in studentData %}
-                    <tr>
-                        {% comment %} <td>{{ forloop.counter }}</td> {% endcomment %}
-                        <td>{{ stud.roll_no }}</td>
-                        <td>{{ stud.first_name }}</td>
-                        <td>{{ stud.year }}</td>
-                        <td>{{ stud.section }}</td>
-                    </tr>
-                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -100,6 +91,8 @@
         <button id="themeToggle"><i class="bi bi-moon-fill"></i></button>
     </div>
     <script>
+        const studentData = {{ studentData|safe }};
+        var presentData = studentData;
         const toggleSwitch = document.getElementById("themeToggle");
         const icon = document.querySelector("#themeToggle i");
         const body = document.body;
@@ -129,17 +122,6 @@
             icon.classList.toggle("bi-brightness-high-fill");
         });
         document.addEventListener("DOMContentLoaded", function () {
-            const studentData = [
-                {% for student in studentData %}
-                {
-                    rollNo: "{{ student.roll_no }}",
-                    studName: "{{ student.first_name }}",
-                    year: "{{ student.year }}",
-                    section: "{{ student.section }}",
-                },
-                {% endfor %}
-            ];
-    
             function filterAndDisplayData() {
                 const rollno = document.getElementById('student-search').value.trim().toLowerCase();
                 const year = document.querySelector('input[name="year"]:checked')?.nextElementSibling.textContent.trim().toLowerCase() || "";
@@ -148,17 +130,17 @@
                 let filteredData = studentData;
     
                 if (rollno !== "") {
-                    filteredData = filteredData.filter(student => student.rollNo.toLowerCase().includes(rollno) || student.studName.toLowerCase().includes(rollno));
+                    filteredData = filteredData.filter(student => student.fields.rollNo.toLowerCase().includes(rollno) || student.studName.toLowerCase().includes(rollno));
                 }
     
                 if (year != "") {
-                    filteredData = filteredData.filter(student => student.year.toLowerCase() == year);
+                    filteredData = filteredData.filter(student => student.fields.year == year);
                 }
     
                 if (section !== "") {
-                    filteredData = filteredData.filter(student => student.section.toLowerCase() === section);
+                    filteredData = filteredData.filter(student => student.fields.section.toLowerCase() === section);
                 }
-    
+                presentData = filteredData;
                 displayData(filteredData);
             }
     
@@ -166,13 +148,14 @@
                 const tableBody = document.querySelector('tbody');
                 tableBody.innerHTML = "";
     
-                data.forEach(student => {
+                data.forEach((student, index) => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${student.rollNo}</td>
-                        <td>${student.studName}</td>
-                        <td>${student.year}</td>
-                        <td>${student.section}</td>
+                        <td>${index+1}</td>
+                        <td>${student.fields.username}</td>
+                        <td>${student.fields.first_name}</td>
+                        <td>${student.fields.year}</td>
+                        <td>${student.fields.section}</td>
                     `;
                     tableBody.appendChild(row);
                 });
@@ -194,10 +177,33 @@
             resetButton.addEventListener('click', function () {
                 reset();
             });
-    
-            // Display initial data
             displayData(studentData);
+            console.log(studentData);
         });
+
+        function downloadData(){
+            var data = [];
+            studentData.forEach(stu => {
+                data.push(stu.pk)
+            })
+            fetch("{% url 'download' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify(data)
+            }).then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'data.xlsx';
+                document.body.appendChild(a); 
+                a.click(); 
+                a.remove(); 
+            });
+        }
     </script>
 </body>
 

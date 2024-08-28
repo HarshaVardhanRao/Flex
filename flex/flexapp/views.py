@@ -2,19 +2,20 @@ from django.shortcuts import render,redirect
 from django.contrib.auth import authenticate,login,logout
 from .forms import ProjectsForm,LeetCodeForm,ForignLanguagesForm
 from django.contrib.auth.decorators import login_required
-from .models import *
 import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .forms import ProjectsForm, LeetCodeForm, ForignLanguagesForm
-from .models import Projects, ForignLanguages
+from .models import Projects, ForignLanguages, student, LeetCode
 import requests
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 import requests
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 import json
 from django.core import serializers
+import pandas as pd
+from django.http import HttpResponse
 
 @login_required
 def dashboard(request):
@@ -139,7 +140,7 @@ def register(request):
 
 def faculty(request):
     studentData = student.objects.all()
-    return render(request, 'faculty_dashboard.html',{'studentData': studentData})
+    return render(request, 'faculty_dashboard.html',{'studentData': serializers.serialize('json', studentData)})
 
 
 def edit_project(request):
@@ -212,9 +213,48 @@ def leetcode_request(request):
         hard_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Hard'), 0)
     else:
         easy_count = medium_count = hard_count = 0
-    
+    leetcode_user, created = LeetCode.objects.get_or_create(rollno=request.user)
+    leetcode_user.easy = easy_count
+    leetcode_user.medium = medium_count
+    leetcode_user.hard = hard_count
+    leetcode_user.TotalProblems = int(easy_count) + int(medium_count) + int(hard_count)
+    leetcode_user.save()
     return JsonResponse({
         'easy_count': easy_count,
        'medium_count': medium_count,
         'hard_count': hard_count,
     })
+
+def download_request(request):
+    list = request.body
+    list = json.loads(list)
+    students = student.objects.filter(id__in=list)
+    print(students)
+    data = []
+    for stu in students:
+        leetcode = LeetCode.objects.get(rollno=stu)
+        technical = ForignLanguages.objects.filter(rollno=stu, category="Technical")
+        foreign = ForignLanguages.objects.filter(rollno=stu, category="Foreign Language")
+        projects = Projects.objects.filter(rollno=stu)
+        data.append({
+            'Roll No': stu.roll_no,
+            'student Name': stu.first_name,
+            'Department': stu.dept,
+            'Section': stu.section,
+            'Year': stu.year,
+            'Total Count': leetcode.TotalProblems,
+            'Projects': ",".join([project.title for project in projects]),
+            'Foreign Languages': ",".join([project.title for project in foreign]),
+            'Technical Certificates': ",".join([project.title for project in technical]),
+        })
+    
+    df = pd.DataFrame(data)
+
+    # Create a response object and specify the content type for Excel
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=students.xlsx'
+
+    # Write the DataFrame to the response object as an Excel file
+    df.to_excel(response, index=False)
+
+    return response
