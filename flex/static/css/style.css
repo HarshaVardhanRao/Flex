@@ -21,6 +21,9 @@ body {
   color: #f5f5f5;
   line-height: 1.6;
 }
+body::-webkit-scrollbar {
+  display: none;
+}
 body.light-theme {
   background-color: rgb(255, 249, 240);
   color: #333333;
@@ -185,6 +188,7 @@ header {
   align-items: center;
   justify-content: space-between;
   box-shadow: 0px 4px 8px rgba(241, 196, 15, 0.5);
+  animation: moveDown 300ms linear;
 }
 header.light-theme {
   background-color: #ffffff;
@@ -230,6 +234,18 @@ main.light-theme {
   padding: 1.5rem;
   border-radius: 10px;
   box-shadow: 0px 4px 12px rgba(241, 196, 15, 0.5);
+  opacity: 0;
+  animation: moveUp 300ms ease-in;
+  animation-fill-mode: forwards;
+}
+.section:nth-child(1) {
+  animation-delay: 100ms;
+}
+.section:nth-child(2) {
+  animation-delay: 200ms;
+}
+.section:nth-child(3) {
+  animation-delay: 300ms;
 }
 .section.light-theme {
   background-color: #ffffff;
@@ -347,6 +363,7 @@ i {
   background-color: #1a1a1a;
   border-radius: 10px;
   box-shadow: 0px 4px 12px rgba(241, 196, 15, 0.5);
+  animation: moveRight 500ms ease-in;
 }
 .profile.light-theme {
   background-color: #ffffff;
@@ -471,6 +488,34 @@ option.light-theme {
   100% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+@keyframes moveUp {
+  from {
+    transform: translateY(150px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes moveDown {
+  from {
+    transform: translateY(-10vh);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes moveRight {
+  from {
+    transform: translateX(-90vw);
+  }
+  to {
+    transform: translateX(0);
   }
 }
 .blur-animation {

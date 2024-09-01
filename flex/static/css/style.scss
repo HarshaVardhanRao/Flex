@@ -50,6 +50,10 @@ body {
 	color: $text-color; // Light text color
 	line-height: 1.6;
 
+	&::-webkit-scrollbar {
+		display: none;
+	}
+
 	&.light-theme {
 		background-color: $light-primary-color; // Light gray background
 		color: $light-text-color; // Dark text color
@@ -206,6 +210,7 @@ header {
 	align-items: center;
 	justify-content: space-between;
 	box-shadow: 0px 4px 8px $shadow-color;
+	animation: moveDown 300ms linear;
 
 	&.light-theme {
 		background-color: $light-primary-light; // Light header background
@@ -222,7 +227,6 @@ header {
 		h1 {
 			font-size: 2rem;
 			color: $accent-color;
-
 			&.light-theme {
 				color: $light-accent-color; // Darker yellow for light theme
 			}
@@ -259,6 +263,20 @@ main {
 	padding: 1.5rem;
 	border-radius: 10px;
 	box-shadow: 0px 4px 12px $shadow-color;
+	opacity: 0;
+
+	animation: moveUp 300ms ease-in;
+	animation-fill-mode: forwards;
+
+	&:nth-child(1){
+		animation-delay: 100ms;
+	}
+	&:nth-child(2){
+		animation-delay: 200ms;
+	}
+	&:nth-child(3){
+		animation-delay: 300ms;
+	}
 
 	&.light-theme {
 		background-color: $light-primary-light; // Light gray for sections
@@ -398,6 +416,7 @@ i {
 	background-color: $primary-light;
 	border-radius: 10px;
 	box-shadow: 0px 4px 12px $shadow-color;
+	animation: moveRight 500ms ease-in;
 
 	&.light-theme {
 		background-color: $light-primary-light; // Light profile background
@@ -538,6 +557,37 @@ option {
 		opacity: 1;
 	}
 }
+
+@keyframes moveUp {
+	from{
+		transform: translateY(150px);
+		opacity: 0;
+	}
+	to{
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes moveDown {
+	from{
+        transform: translateY(-10vh);
+        opacity: 0;
+    }
+    to{
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes moveRight{
+	from{
+		transform: translateX(-90vw);
+	}
+	to{
+        transform: translateX(0);
+    }
+}
 .blur-animation {
 	animation: blur 500ms ease-in-out;
 	animation-fill-mode: forwards;
@@ -546,3 +596,4 @@ option {
 	animation: scaleani 500ms ease-in-out;
 	animation-fill-mode: forwards;
 }
+
