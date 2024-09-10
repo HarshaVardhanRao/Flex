@@ -6,7 +6,7 @@ import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .forms import ProjectsForm, LeetCodeForm, ForignLanguagesForm
-from .models import Projects, ForignLanguages, student, LeetCode
+from .models import Projects, ForignLanguages, student, LeetCode, Faculty
 import requests
 from django.http import HttpResponse, JsonResponse
 import requests
@@ -17,24 +17,25 @@ from django.core import serializers
 import pandas as pd
 from django.http import HttpResponse
 
-@login_required
-def dashboard(request):
+def getStudentDetails(student):
+    projects = Projects.objects.filter(rollno=student)
+    Tech_certifications = ForignLanguages.objects.filter(rollno=student, category="Technical")
+    For_lang = ForignLanguages.objects.filter(rollno=student, category="Foreign Language")
     
-    projects = Projects.objects.filter(rollno=request.user)
-    Tech_certifications = ForignLanguages.objects.filter(rollno=request.user, category="Technical")
-    For_lang = ForignLanguages.objects.filter(rollno=request.user, category="Foreign Language")
-    
-    context = {
+    return {
+        "name": student.first_name,
+        "rollno": student.roll_no,
+        "dept": student.dept,
+        "section": student.section,
+        "leetcode_user": student.leetcode_user,
         'projects': serializers.serialize('json', projects),
         'Technical': serializers.serialize('json', Tech_certifications),
-        'Foreign_languages': serializers.serialize('json', For_lang),
-        'easy_count': 20,
-        'medium_count': 35,
-        'hard_count': 7,
+        'Foreign_languages': serializers.serialize('json', For_lang)
     }
 
-    #print(context)
-
+@login_required
+def dashboard(request):
+    context = getStudentDetails(request.user)
     return render(request, 'dashboard.html', context)
 
 @login_required
@@ -66,15 +67,23 @@ def add_certification(request):
     return render(request, 'dashboard.html')
 
 def CustomLogin(request):
-    if request.method == 'GET':
-        rollno = request.GET.get('rollno')
-        password = request.GET.get('password')
+    if request.user.is_authenticated:
+        if request.user.type() == "student":
+            return redirect('dashboard')
+        if request.user.type() == "Faculty":
+            return redirect('faculty')
+    if request.method == 'POST':
+        rollno = request.POST.get('rollno')
+        password = request.POST.get('password')
         print(rollno, password)
-        user = authenticate(username=rollno, password=password)
+        user = authenticate(request=request, username=rollno, password=password)
         print(user)
         if user is not None:
             login(request, user)
-            return redirect('dashboard')
+            if user.type() == "student":
+                return redirect('dashboard')
+            if user.type() == "Faculty":
+                return redirect('faculty')
     return render(request, 'login.html')
 
 @login_required
@@ -139,7 +148,7 @@ def register(request):
     return render(request, 'register.html')
 
 def faculty(request):
-    studentData = student.objects.all()
+    studentData = student.objects.filter(is_superuser=False)
     return render(request, 'faculty_dashboard.html',{'studentData': serializers.serialize('json', studentData)})
 
 
@@ -184,8 +193,8 @@ def delete_certification(request,primary_key):
     return redirect('dashboard')
 
 
-def leetcode_request(request):
-    username = request.user.leetcode_user
+def leetcode_request(request, leetcode_user):
+    username = leetcode_user
     query = '''
     {
         matchedUser(username: "%s") {
@@ -213,7 +222,7 @@ def leetcode_request(request):
         hard_count = next((item['count'] for item in submission_data if item['difficulty'] == 'Hard'), 0)
     else:
         easy_count = medium_count = hard_count = 0
-    leetcode_user, created = LeetCode.objects.get_or_create(rollno=request.user)
+    leetcode_user, created = LeetCode.objects.get_or_create(rollno=student.objects.get(leetcode_user=username))
     leetcode_user.easy = easy_count
     leetcode_user.medium = medium_count
     leetcode_user.hard = hard_count
@@ -258,3 +267,9 @@ def download_request(request):
     df.to_excel(response, index=False)
 
     return response
+
+def studentView(request, rollno):
+    if request.user.type() == "Faculty":
+        context = getStudentDetails(student.objects.get(roll_no=rollno))
+        return render(request, 'dashboard.html', context=context)
+    return HttpResponse("<h1>You are not authorized to view this page. Redirecting...</h1>\n<script>setTimeout( () => {window.location.href='/';}, 2000)</script>")

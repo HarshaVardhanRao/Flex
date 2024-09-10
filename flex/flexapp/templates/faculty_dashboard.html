@@ -150,6 +150,9 @@
     
                 data.forEach((student, index) => {
                     const row = document.createElement('tr');
+                    row.addEventListener('click', () => {
+                        window.location = `/student/${student.fields.username}`
+                    })
                     row.innerHTML = `
                         <td>${index+1}</td>
                         <td>${student.fields.username}</td>

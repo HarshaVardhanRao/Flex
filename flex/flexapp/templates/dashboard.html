@@ -27,16 +27,16 @@
 	<main>
 		<div class="profile border-custom">
 			<div class="detail">
-				<p>{{ request.user.first_name }}</p>
-				<p>{{ request.user.roll_no }}</p>
-				<p>{{ request.user.dept }} - {{ request.user.section }}</p>
+				<p>{{ name }}</p>
+				<p>{{ rollno }}</p>
+				<p>{{ dept }} - {{ section }}</p>
 			</div>
 			<div class="leetcode">
 				<h5>Leetcode Profile</h5>
 				<div class="leetcode-problems">
-					<div>Easy: <span>{{easy_count}}</span></div>
-					<div>Medium: <span>{{medium_count}}</span></div>
-					<div>Hard: <span>{{hard_count}}</span></div>
+					<div>Easy: <span></span></div>
+					<div>Medium: <span></span></div>
+					<div>Hard: <span></span></div>
 				</div>
 				<div class="animator">
 					<svg version="1.1" id="L5" xmlns="http://www.w3.org/2000/svg"
@@ -164,7 +164,7 @@
 		const technical_ul = document.querySelector('#technical_certificates');
 		const foreign_languages_ul = document.querySelector('#foreign_languages');
 		document.addEventListener("DOMContentLoaded", () => {
-			fetch("{% url 'leetcode' %}").then(response => {
+			fetch("{% url 'leetcode' leetcode_user %}").then(response => {
 				console.log(response);
 				if (response.ok) {
 					return response.json();

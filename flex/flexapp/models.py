@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group, Permission
 
 
 class student(AbstractUser):
@@ -14,8 +14,24 @@ class student(AbstractUser):
     dept= models.CharField(max_length=20, choices=DEPT_CHOICES, default="CSE")
     section = models.CharField(max_length=10,choices=SECTION_CHOICES, default="A")
     year = models.IntegerField(default=3)
+    groups = models.ManyToManyField(Group, related_name="studentGroups")
+    user_permissions = models.ManyToManyField(Permission, related_name="studentPermissions")
     def __str__(self):
         return self.first_name
+    def type(self):
+        return "student"
+
+class Faculty(AbstractUser): 
+    DEPT_CHOICES = [
+        ("CSE","CSE"),("CAI","CAI"),("CSD","CSD"),("CSM","CSM"),("CSC","CSC"),("CST","CST"),("ECE","ECE"),("EEE","EEE"),("CE","CE"),("ME","ME")
+    ]
+    dept= models.CharField(max_length=20, choices=DEPT_CHOICES, default="CSE")
+    groups = models.ManyToManyField(Group, related_name="facultyGroups")
+    user_permissions = models.ManyToManyField(Permission, related_name="facultyPermissions")
+
+    def type(self):
+        return "Faculty"
+
 
 class LeetCode(models.Model):
     TotalProblems = models.IntegerField(default=0)
