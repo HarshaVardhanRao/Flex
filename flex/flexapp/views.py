@@ -114,7 +114,7 @@ def CustomLogout(request):
         logging.error(f"Error in CustomLogout: {e}")
         return HttpResponse("An error occurred.")
 
-def register(request):
+async def register(request):
     try:
         if request.method == 'POST':
             rollno = request.POST.get('rollno')
@@ -147,6 +147,8 @@ def register(request):
 
                 user.set_password(password)
                 user.save()
+                leetcode = LeetCode.objects.create(rollno=user)
+                leetcode.save()
                 logging.debug(f"User saved: {user}")
 
                 authenticated_user = authenticate(username=rollno, password=password)
