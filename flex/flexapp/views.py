@@ -16,6 +16,9 @@ import json
 from django.core import serializers
 import pandas as pd
 from django.http import HttpResponse
+from django.core.mail import send_mail
+import random
+from flex import settings
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -114,53 +117,42 @@ def CustomLogout(request):
         logging.error(f"Error in CustomLogout: {e}")
         return HttpResponse("An error occurred.")
 
-async def register(request):
+def send_otp(email):
+    try:
+        otp = random.randint(100000, 999999)
+        logging.debug(f"Generated OTP: {otp}")
+        send_mail(
+            'Your OTP Code',
+            f'Your OTP code is {otp}',
+            settings.EMAIL_HOST_USER,
+            [email],
+            fail_silently=False,
+        )
+        return otp
+    except Exception as e:
+        logging.error(f"Error in send_otp: {e}")
+        return None
+
+def register(request):
     try:
         if request.method == 'POST':
-            rollno = request.POST.get('rollno')
-            password = request.POST.get('password')
-            first_name = request.POST.get('first_name')
-            role = request.POST.get('role')
-            deptt = request.POST.get('dept')
-            section = request.POST.get('section')
-            is_staff = role == 'staff'
-            leetcode_user = request.POST.get('leetcode_user')
+            request.session['rollno'] = request.POST.get('rollno')
+            request.session['password'] = request.POST.get('password')
+            request.session['first_name'] = request.POST.get('first_name')
+            request.session['role'] = request.POST.get('role')
+            request.session['deptt'] = request.POST.get('dept')
+            request.session['section'] = request.POST.get('section')
+            request.session['is_staff'] = request.POST.get('role') == 'staff'
+            request.session['leetcode_user'] = request.POST.get('leetcode_user')
 
-            logging.debug(f"Received data: rollno={rollno}, password={password}, first_name={first_name}, role={role}")
-
-            stu_email = f"{rollno}@mits.ac.in"
+            stu_email = f"{request.session['rollno']}@mits.ac.in"
             
             try:
-                user = student.objects.create_user(
-                    username=rollno,
-                    roll_no=rollno,
-                    is_staff=is_staff,
-                    first_name=first_name,
-                    dept=deptt,
-                    section=section,
-                    leetcode_user=leetcode_user,
-                )
-                logging.debug(f"User created: {user}")
+                otp = send_otp(stu_email)
+                request.session['otp'] = otp
+                logging.debug(f"OTP sent: {otp}")
 
-                if not user.is_staff:
-                    user.email = stu_email
-
-                user.set_password(password)
-                user.save()
-                leetcode = LeetCode.objects.create(rollno=user)
-                leetcode.save()
-                logging.debug(f"User saved: {user}")
-
-                authenticated_user = authenticate(username=rollno, password=password)
-                logging.debug(f"Authenticated user: {authenticated_user}")
-
-                if authenticated_user is not None:
-                    login(request, authenticated_user)
-                    logging.debug(f"User logged in: {authenticated_user}")
-                    return redirect('dashboard')
-                else:
-                    logging.error("Authentication failed.")
-                    return redirect('login')
+                return redirect('verify_otp')
 
             except Exception as e:
                 logging.error(f"Error during registration: {e}")
@@ -169,6 +161,44 @@ async def register(request):
         return render(request, 'register.html')
     except Exception as e:
         logging.error(f"Error in register: {e}")
+        return HttpResponse("An error occurred.")
+
+def verify_otp(request):
+    try:
+        if request.method == 'POST':
+            otp = request.POST.get('otp')
+            print(otp)
+            print(str(request.session['otp']))
+            if otp == str(request.session['otp']):
+                user = student.objects.create_user(
+                    username=request.session.get('rollno'),
+                    roll_no=request.session.get('rollno'),
+                    is_staff=request.session.get('is_staff'),
+                    first_name=request.session.get('first_name'),
+                    dept=request.session.get('deptt'),
+                    section=request.session.get('section'),
+                    leetcode_user=request.session.get('leetcode_user'),
+                )
+                user.set_password(request.session.get('password'))
+                user.save()
+                print(f"{user.username}: {user.password}")
+                leetcode = LeetCode.objects.create(rollno=user)
+                leetcode.save()
+                authenticated_user = authenticate(username=user.username, password=request.session.get('password'))
+                if authenticated_user is not None:
+                    login(request, authenticated_user, backend='flexapp.auth_backends.StudentBackend')
+                    logging.debug(f"User logged in: {authenticated_user}")
+                    return redirect('dashboard')
+                else:
+                    logging.error("Authentication failed.")
+                    return redirect('login')
+            else:
+                logging.error('Invalid OTP')
+                return render(request, 'verify_otp.html', {'error': 'Invalid OTP'})
+
+        return render(request, 'verify_otp.html')
+    except Exception as e:
+        logging.error(f"Error in verify_otp: {e}")
         return HttpResponse("An error occurred.")
 
 def faculty(request):

@@ -18,4 +18,5 @@ urlpatterns = [
     path('edit_certification', views.edit_certification, name="edit_certification"),
     path('leetcode/<str:leetcode_user>', views.leetcode_request, name="leetcode"),
     path('download', views.download_request, name="download"),
+    path('verify_otp', views.verify_otp, name="verify_otp"),
 ]
