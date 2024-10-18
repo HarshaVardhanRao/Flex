@@ -1,213 +1,239 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+		/>
+		<link rel="stylesheet" href="{% static 'css/faculty.min.css' %}" />
+		<title>Dashboard</title>
+	</head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="{% static 'css/faculty.css' %}">
-    <title>Dashboard</title>
-</head>
+	<body>
+		<header>
+			<img src="{% static 'img/logo.png' %}" alt="Profile Image" />
+			<div class="title">
+				<h1>MITS - FLEX</h1>
+			</div>
+		</header>
 
-<body>
-    <header>
-        <img src="{% static 'img/logo.png' %}"
-            alt="Profile Image" />
-        <div class="title">
-            <h1>MITS - FLEX</h1>
-        </div>
-    </header>
+		<main>
+			<div class="left-bar">
+				<aside class="filters">
+					<h2>Search and Filter</h2>
+					<hr />
+					<input
+						type="search"
+						name="student-search"
+						id="student-search"
+						placeholder="Search here"
+					/>
+					<label for="student-year">Year:</label>
+					<div class="radio-group">
+						<div class="radio">
+							<input type="radio" name="year" id="year-1" />
+							<label for="year-1">1</label>
+						</div>
+						<div class="radio">
+							<input type="radio" name="year" id="year-2" />
+							<label for="year-2">2</label>
+						</div>
+						<div class="radio">
+							<input type="radio" name="year" id="year-3" />
+							<label for="year-3">3</label>
+						</div>
+						<div class="radio">
+							<input type="radio" name="year" id="year-4" />
+							<label for="year-4">4</label>
+						</div>
+					</div>
+					<label for="student-section">Section:</label>
+					<div class="radio-group">
+						<div class="radio">
+							<input type="radio" name="section" id="section-a" />
+							<label for="section-a">A</label>
+						</div>
+						<div class="radio">
+							<input type="radio" name="section" id="section-b" />
+							<label for="section-b">B</label>
+						</div>
+						<div class="radio">
+							<input type="radio" name="section" id="section-c" />
+							<label for="section-c">C</label>
+						</div>
+						<div class="radio">
+							<input type="radio" name="section" id="section-d" />
+							<label for="section-d">D</label>
+						</div>
+					</div>
+					<div class="button-group">
+						<button><i class="bi bi-search"></i> Search</button>
+						<button class="reset">
+							<i class="bi bi-arrow-clockwise"></i> Reset
+						</button>
+					</div>
+				</aside>
+				<br />
+				<button onclick="return downloadData()">Download</button>
+			</div>
+			<div class="table">
+				<table>
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Roll Number</th>
+							<th>Name</th>
+							<th>Year</th>
+							<th>Section</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</main>
+		<div class="form-check-label">
+			<button id="themeToggle"><i class="bi bi-moon-fill"></i></button>
+			<button id="logout"><i class="bi bi-box-arrow-right"></i></button>
+		</div>
+		<script>
+			const studentData = {{ studentData|safe }};
+			var presentData = studentData;
+			const toggleSwitch = document.getElementById("themeToggle");
+			const icon = document.querySelector("#themeToggle i");
+			const body = document.body;
+			toggleSwitch.addEventListener("click", () => {
+			    // Toggle the light theme class on the body
+			    const allElements = document.querySelectorAll("*");
+			    const formAll = document.querySelectorAll(
+			        "input, select, textarea, option"
+			    );
+			    body.classList.toggle("light-theme");
 
-    <main>
-        <div class="left-bar">
-            <aside class="filters">
-                <h2>Search and Filter</h2>
-                <hr>
-                <input type="search" name="student-search" id="student-search" placeholder="Search here">
-                <label for="student-year">Year:</label>
-                <div class="radio-group">
-                    <div class="radio">
-                        <input type="radio" name="year" id="year-1">
-                        <label for="year-1">1</label>
-                    </div>
-                    <div class="radio">
-                        <input type="radio" name="year" id="year-2">
-                        <label for="year-2">2</label>
-                    </div>
-                    <div class="radio">
-                        <input type="radio" name="year" id="year-3">
-                        <label for="year-3">3</label>
-                    </div>
-                    <div class="radio">
-                        <input type="radio" name="year" id="year-4">
-                        <label for="year-4">4</label>
-                    </div>
-                </div>
-                <label for="student-section">Section:</label>
-                <div class="radio-group">
-                    <div class="radio">
-                        <input type="radio" name="section" id="section-a">
-                        <label for="section-a">A</label>
-                    </div>
-                    <div class="radio">
-                        <input type="radio" name="section" id="section-b">
-                        <label for="section-b">B</label>
-                    </div>
-                    <div class="radio">
-                        <input type="radio" name="section" id="section-c">
-                        <label for="section-c">C</label>
-                    </div>
-                    <div class="radio">
-                        <input type="radio" name="section" id="section-d">
-                        <label for="section-d">D</label>
-                    </div>
-                </div>
-                <div class="button-group">
-                    <button><i class="bi bi-search"></i> Search</button>
-                    <button class="reset"><i class="bi bi-arrow-clockwise"></i> Reset</button>
-                </div>
-            </aside>
-            <br>
-            <button onclick="return downloadData()">Download</button>
-        </div>
-        <div class="table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Roll Number</th>
-                        <th>Name</th>
-                        <th>Year</th>
-                        <th>Section</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-        </div>
-    </main>
-    <div class="form-check-label">
-        <button id="themeToggle"><i class="bi bi-moon-fill"></i></button>
-    </div>
-    <script>
-        const studentData = {{ studentData|safe }};
-        var presentData = studentData;
-        const toggleSwitch = document.getElementById("themeToggle");
-        const icon = document.querySelector("#themeToggle i");
-        const body = document.body;
-        toggleSwitch.addEventListener("click", () => {
-            // Toggle the light theme class on the body
-            const allElements = document.querySelectorAll("*");
-            const formAll = document.querySelectorAll(
-                "input, select, textarea, option"
-            );
-            body.classList.toggle("light-theme");
+			    // Add or remove the light theme class from all elements
+			    allElements.forEach((element) => {
+			        element.classList.toggle(
+			            "light-theme",
+			            body.classList.contains("light-theme")
+			        );
+			    });
 
-            // Add or remove the light theme class from all elements
-            allElements.forEach((element) => {
-                element.classList.toggle(
-                    "light-theme",
-                    body.classList.contains("light-theme")
-                );
-            });
+			    formAll.forEach((element) => {
+			        element.classList.toggle(
+			            "light-theme",
+			            body.classList.contains("light-theme")
+			        );
+			    });
+			    icon.classList.toggle("bi-moon-fill");
+			    icon.classList.toggle("bi-brightness-high-fill");
+			});
+			document.addEventListener("DOMContentLoaded", function () {
+			    function filterAndDisplayData() {
+			        const rollno = document.getElementById('student-search').value.trim().toLowerCase();
+			        const year = document.querySelector('input[name="year"]:checked')?.nextElementSibling.textContent.trim().toLowerCase() || "";
+			        const section = document.querySelector('input[name="section"]:checked')?.nextElementSibling.textContent.trim().toLowerCase() || "";
 
-            formAll.forEach((element) => {
-                element.classList.toggle(
-                    "light-theme",
-                    body.classList.contains("light-theme")
-                );
-            });
-            icon.classList.toggle("bi-moon-fill");
-            icon.classList.toggle("bi-brightness-high-fill");
-        });
-        document.addEventListener("DOMContentLoaded", function () {
-            function filterAndDisplayData() {
-                const rollno = document.getElementById('student-search').value.trim().toLowerCase();
-                const year = document.querySelector('input[name="year"]:checked')?.nextElementSibling.textContent.trim().toLowerCase() || "";
-                const section = document.querySelector('input[name="section"]:checked')?.nextElementSibling.textContent.trim().toLowerCase() || "";
-    
-                let filteredData = studentData;
-    
-                if (rollno !== "") {
-                    filteredData = filteredData.filter(student => student.fields.rollNo.toLowerCase().includes(rollno) || student.studName.toLowerCase().includes(rollno));
-                }
-    
-                if (year != "") {
-                    filteredData = filteredData.filter(student => student.fields.year == year);
-                }
-    
-                if (section !== "") {
-                    filteredData = filteredData.filter(student => student.fields.section.toLowerCase() === section);
-                }
-                presentData = filteredData;
-                displayData(filteredData);
-            }
-    
-            function displayData(data) {
-                const tableBody = document.querySelector('tbody');
-                tableBody.innerHTML = "";
-    
-                data.forEach((student, index) => {
-                    const row = document.createElement('tr');
-                    row.addEventListener('click', () => {
-                        window.location = `/student/${student.fields.username}`
-                    })
-                    row.innerHTML = `
-                        <td>${index+1}</td>
-                        <td>${student.fields.username}</td>
-                        <td>${student.fields.first_name}</td>
-                        <td>${student.fields.year}</td>
-                        <td>${student.fields.section}</td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            }
-    
-            function reset() {
-                document.getElementById('student-search').value = "";
-                document.querySelectorAll('input[name="year"]').forEach(radio => radio.checked = false);
-                document.querySelectorAll('input[name="section"]').forEach(radio => radio.checked = false);
-                displayData(studentData);
-            }
-    
-            document.getElementById('student-search').addEventListener('input', filterAndDisplayData);
-            document.querySelectorAll('input[name="year"], input[name="section"]').forEach(radio => {
-                radio.addEventListener('change', filterAndDisplayData);
-            });
-    
-            const resetButton = document.querySelector('.reset');
-            resetButton.addEventListener('click', function () {
-                reset();
-            });
-            displayData(studentData);
-            console.log(studentData);
-        });
+			        let filteredData = studentData;
 
-        function downloadData(){
-            var data = [];
-            studentData.forEach(stu => {
-                data.push(stu.pk)
-            })
-            fetch("{% url 'download' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}',
-                },
-                body: JSON.stringify(data)
-            }).then(response => response.blob())
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'data.xlsx';
-                document.body.appendChild(a); 
-                a.click(); 
-                a.remove(); 
-            });
-        }
-    </script>
-</body>
+			        if (rollno !== "") {
+			            filteredData = filteredData.filter(student => student.fields.rollNo.toLowerCase().includes(rollno) || student.studName.toLowerCase().includes(rollno));
+			        }
 
+			        if (year != "") {
+			            filteredData = filteredData.filter(student => student.fields.year == year);
+			        }
+
+			        if (section !== "") {
+			            filteredData = filteredData.filter(student => student.fields.section.toLowerCase() === section);
+			        }
+			        presentData = filteredData;
+			        displayData(filteredData);
+			    }
+
+			    function displayData(data) {
+			        const tableBody = document.querySelector('tbody');
+			        tableBody.innerHTML = "";
+
+			        data.forEach((student, index) => {
+			            const row = document.createElement('tr');
+			            row.addEventListener('click', () => {
+			                window.location = `/student/${student.fields.username}`
+			            })
+			            row.innerHTML = `
+			                <td>${index+1}</td>
+			                <td>${student.fields.username}</td>
+			                <td>${student.fields.first_name}</td>
+			                <td>${student.fields.year}</td>
+			                <td>${student.fields.section}</td>
+			            `;
+			            tableBody.appendChild(row);
+			        });
+			    }
+
+			    function reset() {
+			        document.getElementById('student-search').value = "";
+			        document.querySelectorAll('input[name="year"]').forEach(radio => radio.checked = false);
+			        document.querySelectorAll('input[name="section"]').forEach(radio => radio.checked = false);
+			        displayData(studentData);
+			    }
+
+			    document.getElementById('student-search').addEventListener('input', filterAndDisplayData);
+			    document.querySelectorAll('input[name="year"], input[name="section"]').forEach(radio => {
+			        radio.addEventListener('change', filterAndDisplayData);
+			    });
+
+			    const resetButton = document.querySelector('.reset');
+			    resetButton.addEventListener('click', function () {
+			        reset();
+			    });
+			    displayData(studentData);
+			    console.log(studentData);
+			});
+
+			function downloadData(){
+			    var data = [];
+			    studentData.forEach(stu => {
+			        data.push(stu.pk)
+			    })
+			    fetch("{% url 'download' %}", {
+			        method: 'POST',
+			        headers: {
+			            'Content-Type': 'application/json',
+			            'X-CSRFToken': '{{ csrf_token }}',
+			        },
+			        body: JSON.stringify(data)
+			    }).then(response => response.blob())
+			    .then(blob => {
+			        const url = window.URL.createObjectURL(blob);
+			        const a = document.createElement('a');
+			        a.href = url;
+			        a.download = 'data.xlsx';
+			        document.body.appendChild(a);
+			        a.click();
+			        a.remove();
+			    });
+			}
+
+			document.querySelector('#logout').addEventListener('click', () => {
+				fetch("{% url 'logout' %}", {
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+				})
+					.then((response) => {
+						if (response.ok) {
+							window.location.href = "{% url 'login' %}";
+						} else {
+							throw new Error('Network response was not ok');
+						}
+					})
+					.catch((error) => {
+						console.error('Error:', error);
+					});
+			});
+		</script>
+	</body>
 </html>
