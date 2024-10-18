@@ -104,7 +104,8 @@ main {
 		input[type="email"],
 		input[type="password"],
 		textarea,
-		select {
+		select,
+		select option {
 			padding: 0.3rem;
 			border: 1px solid $accent-color; // Border color
 			border-radius: 5px;
@@ -181,6 +182,14 @@ main {
 			}
 		}
 
+		select option {
+			background-color: rgba(0, 0, 0, 1);
+
+			&.light-theme {
+				background-color: rgb(255, 255, 255) !important;
+			}
+		}
+
 		@media screen and (min-width: 768px) {
 			display: grid;
 			grid-template-columns: auto auto;
@@ -244,4 +253,3 @@ main {
 		position: fixed;
 	}
 }
-
