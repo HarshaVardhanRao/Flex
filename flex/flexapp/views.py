@@ -121,13 +121,13 @@ def send_otp(email):
     try:
         otp = random.randint(100000, 999999)
         logging.debug(f"Generated OTP: {otp}")
-        send_mail(
-            'Your OTP Code',
-            f'Your OTP code is {otp}',
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False,
-        )
+        # send_mail(
+        #     'Your OTP Code',
+        #     f'Your OTP code is {otp}',
+        #     settings.EMAIL_HOST_USER,
+        #     [email],
+        #     fail_silently=False,
+        # )
         return otp
     except Exception as e:
         logging.error(f"Error in send_otp: {e}")
