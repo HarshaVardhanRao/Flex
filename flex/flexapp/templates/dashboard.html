@@ -1,656 +1,728 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+			integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+			crossorigin="anonymous"
+		/>
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+		/>
+		<title>FLEX</title>
+		<link rel="stylesheet" href="{% static 'css/style.min.css' %}" />
+	</head>
 
-<head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-		integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-	<title>FLEX</title>
-	<link rel="stylesheet" href="{% static 'css/style.css' %}" />
-</head>
-
-<body>
-	<div class="blur">
-		<form action="" method="POST" id="project-form"></form>
-	</div>
-
-	<header>
-		<img src="{% static 'img/logo.png' %}" alt="Profile Image" />
-		<div class="title">
-			<h1>MITS - FLEX</h1>
+	<body>
+		<div class="blur">
+			<form action="" method="POST" id="project-form"></form>
 		</div>
-	</header>
 
-	<main>
-		<div class="profile border-custom">
-			<div class="detail">
-				<p>{{ name }}</p>
-				<p>{{ rollno }}</p>
-				<p>{{ dept }} - {{ section }}</p>
+		<header>
+			<img src="{% static 'img/logo.png' %}" alt="Profile Image" />
+			<div class="title">
+				<h1>MITS - FLEX</h1>
 			</div>
-			<div class="leetcode">
-				<h5>Leetcode Profile</h5>
-				<div class="leetcode-problems">
-					<div>Easy: <span></span></div>
-					<div>Medium: <span></span></div>
-					<div>Hard: <span></span></div>
+		</header>
+
+		<main>
+			<div class="profile border-custom">
+				<div class="detail">
+					<p>{{ name }}</p>
+					<p>{{ rollno }}</p>
+					<p>{{ dept }} - {{ section }}</p>
 				</div>
-				<div class="animator">
-					<svg version="1.1" id="L5" xmlns="http://www.w3.org/2000/svg"
-						xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100"
-						enable-background="new 0 0 0 0" xml:space="preserve">
-						<circle fill="#fff" stroke="none" cx="6" cy="50" r="6">
-							<animateTransform attributeName="transform" dur="1s" type="translate"
-								values="0 15 ; 0 -15; 0 15" repeatCount="indefinite" begin="0.1" />
-						</circle>
-						<circle fill="#fff" stroke="none" cx="30" cy="50" r="6">
-							<animateTransform attributeName="transform" dur="1s" type="translate"
-								values="0 10 ; 0 -10; 0 10" repeatCount="indefinite" begin="0.2" />
-						</circle>
-						<circle fill="#fff" stroke="none" cx="54" cy="50" r="6">
-							<animateTransform attributeName="transform" dur="1s" type="translate"
-								values="0 5 ; 0 -5; 0 5" repeatCount="indefinite" begin="0.3" />
-						</circle>
-					</svg>
-
+				<div class="leetcode">
+					<h5>Leetcode Profile</h5>
+					<div class="leetcode-problems">
+						<div>Easy: <span></span></div>
+						<div>Medium: <span></span></div>
+						<div>Hard: <span></span></div>
+					</div>
+					<div class="animator">
+						<svg
+							version="1.1"
+							id="L5"
+							xmlns="http://www.w3.org/2000/svg"
+							xmlns:xlink="http://www.w3.org/1999/xlink"
+							x="0px"
+							y="0px"
+							viewBox="0 0 100 100"
+							enable-background="new 0 0 0 0"
+							xml:space="preserve"
+						>
+							<circle
+								fill="#fff"
+								stroke="none"
+								cx="6"
+								cy="50"
+								r="6"
+							>
+								<animateTransform
+									attributeName="transform"
+									dur="1s"
+									type="translate"
+									values="0 15 ; 0 -15; 0 15"
+									repeatCount="indefinite"
+									begin="0.1"
+								/>
+							</circle>
+							<circle
+								fill="#fff"
+								stroke="none"
+								cx="30"
+								cy="50"
+								r="6"
+							>
+								<animateTransform
+									attributeName="transform"
+									dur="1s"
+									type="translate"
+									values="0 10 ; 0 -10; 0 10"
+									repeatCount="indefinite"
+									begin="0.2"
+								/>
+							</circle>
+							<circle
+								fill="#fff"
+								stroke="none"
+								cx="54"
+								cy="50"
+								r="6"
+							>
+								<animateTransform
+									attributeName="transform"
+									dur="1s"
+									type="translate"
+									values="0 5 ; 0 -5; 0 5"
+									repeatCount="indefinite"
+									begin="0.3"
+								/>
+							</circle>
+						</svg>
+					</div>
 				</div>
 			</div>
+			<div class="grid">
+				<div class="section border-custom">
+					<h2 id="project">Projects</h2>
+					<hr />
+					<ul class="multiple" id="projects">
+						<!-- Example project list items -->
+						{% comment %} {% for certi in projects %}
+						<li>
+							<h5><a href="#">{{ certi.title }}</a></h5>
+							<p>Desripton: {{ certi.description }}</p>
+							<p>
+								<a
+									href="{{ certi.github_link }}"
+									target="_blank"
+									><i class="bi bi-github"></i>
+								</a>
+							</p>
+							<div class="buttons">
+								<button class="edit">
+									<i class="bi bi-pencil"></i>
+								</button>
+								<button class="delete">
+									<i class="bi bi-x"></i>
+								</button>
+							</div>
+						</li>
+						<hr />
+						{% endfor %} {% endcomment %}
+						<!-- More list items -->
+					</ul>
+					<button
+						class="btn btn-primary"
+						data-category="projects"
+						onclick="new_item(this);"
+					>
+						<i class="bi bi-plus"></i>
+						Project
+					</button>
+				</div>
+				<div class="section border-custom">
+					<h2 id="languages">Foreign Languages</h2>
+					<hr />
+					<ul class="multiple" id="foreign_languages">
+						<!-- Example language list items -->
+						{% comment %} {% for certi in Foreign_languages %}
+						<li>
+							<h5>
+								<a
+									href="{{ certi.course_link }}"
+									target="_blank"
+									>{{ certi.title }}</a
+								>
+							</h5>
+							<p>Provider : {{ certi.source }}</p>
+							<p>Uploded On: {{ certi.uploaded_at }}</p>
+							<div class="buttons">
+								<button class="edit">
+									<i class="bi bi-pencil"></i>
+								</button>
+								<button class="delete">
+									<i class="bi bi-x"></i>
+								</button>
+							</div>
+						</li>
+						<hr />
+						{% endfor %} {% endcomment %}
+						<!-- More list items -->
+					</ul>
+					<button
+						class="btn btn-primary"
+						data-category="languages"
+						onclick="new_item(this);"
+					>
+						<i class="bi bi-plus"></i>
+						Language
+					</button>
+				</div>
+				<div class="section border-custom">
+					<h2 id="technical">Technical Certifications</h2>
+					<hr />
+					<ul class="multiple" id="technical_certificates">
+						{% comment %} {% for certi in Technical %}
+						<li>
+							<h5>
+								<a
+									href="{{ certi.course_link }}"
+									target="_blank"
+									>{{ certi.title }}</a
+								>
+							</h5>
+							<p>Provider : {{ certi.source }}</p>
+							<p>Uploded On: {{ certi.uploaded_at }}</p>
+							<div class="buttons">
+								<button class="edit">
+									<i class="bi bi-pencil"></i>
+								</button>
+								<button class="delete">
+									<i class="bi bi-x"></i>
+								</button>
+							</div>
+						</li>
+						<hr />
+						{% endfor %} {% endcomment %}
+						<!-- More list items -->
+					</ul>
+					<button
+						class="btn btn-primary"
+						data-category="certificates"
+						onclick="new_item(this);"
+					>
+						<i class="bi bi-plus"></i>
+						Certification
+					</button>
+				</div>
+			</div>
+		</main>
+		<div class="form-check-label">
+			<button id="themeToggle"><i class="bi bi-moon-fill"></i></button>
+			<button><i class="bi bi-box-arrow-right"></i></button>
 		</div>
-		<div class="grid">
-			<div class="section border-custom">
-				<h2 id="project">Projects</h2>
-				<hr />
-				<ul class="multiple" id="projects">
-					<!-- Example project list items -->
-					{% comment %} {% for certi in projects %}
-					<li>
-						<h5><a href="#">{{ certi.title }}</a></h5>
-						<p>Desripton: {{ certi.description }}</p>
-						<p>
-							<a href="{{ certi.github_link }}" target="_blank"><i class="bi bi-github"></i>
-							</a>
-						</p>
-						<div class="buttons">
-							<button class="edit">
-								<i class="bi bi-pencil"></i>
-							</button>
-							<button class="delete">
-								<i class="bi bi-x"></i>
-							</button>
-						</div>
-					</li>
-					<hr />
-					{% endfor %} {% endcomment %}
-					<!-- More list items -->
-				</ul>
-				<button class="btn btn-primary" data-category="projects" onclick="new_item(this);">
-					<i class="bi bi-plus"></i>
-					Project
-				</button>
-			</div>
-			<div class="section border-custom">
-				<h2 id="languages">Foreign Languages</h2>
-				<hr />
-				<ul class="multiple" id="foreign_languages">
-					<!-- Example language list items -->
-					{% comment %} {% for certi in Foreign_languages %}
-					<li>
-						<h5>
-							<a href="{{ certi.course_link }}" target="_blank">{{ certi.title }}</a>
-						</h5>
-						<p>Provider : {{ certi.source }}</p>
-						<p>Uploded On: {{ certi.uploaded_at }}</p>
-						<div class="buttons">
-							<button class="edit">
-								<i class="bi bi-pencil"></i>
-							</button>
-							<button class="delete">
-								<i class="bi bi-x"></i>
-							</button>
-						</div>
-					</li>
-					<hr />
-					{% endfor %} {% endcomment %}
-					<!-- More list items -->
-				</ul>
-				<button class="btn btn-primary" data-category="languages" onclick="new_item(this);">
-					<i class="bi bi-plus"></i>
-					Language
-				</button>
-			</div>
-			<div class="section border-custom">
-				<h2 id="technical">Technical Certifications</h2>
-				<hr />
-				<ul class="multiple" id="technical_certificates">
-					{% comment %} {% for certi in Technical %}
-					<li>
-						<h5>
-							<a href="{{ certi.course_link }}" target="_blank">{{ certi.title }}</a>
-						</h5>
-						<p>Provider : {{ certi.source }}</p>
-						<p>Uploded On: {{ certi.uploaded_at }}</p>
-						<div class="buttons">
-							<button class="edit">
-								<i class="bi bi-pencil"></i>
-							</button>
-							<button class="delete">
-								<i class="bi bi-x"></i>
-							</button>
-						</div>
-					</li>
-					<hr />
-					{% endfor %} {% endcomment %}
-					<!-- More list items -->
-				</ul>
-				<button class="btn btn-primary" data-category="certificates" onclick="new_item(this);">
-					<i class="bi bi-plus"></i>
-					Certification
-				</button>
-			</div>
-		</div>
-	</main>
-	<div class="form-check-label">
-		<button id="themeToggle"><i class="bi bi-moon-fill"></i></button>
-	</div>
 
-	<script>
-		const projects = {{ projects| safe }};
-		const technicals = {{ Technical| safe }};
-		const Foreign_languages = {{ Foreign_languages| safe }};
-		const projects_ul = document.querySelector('#projects');
-		const technical_ul = document.querySelector('#technical_certificates');
-		const foreign_languages_ul = document.querySelector('#foreign_languages');
-		document.addEventListener("DOMContentLoaded", () => {
-			fetch("{% url 'leetcode' leetcode_user %}").then(response => {
-				console.log(response);
-				if (response.ok) {
-					return response.json();
-				} else {
-					throw new Error("Network response was not ok");
+		<script>
+			const projects = {{ projects| safe }};
+			const technicals = {{ Technical| safe }};
+			const Foreign_languages = {{ Foreign_languages| safe }};
+			const projects_ul = document.querySelector('#projects');
+			const technical_ul = document.querySelector('#technical_certificates');
+			const foreign_languages_ul = document.querySelector('#foreign_languages');
+			document.addEventListener("DOMContentLoaded", () => {
+				fetch("{% url 'leetcode' leetcode_user %}").then(response => {
+					console.log(response);
+					if (response.ok) {
+						return response.json();
+					} else {
+						throw new Error("Network response was not ok");
+					}
+				}).then(data => {
+					document.querySelectorAll(".leetcode span")[0].innerHTML = data.easy_count;
+					document.querySelectorAll(".leetcode span")[1].innerHTML = data.medium_count;
+					document.querySelectorAll(".leetcode span")[2].innerHTML = data.hard_count;
+
+
+					document.querySelector(".leetcode .animator").style.display = "none";
+					document.querySelector(".leetcode .leetcode-problems").style.display = "block"
+				}).catch(error => {
+					console.error('Error:', error);
+				});
+
+
+				projects.forEach(project => {
+					projects_ul.innerHTML += `<li>
+							<h5><a href="#">${project.fields.title}</a></h5>
+							<p>Desripton: ${project.fields.description}</p>
+							<p>
+								<a href="${project.fields.github_link}" target="_blank"><i class="bi bi-github"></i>
+								</a>
+							</p>
+							<div class="buttons">
+								<button class="edit" onclick="return edit(${project.pk}, 'project')">
+									<i class="bi bi-pencil"></i>
+								</button>
+								<button class="delete" onclick="return delete_item(${project.pk}, 'project')">
+									<i class="bi bi-x"></i>
+								</button>
+							</div>
+						</li>
+						<hr />`
+				});
+				technicals.forEach(technical => {
+					technical_ul.innerHTML += `<li>
+			                      <h5>
+			                          <a href="${technical.fields.course_link}" target="_blank">${technical.fields.title}</a>
+			                      </h5>
+			                      <p>Provider : ${technical.fields.source}</p>
+			                      <p>Uploded On: ${technical.fields.uploaded_at}</p>
+			                      <div class="buttons">
+			                          <button class="edit" onclick="return edit(${technical.pk}, 'technical')">
+			                              <i class="bi bi-pencil"></i>
+			                          </button>
+			                          <button class="delete" onclick="return delete_item(${technical.pk}, 'technical')">
+			                              <i class="bi bi-x"></i>
+			                          </button>
+			                      </div>
+			                  </li>
+			                  <hr />`
+				});
+				Foreign_languages.forEach(language => {
+					foreign_languages_ul.innerHTML += `<li>
+							<h5>
+								<a href="${language.fields.course_link}" target="_blank">${language.fields.title}</a>
+							</h5>
+							<p>Provider : ${language.fields.source}</p>
+							<p>Uploded On: ${language.fields.uploaded_at}</p>
+							<div class="buttons">
+								<button class="edit" onclick="return edit(${language.pk}, 'language')">
+									<i class="bi bi-pencil"></i>
+								</button>
+								<button class="delete" onclick="return delete_item(${language.pk}, 'language')">
+									<i class="bi bi-x"></i>
+								</button>
+							</div>
+						</li>
+						<hr />`
+				});
+			});
+
+			const toggleSwitch = document.getElementById("themeToggle");
+			const icon = document.querySelector("#themeToggle i");
+			const body = document.body;
+			const allElements = document.querySelectorAll("*"); // Select all elements
+			console.log(allElements);
+			const blur = document.querySelector(".blur");
+			const projectform = blur.children[0];
+			toggleSwitch.addEventListener("click", () => {
+				// Toggle the light theme class on the body
+				const formAll = document.querySelectorAll(
+					"input, select, textarea, option, p, button"
+				);
+				body.classList.toggle("light-theme");
+
+				// Add or remove the light theme class from all elements
+				allElements.forEach((element) => {
+					element.classList.toggle(
+						"light-theme",
+						body.classList.contains("light-theme")
+					);
+				});
+
+				formAll.forEach((element) => {
+					element.classList.toggle(
+						"light-theme",
+						body.classList.contains("light-theme")
+					);
+				});
+				icon.classList.toggle("bi-moon-fill");
+				icon.classList.toggle("bi-brightness-high-fill");
+			});
+
+			function remove_form() {
+				blur.style.animationDirection = "reverse";
+				blur.classList.add("blur-animation");
+				projectform.style.animationDirection = "reverse";
+				projectform.classList.add("scale-animation");
+				setTimeout(() => {
+					blur.classList.remove("blur-animation");
+					projectform.classList.remove("scale-animation");
+					blur.style.display = "none";
+				}, 500);
+			}
+
+			function new_item(element) {
+				category = element.dataset.category;
+				blur.style.animationDirection = "normal";
+				blur.style.display = "flex";
+				blur.classList.add("blur-animation");
+				if (category === "projects") {
+					projectform.action = "{% url 'create_project' %}";
+					projectform.innerHTML = `<h2>Add a Project</h2>
+				           <hr>
+				            {% csrf_token %}
+				           <label for="project-name">Project Name</label>
+				           <input type="text" name="project-name" id="project-name" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">
+				           <label for="description">Description</label>
+				           <textarea name="description" id="description" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" cols="30" rows="5"></textarea>
+				           <label for="status">Status</label>
+				           <select name="status" id="status" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">
+				               <option value="Completed" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">Completed</option>
+				               <option value="Pending" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">Pending</option>
+				           </select>
+				           <label for='github'>Github Link</label>
+				           <input type="text" name="github" id="github" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">
+				           <input type="submit" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" value="Create">
+				           <button type="button" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}"></i></button>`;
+				} else if (category === "languages") {
+					projectform.action = "{% url 'add_certification' %}";
+					projectform.innerHTML = `<h2>Add a Language</h2>
+				           <hr>
+				            {% csrf_token %}
+			                      <input type="hidden" name="type" value="Foreign Language">
+			                      <label for="course-name">Language</label>
+			                      <input type="text" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" name="course-name" id="course-name">
+			                      <label for="provider">Provider</label>
+				           <input type="text" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" name="provider" id="provider">
+				           <label for="status">Status</label>
+				           <select name="status" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" id="status">
+				               <option value="Completed" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">Completed</option>
+				               <option value="Pending" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">Pending</option>
+				           </select>
+				           <label for='course-link'>Course Link</label>
+				           <input type="text" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" name="course-link" id="course-link">
+				           <input type="submit" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" value="Create">
+				           <button type="button" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}"></i></button>`;
+				} else if (category === "certificates") {
+					projectform.action = "{% url 'add_certification' %}";
+					projectform.innerHTML = `<h2>Add a Certificate</h2>
+			                  <hr>
+			                  {% csrf_token %}
+			                  <input type="hidden" name="type" value="Technical">
+				           <label for="course-name">Course Name</label>
+				           <input type="text" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" name="course-name" id="course-name">
+				           <label for="provider">Provider</label>
+				           <input type="text" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" name="provider" id="provider">
+				           <label for="status">Status</label>
+				           <select name="status" id="status" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">
+				               <option value="Completed" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">Completed</option>
+				               <option value="Pending" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">Pending</option>
+				           </select>
+				           <label for='course-link'>Course Link</label>
+				           <input type="text" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" name="course-link" id="course-link">
+				           <input type="submit" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" value="Create">
+				           <button type="button" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}"></i></button>`;
 				}
-			}).then(data => {
-				document.querySelectorAll(".leetcode span")[0].innerHTML = data.easy_count;
-				document.querySelectorAll(".leetcode span")[1].innerHTML = data.medium_count;
-				document.querySelectorAll(".leetcode span")[2].innerHTML = data.hard_count;
-
-
-				document.querySelector(".leetcode .animator").style.display = "none";
-				document.querySelector(".leetcode .leetcode-problems").style.display = "block"
-			}).catch(error => {
-				console.error('Error:', error);
-			});
-
-
-			projects.forEach(project => {
-				projects_ul.innerHTML += `<li>
-						<h5><a href="#">${project.fields.title}</a></h5>
-						<p>Desripton: ${project.fields.description}</p>
-						<p>
-							<a href="${project.fields.github_link}" target="_blank"><i class="bi bi-github"></i>
-							</a>
-						</p>
-						<div class="buttons">
-							<button class="edit" onclick="return edit(${project.pk}, 'project')">
-								<i class="bi bi-pencil"></i>
-							</button>
-							<button class="delete" onclick="return delete_item(${project.pk}, 'project')">
-								<i class="bi bi-x"></i>
-							</button>
-						</div>
-					</li>
-					<hr />`
-			});
-			technicals.forEach(technical => {
-				technical_ul.innerHTML += `<li>
-                        <h5>
-                            <a href="${technical.fields.course_link}" target="_blank">${technical.fields.title}</a>
-                        </h5>
-                        <p>Provider : ${technical.fields.source}</p>
-                        <p>Uploded On: ${technical.fields.uploaded_at}</p>
-                        <div class="buttons">
-                            <button class="edit" onclick="return edit(${technical.pk}, 'technical')">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="delete" onclick="return delete_item(${technical.pk}, 'technical')">
-                                <i class="bi bi-x"></i>
-                            </button>
-                        </div>
-                    </li>
-                    <hr />`
-			});
-			Foreign_languages.forEach(language => {
-				foreign_languages_ul.innerHTML += `<li>
-						<h5>
-							<a href="${language.fields.course_link}" target="_blank">${language.fields.title}</a>
-						</h5>
-						<p>Provider : ${language.fields.source}</p>
-						<p>Uploded On: ${language.fields.uploaded_at}</p>
-						<div class="buttons">
-							<button class="edit" onclick="return edit(${language.pk}, 'language')">
-								<i class="bi bi-pencil"></i>
-							</button>
-							<button class="delete" onclick="return delete_item(${language.pk}, 'language')">
-								<i class="bi bi-x"></i>
-							</button>
-						</div>
-					</li>
-					<hr />`
-			});
-		});
-
-		const toggleSwitch = document.getElementById("themeToggle");
-		const icon = document.querySelector("#themeToggle i");
-		const body = document.body;
-		const allElements = document.querySelectorAll("*"); // Select all elements
-		console.log(allElements);
-		const blur = document.querySelector(".blur");
-		const projectform = blur.children[0];
-		toggleSwitch.addEventListener("click", () => {
-			// Toggle the light theme class on the body
-			const formAll = document.querySelectorAll(
-				"input, select, textarea, option, p, button"
-			);
-			body.classList.toggle("light-theme");
-
-			// Add or remove the light theme class from all elements
-			allElements.forEach((element) => {
-				element.classList.toggle(
-					"light-theme",
-					body.classList.contains("light-theme")
-				);
-			});
-
-			formAll.forEach((element) => {
-				element.classList.toggle(
-					"light-theme",
-					body.classList.contains("light-theme")
-				);
-			});
-			icon.classList.toggle("bi-moon-fill");
-			icon.classList.toggle("bi-brightness-high-fill");
-		});
-
-		function remove_form() {
-			blur.style.animationDirection = "reverse";
-			blur.classList.add("blur-animation");
-			projectform.style.animationDirection = "reverse";
-			projectform.classList.add("scale-animation");
-			setTimeout(() => {
-				blur.classList.remove("blur-animation");
-				projectform.classList.remove("scale-animation");
-				blur.style.display = "none";
-			}, 500);
-		}
-
-		function new_item(element) {
-			category = element.dataset.category;
-			blur.style.animationDirection = "normal";
-			blur.style.display = "flex";
-			blur.classList.add("blur-animation");
-			if (category === "projects") {
-				projectform.action = "{% url 'create_project' %}";
-				projectform.innerHTML = `<h2>Add a Project</h2>
-			           <hr>
-			            {% csrf_token %}
-			           <label for="project-name">Project Name</label>
-			           <input type="text" name="project-name" id="project-name" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">
-			           <label for="description">Description</label>
-			           <textarea name="description" id="description" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" cols="30" rows="5"></textarea>
-			           <label for="status">Status</label>
-			           <select name="status" id="status" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">
-			               <option value="Completed" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">Completed</option>
-			               <option value="Pending" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">Pending</option>
-			           </select>
-			           <label for='github'>Github Link</label>
-			           <input type="text" name="github" id="github" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">
-			           <input type="submit" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" value="Create">
-			           <button type="button" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}"></i></button>`;
-			} else if (category === "languages") {
-				projectform.action = "{% url 'add_certification' %}";
-				projectform.innerHTML = `<h2>Add a Language</h2>
-			           <hr>
-			            {% csrf_token %}
-                        <input type="hidden" name="type" value="Foreign Language">
-                        <label for="course-name">Language</label>
-                        <input type="text" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" name="course-name" id="course-name">
-                        <label for="provider">Provider</label>
-			           <input type="text" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" name="provider" id="provider">
-			           <label for="status">Status</label>
-			           <select name="status" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" id="status">
-			               <option value="Completed" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">Completed</option>
-			               <option value="Pending" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">Pending</option>
-			           </select>
-			           <label for='course-link'>Course Link</label>
-			           <input type="text" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" name="course-link" id="course-link">
-			           <input type="submit" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" value="Create">
-			           <button type="button" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}"></i></button>`;
-			} else if (category === "certificates") {
-				projectform.action = "{% url 'add_certification' %}";
-				projectform.innerHTML = `<h2>Add a Certificate</h2>
-                    <hr>
-                    {% csrf_token %}
-                    <input type="hidden" name="type" value="Technical">
-			           <label for="course-name">Course Name</label>
-			           <input type="text" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" name="course-name" id="course-name">
-			           <label for="provider">Provider</label>
-			           <input type="text" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" name="provider" id="provider">
-			           <label for="status">Status</label>
-			           <select name="status" id="status" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">
-			               <option value="Completed" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">Completed</option>
-			               <option value="Pending" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">Pending</option>
-			           </select>
-			           <label for='course-link'>Course Link</label>
-			           <input type="text" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" name="course-link" id="course-link">
-			           <input type="submit" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" value="Create">
-			           <button type="button" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}"></i></button>`;
+				projectform.style.animationDirection = "normal";
+				console.log(projectform);
+				projectform.classList.add("scale-animation");
+				setTimeout(() => {
+					blur.classList.remove("blur-animation");
+					projectform.classList.remove("scale-animation");
+				}, 500);
 			}
-			projectform.style.animationDirection = "normal";
-			console.log(projectform);
-			projectform.classList.add("scale-animation");
-			setTimeout(() => {
-				blur.classList.remove("blur-animation");
-				projectform.classList.remove("scale-animation");
-			}, 500);
-		}
 
-		function edit(id, type) {
-			blur.style.animationDirection = "normal";
-			blur.style.display = "flex";
-			blur.classList.add("blur-animation");
-			if (type === "project") {
-				projectform.action = "{% url 'edit_project' %}";
-				var project = projects.filter(project => project.pk == id)[0];
-				projectform.innerHTML = `<h2>Edit</h2>
-			           <hr>
-			            {% csrf_token %}
-						<input type="hidden" name="id" value="${id}">
-			           <label for="project-name">Project Name</label>
-			           <input type="text" value=${project.fields.title} name="project-name" id="project-name" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">
-			           <label for="description">Description</label>
-			           <textarea name="description" id="description" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" cols="30" rows="5">${project.fields.description}</textarea>
-			           <label for="status">Status</label>
-			           <select name="status" id="status" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">
-			               <option value="Completed" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">Completed</option>
-			               <option value="Initialized" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">Initialized</option>
-			           </select>
-			           <label for='github'>Github Link</label>
-			           <input type="text" value="${project.fields.github_link}" name="github" id="github" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">
-			           <input type="submit" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" value="Update">
-			           <button type="button" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}"></i></button>`;
+			function edit(id, type) {
+				blur.style.animationDirection = "normal";
+				blur.style.display = "flex";
+				blur.classList.add("blur-animation");
+				if (type === "project") {
+					projectform.action = "{% url 'edit_project' %}";
+					var project = projects.filter(project => project.pk == id)[0];
+					projectform.innerHTML = `<h2>Edit</h2>
+				           <hr>
+				            {% csrf_token %}
+							<input type="hidden" name="id" value="${id}">
+				           <label for="project-name">Project Name</label>
+				           <input type="text" value=${project.fields.title} name="project-name" id="project-name" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">
+				           <label for="description">Description</label>
+				           <textarea name="description" id="description" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" cols="30" rows="5">${project.fields.description}</textarea>
+				           <label for="status">Status</label>
+				           <select name="status" id="status" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">
+				               <option value="Completed" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">Completed</option>
+				               <option value="Initialized" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">Initialized</option>
+				           </select>
+				           <label for='github'>Github Link</label>
+				           <input type="text" value="${project.fields.github_link}" name="github" id="github" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">
+				           <input type="submit" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" value="Update">
+				           <button type="button" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}"></i></button>`;
+				}
+				else if (type === "language") {
+					projectform.action = "{% url 'edit_certification' %}";
+					console.log(id);
+					var language = Foreign_languages.filter(lan => lan.pk == id)[0];
+					projectform.innerHTML = `<h2>Edit</h2>
+				           <hr>
+				            {% csrf_token %}
+							<input type="hidden" name="id" value="${id}">
+			                      <label for="course-name">Language</label>
+			                      <input type="text" value="${language.fields.title}" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" name="course-name" id="course-name">
+			                      <label for="provider">Provider</label>
+				           <input type="text" value="${language.fields.source}" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" name="provider" id="provider">
+				           <label for="status">Status</label>
+				           <select name="status" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" id="status">
+				               <option value="Completed" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">Completed</option>
+				               <option value="Pending" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">Pending</option>
+				           </select>
+				           <label for='course-link'>Course Link</label>
+				           <input type="text" value="${language.fields.course_link}" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" name="course-link" id="course-link">
+				           <input type="submit" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" value="Update">
+				           <button type="button" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}"></i></button>`;
+				}
+				else if (type === "technical") {
+					projectform.action = "{% url 'edit_certification' %}";
+					var technical = technicals.filter(skill => skill.pk == id)[0];
+					projectform.innerHTML = `<h2>Edit</h2>
+			                  <hr>
+			                  {% csrf_token %}
+							<input type="hidden" name="id" value="${id}">
+				           <label for="course-name">Course Name</label>
+				           <input type="text" value="${technical.fields.title}" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" name="course-name" id="course-name">
+				           <label for="provider">Provider</label>
+				           <input type="text" value="${technical.fields.source}" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" name="provider" id="provider">
+				           <label for="status">Status</label>
+				           <select name="status" id="status" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">
+				               <option value="Completed" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">Completed</option>
+				               <option value="Pending" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}">Pending</option>
+				           </select>
+				           <label for='course-link'>Course Link</label>
+				           <input type="text" value="${technical.fields.course_link}" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" name="course-link" id="course-link">
+				           <input type="submit" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" value="Update">
+				           <button type="button" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}"></i></button>`
+				}
+				projectform.style.animationDirection = "normal";
+				console.log(projectform);
+				projectform.classList.add("scale-animation");
+				setTimeout(() => {
+					blur.classList.remove("blur-animation");
+					projectform.classList.remove("scale-animation");
+				}, 500);
 			}
-			else if (type === "language") {
-				projectform.action = "{% url 'edit_certification' %}";
-				console.log(id);
-				var language = Foreign_languages.filter(lan => lan.pk == id)[0];
-				projectform.innerHTML = `<h2>Edit</h2>
-			           <hr>
-			            {% csrf_token %}
-						<input type="hidden" name="id" value="${id}">
-                        <label for="course-name">Language</label>
-                        <input type="text" value="${language.fields.title}" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" name="course-name" id="course-name">
-                        <label for="provider">Provider</label>
-			           <input type="text" value="${language.fields.source}" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" name="provider" id="provider">
-			           <label for="status">Status</label>
-			           <select name="status" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" id="status">
-			               <option value="Completed" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">Completed</option>
-			               <option value="Pending" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">Pending</option>
-			           </select>
-			           <label for='course-link'>Course Link</label>
-			           <input type="text" value="${language.fields.course_link}" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" name="course-link" id="course-link">
-			           <input type="submit" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" value="Update">
-			           <button type="button" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}"></i></button>`;
-			}
-			else if (type === "technical") {
-				projectform.action = "{% url 'edit_certification' %}";
-				var technical = technicals.filter(skill => skill.pk == id)[0];
-				projectform.innerHTML = `<h2>Edit</h2>
-                    <hr>
-                    {% csrf_token %}
-						<input type="hidden" name="id" value="${id}">
-			           <label for="course-name">Course Name</label>
-			           <input type="text" value="${technical.fields.title}" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" name="course-name" id="course-name">
-			           <label for="provider">Provider</label>
-			           <input type="text" value="${technical.fields.source}" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" name="provider" id="provider">
-			           <label for="status">Status</label>
-			           <select name="status" id="status" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">
-			               <option value="Completed" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">Completed</option>
-			               <option value="Pending" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}">Pending</option>
-			           </select>
-			           <label for='course-link'>Course Link</label>
-			           <input type="text" value="${technical.fields.course_link}" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" name="course-link" id="course-link">
-			           <input type="submit" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" value="Update">
-			           <button type="button" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}"></i></button>`
-			}
-			projectform.style.animationDirection = "normal";
-			console.log(projectform);
-			projectform.classList.add("scale-animation");
-			setTimeout(() => {
-				blur.classList.remove("blur-animation");
-				projectform.classList.remove("scale-animation");
-			}, 500);
-		}
 
-		function delete_item(id, type) {
-			console.log("Delete")
-			blur.style.animationDirection = "normal";
-			blur.style.display = "flex";
-			blur.classList.add("blur-animation");
-			projectform.method = "GET";
-			projectform.action = `delete_certification/${id}`;
-			if (type == "project") {
-				projectform.action = `delete_project/${id}`;
-				projectform.innerHTML = `<p>Do you want to delete this project?</p>
-				<input type="submit" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" value="Delete">
-					<input type="button" value="No" onclick="return remove_form()">
-			           <button type="button" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}"></i></button>`
+			function delete_item(id, type) {
+				console.log("Delete")
+				blur.style.animationDirection = "normal";
+				blur.style.display = "flex";
+				blur.classList.add("blur-animation");
+				projectform.method = "GET";
+				projectform.action = `delete_certification/${id}`;
+				if (type == "project") {
+					projectform.action = `delete_project/${id}`;
+					projectform.innerHTML = `<p>Do you want to delete this project?</p>
+					<input type="submit" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" value="Delete">
+						<input type="button" value="No" onclick="return remove_form()">
+				           <button type="button" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}"></i></button>`
+				}
+				else if (type == "language") {
+					projectform.innerHTML = `<p>Do you want to delete this Language?</p>
+					<input type="submit" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" value="Delete">
+						<input type="button" value="No" onclick="return remove_form()">
+							<button type="button" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}"></i></button>`
+				}
+				else if (type == "technical") {
+					projectform.innerHTML = `<p>Do you want to delete this Certificate?</p>
+					<input type="submit" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" value="Delete">
+						<input type="button" value="No" onclick="return remove_form()">
+							<button type="button" class="${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
+							? "light-theme"
+							: ""
+						}"></i></button>`
+				}
+				projectform.style.animationDirection = "normal";
+				console.log(projectform);
+				projectform.classList.add("scale-animation");
+				setTimeout(() => {
+					blur.classList.remove("blur-animation");
+					projectform.classList.remove("scale-animation");
+				}, 500);
 			}
-			else if (type == "language") {
-				projectform.innerHTML = `<p>Do you want to delete this Language?</p>
-				<input type="submit" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" value="Delete">
-					<input type="button" value="No" onclick="return remove_form()">
-						<button type="button" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}"></i></button>`
-			}
-			else if (type == "technical") {
-				projectform.innerHTML = `<p>Do you want to delete this Certificate?</p>
-				<input type="submit" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" value="Delete">
-					<input type="button" value="No" onclick="return remove_form()">
-						<button type="button" class="${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}" onclick="return remove_form()"><i class="bi bi-x ${body.classList.contains("light-theme")
-						? "light-theme"
-						: ""
-					}"></i></button>`
-			}
-			projectform.style.animationDirection = "normal";
-			console.log(projectform);
-			projectform.classList.add("scale-animation");
-			setTimeout(() => {
-				blur.classList.remove("blur-animation");
-				projectform.classList.remove("scale-animation");
-			}, 500);
-		}
-	</script>
-</body>
-
+		</script>
+	</body>
 </html>

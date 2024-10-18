@@ -224,6 +224,10 @@ header {
 	}
 
 	.title {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
 		h1 {
 			font-size: 2rem;
 			color: $accent-color;
@@ -268,13 +272,13 @@ main {
 	animation: moveUp 300ms ease-in;
 	animation-fill-mode: forwards;
 
-	&:nth-child(1){
+	&:nth-child(1) {
 		animation-delay: 100ms;
 	}
-	&:nth-child(2){
+	&:nth-child(2) {
 		animation-delay: 200ms;
 	}
-	&:nth-child(3){
+	&:nth-child(3) {
 		animation-delay: 300ms;
 	}
 
@@ -344,8 +348,8 @@ main {
 					color: $dark-accent-color; // Darker shade for hover effect
 				}
 			}
-			
-			&>.buttons{
+
+			& > .buttons {
 				display: flex;
 				gap: 10px;
 			}
@@ -360,7 +364,7 @@ main {
 				align-items: center;
 				background-color: #1a1a1a;
 
-				&.light-theme{
+				&.light-theme {
 					background-color: lighten(#f39c12, 30%);
 				}
 				i {
@@ -450,16 +454,16 @@ i {
 			display: none;
 		}
 
-		.animator{
+		.animator {
 			height: 5rem;
 			width: 100%;
 			align-self: center;
 			justify-self: center;
 
-			svg{
+			svg {
 				width: 100%;
 				height: 100%;
-			  }
+			}
 		}
 	}
 }
@@ -479,6 +483,10 @@ i {
 	bottom: 1vh;
 	right: 1vw;
 	z-index: 10;
+	display: flex;
+	flex-direction: column-reverse;
+	gap: 10px;
+	animation: moveLeft 300ms linear;
 
 	button {
 		background-color: black;
@@ -559,34 +567,44 @@ option {
 }
 
 @keyframes moveUp {
-	from{
+	from {
 		transform: translateY(150px);
 		opacity: 0;
 	}
-	to{
-        transform: translateY(0);
-        opacity: 1;
-    }
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+@keyframes moveLeft {
+	from {
+		transform: translateX(150px);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
 }
 
 @keyframes moveDown {
-	from{
-        transform: translateY(-10vh);
-        opacity: 0;
-    }
-    to{
-        transform: translateY(0);
-        opacity: 1;
-    }
+	from {
+		transform: translateY(-10vh);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
 }
 
-@keyframes moveRight{
-	from{
+@keyframes moveRight {
+	from {
 		transform: translateX(-90vw);
 	}
-	to{
-        transform: translateX(0);
-    }
+	to {
+		transform: translateX(0);
+	}
 }
 .blur-animation {
 	animation: blur 500ms ease-in-out;
@@ -596,4 +614,3 @@ option {
 	animation: scaleani 500ms ease-in-out;
 	animation-fill-mode: forwards;
 }
-
