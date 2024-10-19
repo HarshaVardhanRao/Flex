@@ -321,7 +321,7 @@ def download_request(request):
             projects = Projects.objects.filter(rollno=stu)
             data.append({
                 'Roll No': stu.roll_no,
-                'student Name': stu.first_name,
+                'Student Name': stu.first_name,
                 'Department': stu.dept,
                 'Section': stu.section,
                 'Year': stu.year,

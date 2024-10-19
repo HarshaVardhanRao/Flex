@@ -194,7 +194,7 @@
 
 			function downloadData(){
 			    var data = [];
-			    studentData.forEach(stu => {
+			    presentData.forEach(stu => {
 			        data.push(stu.pk)
 			    })
 			    fetch("{% url 'download' %}", {
