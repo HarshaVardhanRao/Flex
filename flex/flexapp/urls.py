@@ -19,4 +19,7 @@ urlpatterns = [
     path('leetcode/<str:leetcode_user>', views.leetcode_request, name="leetcode"),
     path('download', views.download_request, name="download"),
     path('verify_otp', views.verify_otp, name="verify_otp"),
+    path('forgot_password/verify', views.verify_otp_forgot, name="verify_otp_forgot"),
+    path('forgot_password', views.forgot_password, name="forgot_password"),
+    path('reset_password', views.reset_password, name="reset_password"),
 ]

@@ -36,14 +36,14 @@
 				<label for="password">Password</label>
 				<input type="password" name="password" id="password" required />
 				<input type="submit" value="Login" style="width: fit-content" />
-				<div></div>
+				<a href="{% url 'forgot_password' %}" style="align-self: center; justify-self: flex-end;">Forgot Password?</a>
 				<p>
 					Don't have an account?
 					<a href="{% url 'register' %}">Register here</a>
 				</p>
 			</form>
 		</main>
-``
+		``
 		<div class="form-check-label">
 			<button id="themeToggle"><i class="bi bi-moon-fill"></i></button>
 		</div>

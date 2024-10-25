@@ -354,3 +354,43 @@ def studentView(request, rollno):
     except Exception as e:
         logging.error(f"Error in studentView: {e}")
         return HttpResponse("An error occurred.")
+
+def forgot_password(request):
+    try:
+        if request.method == 'POST':
+            rollno = request.POST.get('rollno')
+            user = student.objects.get(roll_no=rollno)
+            otp = send_otp(f"{user.email}")
+            request.session['rollno'] = rollno
+            request.session['otp'] = otp
+            return redirect('verify_otp_forgot')
+        else:
+            return render(request, 'forgot_password.html')
+    except Exception as e:
+        logging.error(f"Error in forgot_password: {e}")
+        return HttpResponse("An error occurred.")
+
+def verify_otp_forgot(request):
+    try:
+        if request.method == 'POST':
+            otp = request.POST.get('otp')
+            if otp == str(request.session['otp']):
+                print("OTP Verified")
+                return redirect('reset_password')
+            else:
+                return render(request, 'verify_otp.html', {'error': 'Invalid OTP'})
+        return render(request, 'verify_otp.html')
+    except Exception as e:
+        logging.error(f"Error in verify_otp_forgot: {e}")
+        return HttpResponse("An error occurred.")
+
+def reset_password(request):
+    if request.method == 'POST':
+        password = request.POST.get('confirm_password')
+        user = student.objects.get(roll_no=request.session['rollno'])
+        print(user)
+        print(password)
+        user.set_password(password)
+        user.save()
+        return redirect('login')
+    return render(request, 'reset_password.html')
