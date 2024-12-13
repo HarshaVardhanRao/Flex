@@ -1,17 +1,14 @@
 from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from .forms import ProjectsForm, LeetCodeForm, ForignLanguagesForm
-from django.contrib.auth.decorators import login_required
 import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .forms import ProjectsForm, LeetCodeForm, ForignLanguagesForm
 from .models import Projects, ForignLanguages, student, LeetCode, Faculty
 import requests
 from django.http import HttpResponse, JsonResponse
 import requests
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
 import json
 from django.core import serializers
 import pandas as pd
@@ -201,10 +198,11 @@ def verify_otp(request):
         logging.error(f"Error in verify_otp: {e}")
         return HttpResponse("An error occurred.")
 
+from django.db.models import Count
 def faculty(request):
     try:
-        studentData = student.objects.filter(is_superuser=False)
-        return render(request, 'faculty_dashboard.html', {'studentData': serializers.serialize('json', studentData)})
+        studentData = list(student.objects.filter(is_superuser=False).annotate(project_count=Count('Projects'),foreign_language_count=Count('ForeignLanguages')    ).values("roll_no", "first_name", "dept", "year", "section", "studentrollno__TotalProblems", "Projects", "ForeignLanguages"))
+        return render(request, 'faculty_dashboard.html', {'studentData': studentData})
     except Exception as e:
         logging.error(f"Error in faculty: {e}")
         return HttpResponse("An error occurred.")
@@ -394,3 +392,55 @@ def reset_password(request):
         user.save()
         return redirect('login')
     return render(request, 'reset_password.html')
+
+
+
+@login_required
+def student_profile(request):
+    user = request.user  # Get the currently logged-in user
+    
+    if request.method == "POST":
+        # Only update fields provided in the POST request
+        updated_fields = {}
+        
+        if 'name' in request.POST:
+            name = request.POST.get("name")
+            if name and name != user.first_name:
+                user.first_name = name
+                updated_fields['name'] = name
+        
+        if 'username' in request.POST:
+            username = request.POST.get("username")
+            if username and username != user.username:
+                user.username = username
+                updated_fields['username'] = username
+        
+        if 'leetcode_user' in request.POST:
+            leetcode_user = request.POST.get("leetcode_user")
+            if leetcode_user and leetcode_user != user.leetcode_user:
+                user.leetcode_user = leetcode_user
+                updated_fields['leetcode_user'] = leetcode_user
+        
+        if 'year' in request.POST:
+            year = request.POST.get("year")
+            if year and str(year) != str(user.year):
+                user.year = year
+                updated_fields['year'] = year
+        
+        if 'section' in request.POST:
+            section = request.POST.get("section")
+            if section and section != user.section:
+                user.section = section
+                updated_fields['section'] = section
+        
+        if updated_fields:
+            try:
+                user.save()
+                messages.success(request, "Profile updated successfully.")
+            except Exception as e:
+                messages.error(request, f"An error occurred: {e}")
+        else:
+            messages.info(request, "No changes were made.")
+        
+        return redirect('student_profile')
+    return render(request, 'student_profile_edit.html', {'user': user})

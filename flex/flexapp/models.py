@@ -35,7 +35,7 @@ class Faculty(AbstractUser):
 
 class LeetCode(models.Model):
     TotalProblems = models.IntegerField(default=0)
-    rollno = models.ForeignKey(student,on_delete=models.CASCADE)
+    rollno = models.ForeignKey(student,on_delete=models.CASCADE, related_name="studentrollno")
     easy = models.IntegerField(default=0)
     medium = models.IntegerField(default=0)
     hard = models.IntegerField(default=0)
@@ -43,7 +43,7 @@ class LeetCode(models.Model):
         return f"{self.rollno} - Total Problems Solved: {self.TotalProblems}"
 
 class ForignLanguages(models.Model):
-    rollno = models.ForeignKey(student,on_delete=models.CASCADE)
+    rollno = models.ForeignKey(student,on_delete=models.CASCADE, related_name="ForeignLanguages")
     source = models.CharField(max_length=50)
     title = models.CharField(max_length=255)
     certificate = models.FileField(upload_to='certificates/',null=True)
@@ -61,7 +61,7 @@ class ForignLanguages(models.Model):
         return f"{self.rollno} - {self.title}"
 
 class Projects(models.Model):
-    rollno = models.ForeignKey(student,on_delete=models.CASCADE)
+    rollno = models.ForeignKey(student,on_delete=models.CASCADE, related_name="Projects")
     title = models.CharField(max_length=255)
     description = models.TextField()
     github_link = models.URLField(blank=True)

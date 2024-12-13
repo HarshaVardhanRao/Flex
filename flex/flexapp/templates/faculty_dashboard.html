@@ -75,6 +75,30 @@
 							<i class="bi bi-arrow-clockwise"></i> Reset
 						</button>
 					</div>
+					<button id="advancedToggle"><i class="bi bi-sliders"></i> Advanced</button>
+					<div id="advanced-filters" style="display: none;">
+						<label for="leetcode-problems">LeetCode Problems:</label>
+						<input
+							type="number"
+							id="leetcode-problems"
+							name="leetcode-problems"
+							placeholder="Enter minimum problems solved"
+						/>
+						<label for="projects">Projects:</label>
+						<input
+							type="number"
+							id="projects"
+							name="projects"
+							placeholder="Enter minimum projects done"
+						/>
+						<label for="certifications">Certifications:</label>
+						<input
+							type="number"
+							id="certifications"
+							name="certifications"
+							placeholder="Enter minimum certifications"
+						/>
+					</div>
 				</aside>
 				<br />
 				<button onclick="return downloadData()">Download</button>
@@ -99,121 +123,125 @@
 			<button id="logout"><i class="bi bi-box-arrow-right"></i></button>
 		</div>
 		<script>
-			const studentData = {{ studentData|safe }};
-			var presentData = studentData;
-			const toggleSwitch = document.getElementById("themeToggle");
-			const icon = document.querySelector("#themeToggle i");
-			const body = document.body;
-			toggleSwitch.addEventListener("click", () => {
-			    // Toggle the light theme class on the body
-			    const allElements = document.querySelectorAll("*");
-			    const formAll = document.querySelectorAll(
-			        "input, select, textarea, option"
-			    );
-			    body.classList.toggle("light-theme");
-
-			    // Add or remove the light theme class from all elements
-			    allElements.forEach((element) => {
-			        element.classList.toggle(
-			            "light-theme",
-			            body.classList.contains("light-theme")
-			        );
-			    });
-
-			    formAll.forEach((element) => {
-			        element.classList.toggle(
-			            "light-theme",
-			            body.classList.contains("light-theme")
-			        );
-			    });
-			    icon.classList.toggle("bi-moon-fill");
-			    icon.classList.toggle("bi-brightness-high-fill");
-			});
-			document.addEventListener("DOMContentLoaded", function () {
-			    function filterAndDisplayData() {
-			        const rollno = document.getElementById('student-search').value.trim().toLowerCase();
-			        const year = document.querySelector('input[name="year"]:checked')?.nextElementSibling.textContent.trim().toLowerCase() || "";
-			        const section = document.querySelector('input[name="section"]:checked')?.nextElementSibling.textContent.trim().toLowerCase() || "";
-
-			        let filteredData = studentData;
-
-			        if (rollno !== "") {
-			            filteredData = filteredData.filter(student => student.fields.rollNo.toLowerCase().includes(rollno) || student.studName.toLowerCase().includes(rollno));
-			        }
-
-			        if (year != "") {
-			            filteredData = filteredData.filter(student => student.fields.year == year);
-			        }
-
-			        if (section !== "") {
-			            filteredData = filteredData.filter(student => student.fields.section.toLowerCase() === section);
-			        }
-			        presentData = filteredData;
-			        displayData(filteredData);
-			    }
-
-			    function displayData(data) {
-			        const tableBody = document.querySelector('tbody');
-			        tableBody.innerHTML = "";
-
-			        data.forEach((student, index) => {
-			            const row = document.createElement('tr');
-			            row.addEventListener('click', () => {
-			                window.location = `/student/${student.fields.username}`
-			            })
-			            row.innerHTML = `
-			                <td>${index+1}</td>
-			                <td>${student.fields.username}</td>
-			                <td>${student.fields.first_name}</td>
-			                <td>${student.fields.year}</td>
-			                <td>${student.fields.section}</td>
-			            `;
-			            tableBody.appendChild(row);
-			        });
-			    }
-
-			    function reset() {
-			        document.getElementById('student-search').value = "";
-			        document.querySelectorAll('input[name="year"]').forEach(radio => radio.checked = false);
-			        document.querySelectorAll('input[name="section"]').forEach(radio => radio.checked = false);
-			        displayData(studentData);
-			    }
-
-			    document.getElementById('student-search').addEventListener('input', filterAndDisplayData);
-			    document.querySelectorAll('input[name="year"], input[name="section"]').forEach(radio => {
-			        radio.addEventListener('change', filterAndDisplayData);
-			    });
-
-			    const resetButton = document.querySelector('.reset');
-			    resetButton.addEventListener('click', function () {
-			        reset();
-			    });
-			    displayData(studentData);
-			    console.log(studentData);
+			var None = 0;
+			var studentData = {{ studentData | safe }}
+			document.getElementById('advancedToggle').addEventListener('click', () => {
+				const advancedFilters = document.getElementById('advanced-filters');
+				if (advancedFilters.style.display === 'none') {
+					advancedFilters.style.display = 'block';
+				} else {
+					advancedFilters.style.display = 'none';
+				}
 			});
 
-			function downloadData(){
-			    var data = [];
-			    presentData.forEach(stu => {
-			        data.push(stu.pk)
-			    })
-			    fetch("{% url 'download' %}", {
-			        method: 'POST',
-			        headers: {
-			            'Content-Type': 'application/json',
-			            'X-CSRFToken': '{{ csrf_token }}',
-			        },
-			        body: JSON.stringify(data)
-			    }).then(response => response.blob())
-			    .then(blob => {
-			        const url = window.URL.createObjectURL(blob);
-			        const a = document.createElement('a');
-			        a.href = url;
-			        a.download = 'data.xlsx';
-			        document.body.appendChild(a);
-			        a.click();
-			        a.remove();
-			    });
+			document.addEventListener('DOMContentLoaded', function () {
+				function filterAndDisplayData() {
+					const rollno = document.getElementById('student-search').value.trim().toLowerCase();
+					const year = document.querySelector('input[name="year"]:checked')?.nextElementSibling.textContent.trim().toLowerCase() || "";
+					const section = document.querySelector('input[name="section"]:checked')?.nextElementSibling.textContent.trim().toLowerCase() || "";
+					const leetCodeProblems = parseInt(document.getElementById('leetcode-problems').value) || 0;
+					const projects = parseInt(document.getElementById('projects').value) || 0;
+					const certifications = parseInt(document.getElementById('certifications').value) || 0;
+
+					let filteredData = studentData;
+					console.log(filteredData)
+
+					if (rollno !== "") {
+						filteredData = filteredData.filter(student => student.fields.rollNo.toLowerCase().includes(rollno) || student.fields.first_name.toLowerCase().includes(rollno));
+					}
+
+					if (year != "") {
+						filteredData = filteredData.filter(student => student.fields.year == year);
+					}
+
+					if (section !== "") {
+						filteredData = filteredData.filter(student => student.fields.section.toLowerCase() === section);
+					}
+
+					if (leetCodeProblems > 0) {
+						filteredData = filteredData.filter(student => student.fields.leetcode_problems >= leetCodeProblems);
+					}
+
+					if (projects > 0) {
+						filteredData = filteredData.filter(student => student.fields.projects >= projects);
+					}
+
+					if (certifications > 0) {
+						filteredData = filteredData.filter(student => student.fields.certifications >= certifications);
+					}
+
+					displayData(filteredData);
+				}
+
+				function displayData(data) {
+					const tableBody = document.querySelector('tbody');
+					tableBody.innerHTML = "";
+
+					if (data.length === 0) {
+						tableBody.innerHTML = `<tr><td colspan="5">No data available</td></tr>`;
+						return;
+					}
+
+					data.forEach((student, index) => {
+						const row = document.createElement('tr');
+						row.addEventListener('click', () => {
+							window.location = `/student/${student.roll_no}`;
+						});
+						row.innerHTML = `
+							<td>${index + 1}</td>
+							<td>${student.roll_no}</td>
+							<td>${student.first_name}</td>
+							<td>${student.year}</td>
+							<td>${student.section}</td>
+						`;
+						tableBody.appendChild(row);
+					});
+				}
+
+				function reset() {
+					document.getElementById('student-search').value = "";
+					document.querySelectorAll('input[name="year"]').forEach((radio) => (radio.checked = false));
+					document.querySelectorAll('input[name="section"]').forEach((radio) => (radio.checked = false));
+					document.getElementById('leetcode-problems').value = "";
+					document.getElementById('projects').value = "";
+					document.getElementById('certifications').value = "";
+					displayData(studentData);
+				}
+
+				document.getElementById('student-search').addEventListener('input', filterAndDisplayData);
+				document.querySelectorAll('input[name="year"], input[name="section"]').forEach((radio) => {
+					radio.addEventListener('change', filterAndDisplayData);
+				});
+				document.getElementById('leetcode-problems').addEventListener('input', filterAndDisplayData);
+				document.getElementById('projects').addEventListener('input', filterAndDisplayData);
+				document.getElementById('certifications').addEventListener('input', filterAndDisplayData);
+
+				const resetButton = document.querySelector('.reset');
+				resetButton.addEventListener('click', reset);
+
+				displayData(studentData);
+			});
+
+			function downloadData() {
+				const data = presentData.map((stu) => stu.pk);
+				fetch("{% url 'download' %}", {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-CSRFToken': '{{ csrf_token }}',
+					},
+					body: JSON.stringify(data),
+				})
+					.then((response) => response.blob())
+					.then((blob) => {
+						const url = window.URL.createObjectURL(blob);
+						const a = document.createElement('a');
+						a.href = url;
+						a.download = 'data.xlsx';
+						document.body.appendChild(a);
+						a.click();
+						a.remove();
+					});
 			}
 
 			document.querySelector('#logout').addEventListener('click', () => {
