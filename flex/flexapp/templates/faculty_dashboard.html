@@ -75,9 +75,13 @@
 							<i class="bi bi-arrow-clockwise"></i> Reset
 						</button>
 					</div>
-					<button id="advancedToggle"><i class="bi bi-sliders"></i> Advanced</button>
-					<div id="advanced-filters" style="display: none;">
-						<label for="leetcode-problems">LeetCode Problems:</label>
+					<button id="advancedToggle">
+						<i class="bi bi-sliders"></i> Advanced
+					</button>
+					<div id="advanced-filters" style="display: none">
+						<label for="leetcode-problems"
+							>LeetCode Problems:</label
+						>
 						<input
 							type="number"
 							id="leetcode-problems"
@@ -107,11 +111,21 @@
 				<table>
 					<thead>
 						<tr>
+							<th>
+								<input
+									type="checkbox"
+									name="select-all"
+									id="select-all"
+								/>
+							</th>
 							<th>#</th>
 							<th>Roll Number</th>
 							<th>Name</th>
-							<th>Year</th>
-							<th>Section</th>
+							<th style="text-align: center">Year</th>
+							<th style="text-align: center">Section</th>
+							<th style="text-align: center">Leetcode Count</th>
+							<th style="text-align: center">Projects</th>
+							<th style="text-align: center">Certifications</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -128,13 +142,17 @@
 			document.getElementById('advancedToggle').addEventListener('click', () => {
 				const advancedFilters = document.getElementById('advanced-filters');
 				if (advancedFilters.style.display === 'none') {
-					advancedFilters.style.display = 'block';
+					advancedFilters.style.display = 'flex';
 				} else {
 					advancedFilters.style.display = 'none';
 				}
 			});
 
 			document.addEventListener('DOMContentLoaded', function () {
+				document.querySelector("input[name='select-all']").addEventListener('change', (event) => {
+					const checkboxes = document.querySelectorAll("input[name='select-student']");
+					checkboxes.forEach((checkbox) => (checkbox.checked = event.target.checked));
+				});
 				function filterAndDisplayData() {
 					const rollno = document.getElementById('student-search').value.trim().toLowerCase();
 					const year = document.querySelector('input[name="year"]:checked')?.nextElementSibling.textContent.trim().toLowerCase() || "";
@@ -159,15 +177,15 @@
 					}
 
 					if (leetCodeProblems > 0) {
-						filteredData = filteredData.filter(student => student.fields.leetcode_problems >= leetCodeProblems);
+						filteredData = filteredData.filter(student => student.studentrollno__TotalProblems >= leetCodeProblems);
 					}
 
 					if (projects > 0) {
-						filteredData = filteredData.filter(student => student.fields.projects >= projects);
+						filteredData = filteredData.filter(student => student.Projects >= projects);
 					}
 
 					if (certifications > 0) {
-						filteredData = filteredData.filter(student => student.fields.certifications >= certifications);
+						filteredData = filteredData.filter(student => student.ForeignLanguages >= certifications);
 					}
 
 					displayData(filteredData);
@@ -184,17 +202,23 @@
 
 					data.forEach((student, index) => {
 						const row = document.createElement('tr');
-						row.addEventListener('click', () => {
-							window.location = `/student/${student.roll_no}`;
-						});
 						row.innerHTML = `
+						<td><input type="checkbox" name="select-student" value="${student.roll_no}"></td>
 							<td>${index + 1}</td>
 							<td>${student.roll_no}</td>
 							<td>${student.first_name}</td>
-							<td>${student.year}</td>
-							<td>${student.section}</td>
+							<td style='text-align: center;'>${student.year}</td>
+							<td style='text-align: center;'>${student.section}</td>
+							<td style='text-align: center;'>${student.studentrollno__TotalProblems}</td>
+							<td style='text-align: center;'>${student.Projects}</td>
+							<td style='text-align: center;'>${student.ForeignLanguages}</td>
 						`;
 						tableBody.appendChild(row);
+					});
+					document.querySelectorAll('td:not(:has(input))').forEach(data => {
+						data.addEventListener('click', () => {
+							window.location.href = '/student/' + data.parentElement.children[2].innerText;
+						});
 					});
 				}
 
@@ -223,7 +247,8 @@
 			});
 
 			function downloadData() {
-				const data = presentData.map((stu) => stu.pk);
+				const data = Array.from(document.querySelectorAll('input[name="select-student"]:checked')).map((checkbox) => checkbox.value);
+				console.log(data);
 				fetch("{% url 'download' %}", {
 					method: 'POST',
 					headers: {
@@ -261,7 +286,7 @@
 					.catch((error) => {
 						console.error('Error:', error);
 					});
-			});
+					});
 		</script>
 	</body>
 </html>

@@ -310,7 +310,7 @@ def download_request(request):
     try:
         list = request.body
         list = json.loads(list)
-        students = student.objects.filter(id__in=list)
+        students = student.objects.filter(roll_no__in=list)
         data = []
         for stu in students:
             leetcode = LeetCode.objects.get(rollno=stu)

@@ -162,7 +162,7 @@ aside {
 		}
 	}
 
-	input[type="search"] {
+	input[type="search"], input[type="text"], input[type="number"], input[type="date"] {
 		padding: 0.5rem 0.7rem;
 		margin: 10px 0;
 		font-size: 16px;
@@ -226,6 +226,10 @@ aside {
 			}
 		}
 	}
+	#advanced-filters{
+		display: flex;
+		flex-direction: column;
+	}
 }
 
 .table {
@@ -252,6 +256,10 @@ table {
 		text-align: left;
 		border-bottom: 1px solid $primary-light;
 
+		input[type="checkbox"] {
+			accent-color: $accent-color;
+		}
+
 		&.light-theme {
 			border-bottom: 1px solid darken($light-primary-color, 2%); // Light theme border
 		}
@@ -271,7 +279,7 @@ table {
 	}
 
 	tbody {
-		tr a{
+		tr a {
 			cursor: pointer;
 			background-color: #000;
 
@@ -305,6 +313,7 @@ table {
 		border: 2px solid $shadow-color;
 		box-shadow: 0px 0px 3px 2px $shadow-color;
 		transition: all 200ms ease-in-out;
+		overflow: hidden;
 
 		i {
 			background-color: black;
@@ -326,7 +335,7 @@ table {
 			background-color: $dark-accent-color;
 			border-color: $accent-color;
 			box-shadow: 0px 0px 10px 3px $accent-color;
-			
+
 			i {
 				color: white;
 				background-color: $dark-accent-color;
