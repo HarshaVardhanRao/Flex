@@ -448,7 +448,6 @@ def student_profile(request):
         return redirect('student_profile')
     return render(request, 'student_profile_edit.html', {'user': user})
 
-<<<<<<< HEAD
 
 def change_ac(request,yearr):
     if request.user.is_authenticated and request.user.type() == "Faculty":
@@ -457,11 +456,3 @@ def change_ac(request,yearr):
             stu.year += yearr
             stu.save()
         return redirect('faculty')
-=======
-def change_ac(request):
-    students = student.objects.all()
-    for student in students:
-        student.year = student.year + 1
-        student.save()
-    return redirect('/')
->>>>>>> 4833424c26970a24d097ae521f31e146067374d8
