@@ -139,6 +139,7 @@ def register(request):
             request.session['role'] = request.POST.get('role')
             request.session['deptt'] = request.POST.get('dept')
             request.session['section'] = request.POST.get('section')
+            request.session['year'] = request.POST.get('year')
             request.session['is_staff'] = request.POST.get('role') == 'staff'
             request.session['leetcode_user'] = request.POST.get('leetcode_user')
 
@@ -174,6 +175,7 @@ def verify_otp(request):
                     first_name=request.session.get('first_name'),
                     dept=request.session.get('deptt'),
                     section=request.session.get('section'),
+                    year=request.session.get('year'),
                     leetcode_user=request.session.get('leetcode_user'),
                 )
                 user.set_password(request.session.get('password'))
@@ -444,3 +446,10 @@ def student_profile(request):
         
         return redirect('student_profile')
     return render(request, 'student_profile_edit.html', {'user': user})
+
+def change_ac(request):
+    students = student.objects.all()
+    for student in students:
+        student.year = student.year + 1
+        student.save()
+    return redirect('/')

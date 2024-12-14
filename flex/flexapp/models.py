@@ -14,6 +14,7 @@ class student(AbstractUser):
     dept= models.CharField(max_length=20, choices=DEPT_CHOICES, default="CSE")
     section = models.CharField(max_length=10,choices=SECTION_CHOICES, default="A")
     year = models.IntegerField(default=3)
+    # githublink = models.URLField(default=None,null=True)
     groups = models.ManyToManyField(Group, related_name="studentGroups")
     user_permissions = models.ManyToManyField(Permission, related_name="studentPermissions")
     def __str__(self):
