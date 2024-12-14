@@ -199,6 +199,7 @@ def verify_otp(request):
         return HttpResponse("An error occurred.")
 
 from django.db.models import Count
+# @login_required
 def faculty(request):
     try:
         studentData = list(student.objects.filter(is_superuser=False).annotate(project_count=Count('Projects'),foreign_language_count=Count('ForeignLanguages')    ).values("roll_no", "first_name", "dept", "year", "section", "studentrollno__TotalProblems", "Projects", "ForeignLanguages"))
@@ -444,3 +445,12 @@ def student_profile(request):
         
         return redirect('student_profile')
     return render(request, 'student_profile_edit.html', {'user': user})
+
+
+def change_ac(request,yearr):
+    if request.user.is_authenticated and request.user.type() == "Faculty":
+        studs = student.objects.all()
+        for stu in studs:
+            stu.year += yearr
+            stu.save()
+        return redirect('faculty')

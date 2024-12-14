@@ -16,18 +16,24 @@ class student(AbstractUser):
     year = models.IntegerField(default=3)
     groups = models.ManyToManyField(Group, related_name="studentGroups")
     user_permissions = models.ManyToManyField(Permission, related_name="studentPermissions")
+    github_link = models.URLField(blank=True,null=True)
     def __str__(self):
         return self.first_name
     def type(self):
         return "student"
 
 class Faculty(AbstractUser): 
+    SECTION_CHOICES = [
+        ("A","A"),("B","B"),("C","C"),("D","D"),("E","E"),("F","F")
+    ]
     DEPT_CHOICES = [
         ("CSE","CSE"),("CAI","CAI"),("CSD","CSD"),("CSM","CSM"),("CSC","CSC"),("CST","CST"),("ECE","ECE"),("EEE","EEE"),("CE","CE"),("ME","ME")
     ]
     dept= models.CharField(max_length=20, choices=DEPT_CHOICES, default="CSE")
     groups = models.ManyToManyField(Group, related_name="facultyGroups")
     user_permissions = models.ManyToManyField(Permission, related_name="facultyPermissions")
+    default_year = models.IntegerField(default=None,null=True)
+    default_section = models.CharField(max_length=10,choices=SECTION_CHOICES, default="A")
 
     def type(self):
         return "Faculty"
