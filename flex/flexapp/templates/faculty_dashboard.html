@@ -134,7 +134,7 @@
 		</main>
 		<div class="form-check-label">
 			<button id="themeToggle"><i class="bi bi-moon-fill"></i></button>
-			<button id="logout"><i class="bi bi-gear"></i></button>
+			<button id="Gear"><i class="bi bi-gear"></i></button>
 			<button id="logout"><i class="bi bi-box-arrow-right"></i></button>
 		</div>
 		<script>
@@ -166,15 +166,15 @@
 					console.log(filteredData)
 
 					if (rollno !== "") {
-						filteredData = filteredData.filter(student => student.fields.rollNo.toLowerCase().includes(rollno) || student.fields.first_name.toLowerCase().includes(rollno));
+						filteredData = filteredData.filter(student => student.roll_no.toLowerCase().includes(rollno) || student.first_name.toLowerCase().includes(rollno));
 					}
 
 					if (year != "") {
-						filteredData = filteredData.filter(student => student.fields.year == year);
+						filteredData = filteredData.filter(student => student.year == year);
 					}
 
 					if (section !== "") {
-						filteredData = filteredData.filter(student => student.fields.section.toLowerCase() === section);
+						filteredData = filteredData.filter(student => student.section.toLowerCase() === section);
 					}
 
 					if (leetCodeProblems > 0) {
@@ -288,6 +288,38 @@
 						console.error('Error:', error);
 					});
 					});
+
+					const toggleSwitch = document.getElementById("themeToggle");
+			const icon = document.querySelector("#themeToggle i");
+			const body = document.body;
+			const allElements = document.querySelectorAll("*"); // Select all elements
+			console.log(allElements);
+			const blur = document.querySelector(".blur");
+			toggleSwitch.addEventListener("click", () => {
+				// Toggle the light theme class on the body
+				const formAll = document.querySelectorAll(
+					"input, select, textarea, option, p, button"
+				);
+				body.classList.toggle("light-theme");
+
+				// Add or remove the light theme class from all elements
+				allElements.forEach((element) => {
+					element.classList.toggle(
+						"light-theme",
+						body.classList.contains("light-theme")
+					);
+				});
+
+				formAll.forEach((element) => {
+					element.classList.toggle(
+						"light-theme",
+						body.classList.contains("light-theme")
+					);
+				});
+				icon.classList.toggle("bi-moon-fill");
+				icon.classList.toggle("bi-brightness-high-fill");
+			});
+
 		</script>
 	</body>
 </html>
