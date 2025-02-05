@@ -113,19 +113,34 @@ def CustomLogout(request):
     except Exception as e:
         logging.error(f"Error in CustomLogout: {e}")
         return HttpResponse("An error occurred.")
-
+import smtplib
+from email.mime.text import MIMEText
 def send_otp(email):
     try:
         otp = random.randint(100000, 999999)
         logging.debug(f"Generated OTP: {otp}")
-        # send_mail(
-        #     'Your OTP Code',
-        #     f'Your OTP code is {otp}',
-        #     settings.EMAIL_HOST_USER,
-        #     [email],
-        #     fail_silently=False,
-        # )
-        return otp
+        sender_email = "mitsflex@outlook.com"
+        sender_password = "admcsaedssculrla"
+        smtp_server = "smtp-mail.outlook.com"
+        smtp_port = 587
+        recipient_email = email
+
+        # Create message
+        subject = "OTP for Verification"
+        body = f"Your OTP for login into the Internship Dashboard is: {otp}"
+        message = MIMEText(body)
+        message["Subject"] = subject
+        message["From"] = sender_email
+        message["To"] = recipient_email
+
+    # Connect to the server
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            # Log in to the email account
+            server.login(sender_email, sender_password)
+            # Send the email
+            server.sendmail(sender_email, recipient_email, message.as_string())
+            print("OTP sent successfully.")
     except Exception as e:
         logging.error(f"Error in send_otp: {e}")
         return None
