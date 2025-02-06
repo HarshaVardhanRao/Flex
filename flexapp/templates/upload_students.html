@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Upload Students</title>
+	</head>
+	<body>
+		<h1>Upload Students</h1>
+		<form method="post" enctype="multipart/form-data">
+			{% csrf_token %}
+			<input type="file" name="file" accept=".xlsx" />
+			<button type="submit">Upload</button>
+		</form>
+	</body>
+</html>

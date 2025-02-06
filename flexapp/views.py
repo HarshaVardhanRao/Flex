@@ -16,6 +16,8 @@ from django.http import HttpResponse
 from django.core.mail import send_mail
 import random
 from flex import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.core.files.storage import FileSystemStorage
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -471,3 +473,34 @@ def change_ac(request,yearr):
             stu.year += yearr
             stu.save()
         return redirect('faculty')
+
+@csrf_exempt
+def upload_students(request):
+    if request.method == 'POST' and request.FILES['file']:
+        try:
+            file = request.FILES['file']
+            fs = FileSystemStorage()
+            filename = fs.save(file.name, file)
+            file_path = fs.path(filename)
+            
+            # Read the Excel file
+            df = pd.read_excel(file_path)
+            
+            # Iterate through the rows and add details to the student model
+            for index, row in df.iterrows():
+                s = student(
+                    roll_no=row['Roll'],
+                    first_name=row['Name'],
+                    year=row['Year'],
+                    section=row['Section'],
+                    username=row['Roll']
+                )
+                s.set_password(row['Roll'])
+                s.save()
+            
+            messages.success(request, "Students added successfully.")
+            return redirect('dashboard')
+        except Exception as e:
+            logging.error(f"Error in upload_students: {e}")
+            return HttpResponse("An error occurred.")
+    return render(request, 'upload_students.html')

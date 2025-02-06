@@ -16,6 +16,13 @@
 		/>
 		<title>FLEX</title>
 		<link rel="stylesheet" href="{% static 'css/style.min.css' %}" />
+		<style>
+			@media screen and (max-width: 600px) {
+				.profile-icon {
+					display: none !important;
+				}
+			}
+		</style>
 	</head>
 
 	<body>
@@ -32,13 +39,29 @@
 
 		<main>
 			<div class="profile border-custom">
-				<div style="display: flex">
-					<a href="{% url 'profile' %}" class="profile-icon" style="height: 100%; text-decoration: none; color: #f1c40f;">
+				<div
+					style="
+						display: flex;
+						align-items: center;
+						justify-content: center;
+					"
+				>
+					<a
+						href="{% url 'profile' %}"
+						class="profile-icon"
+						style="
+							display: flex;
+							align-items: center;
+							justify-content: left;
+							height: inherit;
+							width: 50%;
+							text-decoration: none;
+							color: #f1c40f;
+						"
+					>
 						<svg
-							style="scale: 10; translate: -600% 300% 0"
 							xmlns="http://www.w3.org/2000/svg"
-							width="16"
-							height="16"
+							style="width: 50%"
 							fill="currentColor"
 							class="bi bi-person-vcard-fill"
 							viewBox="0 0 16 16"

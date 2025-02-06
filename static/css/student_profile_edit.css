@@ -77,13 +77,18 @@ form .form-label {
 
 form .form-control,
 form .form-select {
-	background-color: #222;
+	background-color: #222 !important;
 	color: #ffcc00;
 	transition: border-color 0.3s ease, background-color 0.3s ease;
 	border-radius: 5px;
+	border: 1px solid #f1c40f;
 	padding: 10px;
 	font-size: 1rem;
 	transition: border-color 0.3s, background-color 0.3s;
+}
+
+.form-control:focus {
+	color: #fff;
 }
 
 form .form-control::placeholder,
