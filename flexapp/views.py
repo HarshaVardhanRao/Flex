@@ -121,8 +121,8 @@ def send_otp(email):
     try:
         otp = random.randint(100000, 999999)
         logging.debug(f"Generated OTP: {otp}")
-        sender_email = "mitsflex@outlook.com"
-        sender_password = "admcsaedssculrla"
+        sender_email = "webclubmits@gmail.com"
+        sender_password = "geby ycow vxgn ekxu"
         smtp_server = "smtp-mail.outlook.com"
         smtp_port = 587
         recipient_email = email
