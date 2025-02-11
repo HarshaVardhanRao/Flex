@@ -301,6 +301,7 @@
 					projects_ul.innerHTML += `<li>
 							<h5><a href="#">${project.fields.title}</a></h5>
 							<p>Desripton: ${project.fields.description}</p>
+							<p>${project.fields.year_and_sem}</p>
 							<p>
 								<a href="${project.fields.github_link}" target="_blank"><i class="bi bi-github"></i>
 								</a>
@@ -322,7 +323,7 @@
 			                          <a href="${technical.fields.course_link}" target="_blank">${technical.fields.title}</a>
 			                      </h5>
 			                      <p>Provider : ${technical.fields.source}</p>
-			                      <p>Uploded On: ${technical.fields.uploaded_at}</p>
+			                      <p>${technical.fields.year_and_sem}</p>
 			                      <div class="buttons">
 			                          <button class="edit" onclick="return edit(${technical.pk}, 'technical')">
 			                              <i class="bi bi-pencil"></i>
@@ -340,7 +341,7 @@
 								<a href="${language.fields.course_link}" target="_blank">${language.fields.title}</a>
 							</h5>
 							<p>Provider : ${language.fields.source}</p>
-							<p>Uploded On: ${language.fields.uploaded_at}</p>
+							<p>${language.fields.year_and_sem}</p>
 							<div class="buttons">
 								<button class="edit" onclick="return edit(${language.pk}, 'language')">
 									<i class="bi bi-pencil"></i>
@@ -418,6 +419,17 @@
 							? "light-theme"
 							: ""
 						}" cols="30" rows="5"></textarea>
+						   <label for="year-and-sem">Year and Semester</label>
+						   <select name="year-and-sem" id="year-and-sem" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">
+							   <option value="I-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">I-I</option>
+							   <option value="I-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">I-II</option>
+							   <option value="II-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">II-I</option>
+							   <option value="II-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">II-II</option>
+							   <option value="III-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">III-I</option>
+							   <option value="III-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">III-II</option>
+							   <option value="IV-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">IV-I</option>
+							   <option value="IV-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">IV-II</option>
+						   </select>
 				           <label for="status">Status</label>
 				           <select name="status" id="status" class="${body.classList.contains("light-theme")
 							? "light-theme"
@@ -464,6 +476,17 @@
 							? "light-theme"
 							: ""
 						}" name="provider" id="provider">
+						<label for="year-and-sem">Year and Semester</label>
+						   <select name="year-and-sem" id="year-and-sem" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">
+							   <option value="I-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">I-I</option>
+							   <option value="I-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">I-II</option>
+							   <option value="II-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">II-I</option>
+							   <option value="II-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">II-II</option>
+							   <option value="III-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">III-I</option>
+							   <option value="III-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">III-II</option>
+							   <option value="IV-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">IV-I</option>
+							   <option value="IV-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">IV-II</option>
+						   </select>
 				           <label for="status">Status</label>
 				           <select name="status" class="${body.classList.contains("light-theme")
 							? "light-theme"
@@ -507,6 +530,17 @@
 							? "light-theme"
 							: ""
 						}" name="provider" id="provider">
+						<label for="year-and-sem">Year and Semester</label>
+						   <select name="year-and-sem" id="year-and-sem" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">
+							   <option value="I-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">I-I</option>
+							   <option value="I-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">I-II</option>
+							   <option value="II-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">II-I</option>
+							   <option value="II-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">II-II</option>
+							   <option value="III-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">III-I</option>
+							   <option value="III-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">III-II</option>
+							   <option value="IV-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">IV-I</option>
+							   <option value="IV-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">IV-II</option>
+						   </select>
 				           <label for="status">Status</label>
 				           <select name="status" id="status" class="${body.classList.contains("light-theme")
 							? "light-theme"
@@ -554,6 +588,7 @@
 				if (type === "project") {
 					projectform.action = "{% url 'edit_project' %}";
 					var project = projects.filter(project => project.pk == id)[0];
+					console.log(project.fields)
 					projectform.innerHTML = `<h2>Edit</h2>
 				           <hr>
 				            {% csrf_token %}
@@ -568,7 +603,18 @@
 							? "light-theme"
 							: ""
 						}" cols="30" rows="5">${project.fields.description}</textarea>
-				           <label for="status">Status</label>
+							<label for="year-and-sem">Year and Semester</label>
+						   <select name="year-and-sem" id="year-and-sem" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">
+							   <option value="I-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${project.fields.year_and_sem == "I-I" ? "selected" : ""}>I-I</option>
+							   <option value="I-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${project.fields.year_and_sem == "I-II" ? "selected" : ""}>I-II</option>
+							   <option value="II-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}"  ${project.fields.year_and_sem == "II-I" ? "selected" : ""}>II-I</option>
+							   <option value="II-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}"  ${project.fields.year_and_sem == "II-II" ? "selected" : ""}>II-II</option>
+							   <option value="III-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${project.fields.year_and_sem == "III-I" ? "selected" : ""}>III-I</option>
+							   <option value="III-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${project.fields.year_and_sem == "III-II" ? "selected" : ""}>III-II</option>
+							   <option value="IV-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${project.fields.year_and_sem == "IV-I" ? "selected" : ""}>IV-I</option>
+							   <option value="IV-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${project.fields.year_and_sem == "IV-II" ? "selected" : ""}>IV-II</option>
+						   </select>
+						   <label for="status">Status</label>
 				           <select name="status" id="status" class="${body.classList.contains("light-theme")
 							? "light-theme"
 							: ""
@@ -617,6 +663,17 @@
 							? "light-theme"
 							: ""
 						}" name="provider" id="provider">
+						<label for="year-and-sem">Year and Semester</label>
+			   <select name="year-and-sem" id="year-and-sem" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">
+							   <option value="I-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${language.fields.year_and_sem == "I-I" ? "selected" : ""}>I-I</option>
+							   <option value="I-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${language.fields.year_and_sem == "I-II" ? "selected" : ""}>I-II</option>
+							   <option value="II-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}"  ${language.fields.year_and_sem == "II-I" ? "selected" : ""}>II-I</option>
+							   <option value="II-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}"  ${language.fields.year_and_sem == "II-II" ? "selected" : ""}>II-II</option>
+							   <option value="III-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${language.fields.year_and_sem == "III-I" ? "selected" : ""}>III-I</option>
+							   <option value="III-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${language.fields.year_and_sem == "III-II" ? "selected" : ""}>III-II</option>
+							   <option value="IV-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${language.fields.year_and_sem == "IV-I" ? "selected" : ""}>IV-I</option>
+							   <option value="IV-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${language.fields.year_and_sem == "IV-II" ? "selected" : ""}>IV-II</option>
+						   </select>
 				           <label for="status">Status</label>
 				           <select name="status" class="${body.classList.contains("light-theme")
 							? "light-theme"
@@ -662,6 +719,17 @@
 							? "light-theme"
 							: ""
 						}" name="provider" id="provider">
+						<label for="year-and-sem">Year and Semester</label>
+						   <select name="year-and-sem" id="year-and-sem" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">
+							   <option value="I-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${technical.fields.year_and_sem == "I-I" ? "selected" : ""}>I-I</option>
+							   <option value="I-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${technical.fields.year_and_sem == "I-II" ? "selected" : ""}>I-II</option>
+							   <option value="II-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}"  ${technical.fields.year_and_sem == "II-I" ? "selected" : ""}>II-I</option>
+							   <option value="II-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}"  ${technical.fields.year_and_sem == "II-II" ? "selected" : ""}>II-II</option>
+							   <option value="III-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${technical.fields.year_and_sem == "III-I" ? "selected" : ""}>III-I</option>
+							   <option value="III-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${technical.fields.year_and_sem == "III-II" ? "selected" : ""}>III-II</option>
+							   <option value="IV-I" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${technical.fields.year_and_sem == "IV-I" ? "selected" : ""}>IV-I</option>
+							   <option value="IV-II" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" ${technical.fields.year_and_sem == "IV-II" ? "selected" : ""}>IV-II</option>
+						   </select>
 				           <label for="status">Status</label>
 				           <select name="status" id="status" class="${body.classList.contains("light-theme")
 							? "light-theme"

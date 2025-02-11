@@ -51,6 +51,12 @@
                 {% endfor %}
             </select>
         </div>
+        <div class="row">
+            <div class="column">        
+                <label for="mobile" class="form-label">Mobile:</label>
+                <input type="text" id="mobile" name="mobile" class="form-control" value="{{ user.phone }}" disabled/>
+            </div>
+        </div>
         <button type="button" id="editButton" class="btn btn-primary">Edit</button>
         <button type="submit" id="saveButton" class="btn btn-success d-none">Save</button>
         <button type="button" id="cancelButton" class="btn btn-secondary d-none">Cancel</button>

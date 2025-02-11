@@ -18,6 +18,7 @@ class student(AbstractUser):
     groups = models.ManyToManyField(Group, related_name="studentGroups")
     user_permissions = models.ManyToManyField(Permission, related_name="studentPermissions")
     github_link = models.URLField(blank=True,null=True)
+    phone = models.CharField(max_length=12, default="", null=True, blank=True)
     def __str__(self):
         return self.first_name
     def type(self):
@@ -61,7 +62,8 @@ class ForignLanguages(models.Model):
         (FOREIGN_LANGUAGE,'Foreign Language'),
     ]
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default=TECHNICAL)
-    
+    YEAR_AND_SEM_CHOICES = [("I-I", "I-I"), ("I-II", "I-II"), ("II-I", "II-I"), ("II-II", "II-II"), ("III-I", "III-I"), ("III-II", "III-II"), ("IV-I", "IV-I"), ("IV-II", "IV-II")]
+    year_and_sem = models.CharField(max_length=10, choices=YEAR_AND_SEM_CHOICES)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     course_link = models.URLField(blank=True)
     def __str__(self):
@@ -71,6 +73,8 @@ class Projects(models.Model):
     rollno = models.ForeignKey(student,on_delete=models.CASCADE, related_name="Projects")
     title = models.CharField(max_length=255)
     description = models.TextField()
+    YEAR_AND_SEM_CHOICES = [("I-I", "I-I"), ("I-II", "I-II"), ("II-I", "II-I"), ("II-II", "II-II"), ("III-I", "III-I"), ("III-II", "III-II"), ("IV-I", "IV-I"), ("IV-II", "IV-II")]
+    year_and_sem = models.CharField(max_length=10, choices=YEAR_AND_SEM_CHOICES)
     github_link = models.URLField(blank=True)
     Status_choices = [
         ("Initialized","Initialized"),
