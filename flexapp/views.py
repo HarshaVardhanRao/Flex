@@ -57,10 +57,9 @@ def create_project(request):
             rollno = request.user
             title = request.POST.get('project-name')
             description = request.POST.get('description')
-            year_and_sem = request.POST.get('year-and-sem')
             status = request.POST.get('status')
             github_link = request.POST.get('github')
-            new_project = Projects(rollno=rollno, title=title, description=description, github_link=github_link, year_and_sem=year_and_sem, status=status)
+            new_project = Projects(rollno=rollno, title=title, description=description, github_link=github_link)
             new_project.save()
             return redirect('dashboard')
         return render(request, 'dashboard.html')
@@ -75,11 +74,10 @@ def add_certification(request):
             rollno = request.user
             course_type = request.POST.get('type')
             title = request.POST.get('course-name')
-            year_and_sem = request.POST.get('year-and-sem')
             source = request.POST.get('provider')
             status = request.POST.get('status')
             course_link = request.POST.get('course-link')
-            new_course = ForignLanguages(rollno=rollno, title=title, source=source, course_link=course_link, category=course_type, year_and_sem=year_and_sem)
+            new_course = ForignLanguages(rollno=rollno, title=title, source=source, course_link=course_link, category=course_type)
             new_course.save()
             return redirect('dashboard')
         return render(request, 'dashboard.html')
@@ -235,14 +233,11 @@ def edit_project(request):
             primary_key = request.POST.get('id')
             title = request.POST.get('project-name')
             description = request.POST.get('description')
-            year_and_sem = request.POST.get('year-and-sem')
-            print(year_and_sem)
             status = request.POST.get('status')
             github_link = request.POST.get('github')
             project = Projects.objects.get(id=primary_key)
             project.title = title
             project.description = description
-            project.year_and_sem = year_and_sem
             project.status = status
             project.github_link = github_link
             project.save()
@@ -256,13 +251,11 @@ def edit_certification(request):
         if request.method == 'POST':
             primary_key = request.POST.get('id')
             source = request.POST.get('provider')
-            year_and_sem = request.POST.get('year-and-sem')
             title = request.POST.get('course-name')
             course_link = request.POST.get('course-link')
             project = ForignLanguages.objects.get(id=primary_key)
             project.source = source
             project.title = title
-            project.year_and_sem = year_and_sem
             project.course_link = course_link
             project.save()
             return redirect('dashboard')
@@ -459,12 +452,6 @@ def student_profile(request):
             if section and section != user.section:
                 user.section = section
                 updated_fields['section'] = section
-        
-        if 'mobile' in request.POST:
-            section = request.POST.get("mobile")
-            if section and section != user.phone:
-                user.phone = section
-                updated_fields['phone'] = section
         
         if updated_fields:
             try:

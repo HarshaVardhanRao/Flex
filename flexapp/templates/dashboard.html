@@ -72,7 +72,16 @@
 						</svg>
 					</a>
 					<div class="detail">
-						<p><a href="{% url 'profile' %}">{{ name }}</a></p>
+						<p style="white-space: nowrap">
+							<a
+								href="{% url 'profile' %}"
+								style="text-decoration: none; color: white"
+								>{{ name }}<i
+									class="bi bi-pencil"
+									style="margin-left: 5px; font-size: 1rem"
+								></i
+							></a>
+						</p>
 						<p>{{ rollno }}</p>
 						<p>{{ dept }} - {{ section }}</p>
 					</div>
@@ -396,7 +405,7 @@
 					blur.classList.remove("blur-animation");
 					projectform.classList.remove("scale-animation");
 					blur.style.display = "none";
-				}, 500);
+				}, 300);
 			}
 
 			function new_item(element) {
@@ -578,7 +587,7 @@
 				setTimeout(() => {
 					blur.classList.remove("blur-animation");
 					projectform.classList.remove("scale-animation");
-				}, 500);
+				}, 300);
 			}
 
 			function edit(id, type) {
@@ -767,7 +776,7 @@
 				setTimeout(() => {
 					blur.classList.remove("blur-animation");
 					projectform.classList.remove("scale-animation");
-				}, 500);
+				}, 300);
 			}
 
 			function delete_item(id, type) {
@@ -829,7 +838,7 @@
 				setTimeout(() => {
 					blur.classList.remove("blur-animation");
 					projectform.classList.remove("scale-animation");
-				}, 500);
+				}, 300);
 			}
 			document.querySelector('#logout').addEventListener('click', () => {
 				fetch("{% url 'logout' %}", {
