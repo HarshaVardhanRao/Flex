@@ -1,0 +1,42 @@
+<form id="fillForm">
+    <div id="formContainer"></div>
+    <button type="submit">Submit</button>
+</form>
+
+<script>
+async function loadForm(formId) {
+    let response = await fetch(`/get_form/${formId}/`);
+    let formData = await response.json();
+
+    let container = document.getElementById("formContainer");
+    container.innerHTML = `<h3>${formData.title}</h3><p>${formData.description}</p>`;
+
+    formData.fields.forEach(field => {
+        let input = document.createElement("input");
+        input.placeholder = field.field_name;
+        input.name = field.field_name;
+        if (field.field_type === "number") input.type = "number";
+        if (field.field_type === "date") input.type = "date";
+        container.appendChild(input);
+    });
+}
+
+document.getElementById("fillForm").onsubmit = async function(e) {
+    e.preventDefault();
+    let responses = {};
+    document.querySelectorAll("#formContainer input").forEach(input => {
+        responses[input.name] = input.value;
+    });
+
+    let response = await fetch(`/submit_response/1/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ responses: responses }),
+    });
+
+    let result = await response.json();
+    alert(result.message);
+};
+
+loadForm(1);
+</script>

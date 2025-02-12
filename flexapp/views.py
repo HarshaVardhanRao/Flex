@@ -1,22 +1,19 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from .forms import ProjectsForm, LeetCodeForm, ForignLanguagesForm
 import logging
-from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Projects, ForignLanguages, student, LeetCode, Faculty
+from .models import Projects, ForignLanguages, student, LeetCode, Faculty,FillOutForm, FillOutField, student
 import requests
 from django.http import HttpResponse, JsonResponse
-import requests
 import json
+from django.views.decorators.csrf import csrf_exempt
 from django.core import serializers
 import pandas as pd
-from django.http import HttpResponse
 from django.core.mail import send_mail
 import random
 from flex import settings
-from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import FileSystemStorage
 
 logging.basicConfig(level=logging.DEBUG)
@@ -115,6 +112,37 @@ def CustomLogout(request):
     except Exception as e:
         logging.error(f"Error in CustomLogout: {e}")
         return HttpResponse("An error occurred.")
+    
+################################FillOut##########################
+@csrf_exempt
+def create_form(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        form = FillOutForm.objects.create(
+            title=data["title"],
+            description=data.get("description", ""),
+            created_by=request.user,
+        )
+        for field in data["fields"]:
+            FillOutField.objects.create(
+                form=form,
+                field_name=field["field_name"],
+                field_type=field["field_type"],
+                options=json.dumps(field.get("options", [])),
+            )
+        students = student.objects.filter(id__in=data["assigned_students"])
+        form.assigned_students.set(students)
+        return JsonResponse({"message": "Form created successfully!", "form_id": form.id})
+
+@csrf_exempt
+def submit_response(request, form_id):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        form = get_object_or_404(FillOutForm, id=form_id)
+        student_obj = request.user  # Assuming logged-in student
+        FillOutResponse.objects.create(form=form, student=student_obj, responses=data["responses"])
+        return JsonResponse({"message": "Response submitted successfully!"})
+################################## Otp ##################################################
 import smtplib
 from email.mime.text import MIMEText
 def send_otp(email):
@@ -148,36 +176,6 @@ def send_otp(email):
         logging.error(f"Error in send_otp: {e}")
         return None
 
-def register(request):
-    try:
-        if request.method == 'POST':
-            request.session['rollno'] = request.POST.get('rollno')
-            request.session['password'] = request.POST.get('password')
-            request.session['first_name'] = request.POST.get('first_name')
-            request.session['role'] = request.POST.get('role')
-            request.session['deptt'] = request.POST.get('dept')
-            request.session['section'] = request.POST.get('section')
-            request.session['year'] = request.POST.get('year')
-            request.session['is_staff'] = request.POST.get('role') == 'staff'
-            request.session['leetcode_user'] = request.POST.get('leetcode_user')
-
-            stu_email = f"{request.session['rollno']}@mits.ac.in"
-            
-            try:
-                otp = send_otp(stu_email)
-                request.session['otp'] = otp
-                logging.debug(f"OTP sent: {otp}")
-
-                return redirect('verify_otp')
-
-            except Exception as e:
-                logging.error(f"Error during registration: {e}")
-                return render(request, 'register.html', {'error': str(e)})
-
-        return render(request, 'register.html')
-    except Exception as e:
-        logging.error(f"Error in register: {e}")
-        return HttpResponse("An error occurred.")
 
 def verify_otp(request):
     try:
@@ -217,7 +215,36 @@ def verify_otp(request):
     except Exception as e:
         logging.error(f"Error in verify_otp: {e}")
         return HttpResponse("An error occurred.")
+def register(request):
+    try:
+        if request.method == 'POST':
+            request.session['rollno'] = request.POST.get('rollno')
+            request.session['password'] = request.POST.get('password')
+            request.session['first_name'] = request.POST.get('first_name')
+            request.session['role'] = request.POST.get('role')
+            request.session['deptt'] = request.POST.get('dept')
+            request.session['section'] = request.POST.get('section')
+            request.session['year'] = request.POST.get('year')
+            request.session['is_staff'] = request.POST.get('role') == 'staff'
+            request.session['leetcode_user'] = request.POST.get('leetcode_user')
 
+            stu_email = f"{request.session['rollno']}@mits.ac.in"
+            
+            try:
+                otp = send_otp(stu_email)
+                request.session['otp'] = otp
+                logging.debug(f"OTP sent: {otp}")
+
+                return redirect('verify_otp')
+
+            except Exception as e:
+                logging.error(f"Error during registration: {e}")
+                return render(request, 'register.html', {'error': str(e)})
+
+        return render(request, 'register.html')
+    except Exception as e:
+        logging.error(f"Error in register: {e}")
+        return HttpResponse("An error occurred.")
 from django.db.models import Count
 # @login_required
 def faculty(request):
@@ -227,7 +254,7 @@ def faculty(request):
     except Exception as e:
         logging.error(f"Error in faculty: {e}")
         return HttpResponse("An error occurred.")
-
+################################ FLEX #####################################
 def edit_project(request):
     try:
         if request.method == 'POST':
@@ -326,6 +353,8 @@ def leetcode_request(request, leetcode_user):
     except Exception as e:
         logging.error(f"Error in leetcode_request: {e}")
         return JsonResponse({'error': 'An error occurred.'}, status=500)
+    
+################################ Download #####################################
 
 def download_request(request):
     try:

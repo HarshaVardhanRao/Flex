@@ -1,0 +1,48 @@
+<form id="createForm">
+    <input type="text" id="title" placeholder="Form Title" required />
+    <textarea id="description" placeholder="Description"></textarea>
+    <div id="fieldsContainer"></div>
+    <button type="button" onclick="addField()">Add Field</button>
+    <button type="submit">Create Form</button>
+</form>
+
+<script>
+function addField() {
+    let div = document.createElement("div");
+    div.innerHTML = `
+        <input type="text" placeholder="Field Name" class="field_name" required />
+        <select class="field_type">
+            <option value="text">Text</option>
+            <option value="number">Number</option>
+            <option value="date">Date</option>
+            <option value="choice">Multiple Choice</option>
+        </select>
+    `;
+    document.getElementById("fieldsContainer").appendChild(div);
+}
+
+document.getElementById("createForm").onsubmit = async function(e) {
+    e.preventDefault();
+    let fields = [];
+    document.querySelectorAll("#fieldsContainer div").forEach(div => {
+        fields.push({
+            field_name: div.querySelector(".field_name").value,
+            field_type: div.querySelector(".field_type").value,
+        });
+    });
+
+    let response = await fetch("/create_form/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            title: document.getElementById("title").value,
+            description: document.getElementById("description").value,
+            fields: fields,
+            assigned_students: [1, 2, 3],  // Example student IDs
+        }),
+    });
+
+    let result = await response.json();
+    alert(result.message);
+};
+</script>

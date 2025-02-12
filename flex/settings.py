@@ -89,16 +89,40 @@ AUTHENTICATION_BACKENDS = [
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'flex',
-        'USER': 'mahi',
-        'PASSWORD': 'mahi',
-        'HOST': 'localhost',
-        'PORT': '',
+
+try:
+    # Try PostgreSQL
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'flex',
+            'USER': 'mahi',
+            'PASSWORD': 'mahi',
+            'HOST': 'localhost',
+            'PORT': '',
+        }
     }
-}
+
+    # Check if PostgreSQL is accessible
+    import psycopg2
+    conn = psycopg2.connect(
+        dbname=DATABASES['default']['NAME'],
+        user=DATABASES['default']['USER'],
+        password=DATABASES['default']['PASSWORD'],
+        host=DATABASES['default']['HOST'],
+        port=DATABASES['default']['PORT'],
+    )
+    conn.close()
+
+except Exception:
+    # Fallback to SQLite3 if PostgreSQL fails
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(os.path.dirname(__file__), 'db.sqlite3'),
+        }
+    }
+
 
 
 # Password validation
