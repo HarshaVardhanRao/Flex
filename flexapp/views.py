@@ -122,8 +122,8 @@ def send_otp(email):
         otp = random.randint(100000, 999999)
         logging.debug(f"Generated OTP: {otp}")
         sender_email = "webclubmits@gmail.com"
-        sender_password = "geby ycow vxgn ekxu"
-        smtp_server = "smtp-mail.outlook.com"
+        sender_password = "zpco iaxk aywo rcwg"
+        smtp_server = "smtp.gmail.com"
         smtp_port = 587
         recipient_email = email
 
@@ -143,6 +143,7 @@ def send_otp(email):
             # Send the email
             server.sendmail(sender_email, recipient_email, message.as_string())
             print("OTP sent successfully.")
+        return otp
     except Exception as e:
         logging.error(f"Error in send_otp: {e}")
         return None
@@ -378,9 +379,11 @@ def forgot_password(request):
         if request.method == 'POST':
             rollno = request.POST.get('rollno')
             user = student.objects.get(roll_no=rollno)
-            otp = send_otp(f"{user.email}")
+            otp = send_otp(f"{user.roll_no}@mits.ac.in")
+            print(otp)
             request.session['rollno'] = rollno
             request.session['otp'] = otp
+            print(request.session['otp'])
             return redirect('verify_otp_forgot')
         else:
             return render(request, 'forgot_password.html')
@@ -392,6 +395,8 @@ def verify_otp_forgot(request):
     try:
         if request.method == 'POST':
             otp = request.POST.get('otp')
+            print(otp)
+            print(str(request.session['otp']))
             if otp == str(request.session['otp']):
                 print("OTP Verified")
                 return redirect('reset_password')
