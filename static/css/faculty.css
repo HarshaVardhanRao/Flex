@@ -119,7 +119,7 @@ aside hr {
 aside hr.light-theme {
   background-color: #f39c12;
 }
-aside input[type=search] {
+aside input[type=search], aside input[type=text], aside input[type=number], aside input[type=date] {
   padding: 0.5rem 0.7rem;
   margin: 10px 0;
   font-size: 16px;
@@ -129,19 +129,19 @@ aside input[type=search] {
   background-color: transparent;
   color: #f5f5f5;
 }
-aside input[type=search]::-moz-placeholder {
+aside input[type=search]::-moz-placeholder, aside input[type=text]::-moz-placeholder, aside input[type=number]::-moz-placeholder, aside input[type=date]::-moz-placeholder {
   color: #f5f5f5;
   opacity: 0.7;
 }
-aside input[type=search]::placeholder {
+aside input[type=search]::placeholder, aside input[type=text]::placeholder, aside input[type=number]::placeholder, aside input[type=date]::placeholder {
   color: #f5f5f5;
   opacity: 0.7;
 }
-aside input[type=search]:focus {
+aside input[type=search]:focus, aside input[type=text]:focus, aside input[type=number]:focus, aside input[type=date]:focus {
   border-color: #f39c12 !important;
   background-color: rgba(241, 196, 15, 0.1) !important;
 }
-aside input[type=search]:focus.light-theme {
+aside input[type=search]:focus.light-theme, aside input[type=text]:focus.light-theme, aside input[type=number]:focus.light-theme, aside input[type=date]:focus.light-theme {
   border-color: #f39c12;
   color: #333333;
 }
@@ -174,6 +174,10 @@ aside button:hover {
 aside button:hover.light-theme {
   background-color: #d3a500;
 }
+aside #advanced-filters {
+  display: flex;
+  flex-direction: column;
+}
 
 .table {
   width: 100%;
@@ -199,6 +203,10 @@ table td {
   text-align: left;
   border-bottom: 1px solid #1a1a1a;
 }
+table th input[type=checkbox],
+table td input[type=checkbox] {
+  accent-color: #f1c40f;
+}
 table th.light-theme,
 table td.light-theme {
   border-bottom: 1px solid #fff5e6;
@@ -211,14 +219,14 @@ table th.light-theme {
   background-color: #fff5e6;
   color: #f39c12;
 }
-table tbody tr {
+table tbody tr a {
   cursor: pointer;
   background-color: #000;
 }
-table tbody tr:hover {
+table tbody tr a:hover {
   background-color: #1a1a1a;
 }
-table tbody tr.light-theme {
+table tbody tr a.light-theme {
   background-color: #ffffff;
 }
 
@@ -231,12 +239,18 @@ table tbody tr.light-theme {
 .form-check-label button {
   background-color: black;
   height: 7vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   border-radius: 50%;
   aspect-ratio: 1;
   outline: none;
   border: 2px solid rgba(241, 196, 15, 0.5);
   box-shadow: 0px 0px 3px 2px rgba(241, 196, 15, 0.5);
   transition: all 200ms ease-in-out;
+  overflow: hidden;
 }
 .form-check-label button i {
   background-color: black;
@@ -252,12 +266,12 @@ table tbody tr.light-theme {
   background-color: #fff;
 }
 .form-check-label button:hover {
-  color: white;
   background-color: #f39c12;
   border-color: #f1c40f;
   box-shadow: 0px 0px 10px 3px #f1c40f;
 }
 .form-check-label button:hover i {
+  color: white;
   background-color: #f39c12;
 }
 .form-check-label button:hover.light-theme {
