@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import upload_students
+from .views import upload_students, search_students
 
 urlpatterns = [
 
@@ -25,4 +25,6 @@ urlpatterns = [
     path('reset_password', views.reset_password, name="reset_password"),
     path('profile', views.student_profile, name='profile'),
     path('upload_students/', upload_students, name='upload_students'),
+    path("search_students/", search_students, name="search_students"),
+    path("search_technologies/", views.search_technologies, name="search_technologies"),
 ]

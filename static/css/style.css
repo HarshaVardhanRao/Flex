@@ -30,9 +30,9 @@ body.light-theme {
 }
 
 .blur {
-  height: 100vh;
-  width: 100vw;
-  position: fixed;
+  min-height: 100vh;
+  min-width: 100vw;
+  position: absolute;
   top: 0;
   left: 0;
   -webkit-backdrop-filter: blur(8px);
@@ -42,9 +42,9 @@ body.light-theme {
   justify-content: center;
   z-index: 10;
   display: none;
+  padding: 1.5rem;
 }
 .blur form {
-  max-height: 90vh;
   aspect-ratio: 7.5;
   display: flex;
   flex-direction: column;
@@ -140,7 +140,7 @@ body.light-theme {
   background-color: #f39c12;
   color: #ffffff;
 }
-.blur form button {
+.blur form .close-form-btn {
   position: absolute;
   height: 2.5rem;
   width: 2.5rem;
@@ -156,34 +156,34 @@ body.light-theme {
   border-radius: 50%;
   transition: background-color 200ms linear;
 }
-.blur form button i {
+.blur form .close-form-btn i {
   font-size: 2rem;
   color: #000000;
   transition: color 200ms linear;
 }
-.blur form button i.light-theme {
+.blur form .close-form-btn i.light-theme {
   color: #ffffff;
 }
-.blur form button i.light-theme:hover {
+.blur form .close-form-btn i.light-theme:hover {
   color: #000000;
 }
-.blur form button i:hover {
+.blur form .close-form-btn i:hover {
   color: #ffffff;
 }
-.blur form button:hover {
+.blur form .close-form-btn:hover {
   background-color: red;
 }
-.blur form button.light-theme {
+.blur form .close-form-btn.light-theme {
   background-color: #f39c12;
 }
-.blur form button.light-theme:hover {
+.blur form .close-form-btn.light-theme:hover {
   background-color: red;
 }
 
 header {
   background-color: #1a1a1a;
   color: #f5f5f5;
-  padding: 0;
+  padding: 0.5rem 5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -196,8 +196,14 @@ header.light-theme {
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
 }
 header img {
-  height: 60px;
+  height: 80px;
   border-radius: 50%;
+}
+header .title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 header .title h1 {
   font-size: 2rem;
@@ -276,7 +282,7 @@ main.light-theme {
   border-radius: 10px;
 }
 .section .multiple.light-theme {
-  background-color: #ffffff;
+  background-color: #fff7e9;
 }
 .section .multiple li {
   margin-bottom: 1rem;
@@ -417,6 +423,10 @@ i {
   bottom: 1vh;
   right: 1vw;
   z-index: 10;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  animation: moveLeft 300ms linear;
 }
 .form-check-label button {
   background-color: black;
@@ -442,12 +452,12 @@ i {
   background-color: #fff;
 }
 .form-check-label button:hover {
-  color: white;
   background-color: #f39c12;
   border-color: #f1c40f;
   box-shadow: 0px 0px 10px 3px #f1c40f;
 }
 .form-check-label button:hover i {
+  color: white;
   background-color: #f39c12;
 }
 .form-check-label button:hover.light-theme {
@@ -500,6 +510,16 @@ option.light-theme {
     opacity: 1;
   }
 }
+@keyframes moveLeft {
+  from {
+    transform: translateX(150px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
 @keyframes moveDown {
   from {
     transform: translateY(-10vh);
@@ -519,11 +539,11 @@ option.light-theme {
   }
 }
 .blur-animation {
-  animation: blur 500ms ease-in-out;
+  animation: blur 300ms ease-in-out;
   animation-fill-mode: forwards;
 }
 
 .scale-animation {
-  animation: scaleani 500ms ease-in-out;
+  animation: scaleani 300ms ease-in-out;
   animation-fill-mode: forwards;
 }/*# sourceMappingURL=style.css.map */

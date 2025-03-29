@@ -20,10 +20,13 @@ logging.basicConfig(level=logging.DEBUG)
 
 def getStudentDetails(student):
     try:
-        projects = Projects.objects.filter(rollno=student)
+        # Ensure we are querying the correct model field
+        # projects = Projects.objects.filter(contributors=student)  # Updated line
+        projects = Projects.objects.prefetch_related("technologies").filter(contributors=student)
+        
         Tech_certifications = ForignLanguages.objects.filter(rollno=student, category="Technical")
         For_lang = ForignLanguages.objects.filter(rollno=student, category="Foreign Language")
-        
+
         return {
             "name": student.first_name,
             "rollno": student.roll_no,
@@ -38,6 +41,7 @@ def getStudentDetails(student):
         logging.error(f"Error in getStudentDetails: {e}")
         return {}
 
+
 @login_required
 def dashboard(request):
     try:
@@ -47,22 +51,78 @@ def dashboard(request):
         logging.error(f"Error in dashboard: {e}")
         return HttpResponse("An error occurred.")
 
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+import logging
+from .models import Projects, Technology, student
+
+@login_required
+def search_students(request):
+    if "term" in request.GET:
+        query = request.GET.get("term", "")
+        print(query)
+        students = student.objects.filter(first_name__icontains=query)[:10]  # Limit results
+        students_list = [{"id": s.id, "text": s.first_name} for s in students]
+        return JsonResponse(students_list, safe=False)
+    return JsonResponse([], safe=False)
+
+def search_technologies(request):
+    term = request.GET.get("term", "")
+    technologies = Technology.objects.filter(name__icontains=term).values("id", "name")
+    return JsonResponse(list(technologies), safe=False)
+
+
 @login_required
 def create_project(request):
     try:
         if request.method == 'POST':
-            rollno = request.user
             title = request.POST.get('project-name')
             description = request.POST.get('description')
-            status = request.POST.get('status')
+            year_and_sem = request.POST.get('year-and-sem')
+            status = request.POST.get('status', 'Initialized')
             github_link = request.POST.get('github')
-            new_project = Projects(rollno=rollno, title=title, description=description, github_link=github_link)
+            contributors_ids = request.POST.getlist('contributors')
+            tech_names = request.POST.getlist('technologies')
+
+            # Create project instance
+            new_project = Projects.objects.create(
+                title=title,
+                description=description,
+                year_and_sem=year_and_sem,
+                github_link=github_link,
+                status=status
+            )
+
+            # Add the current user as a contributor (Ensure request.user is a student)
+            if hasattr(request.user, 'student'):
+                new_project.contributors.add(request.user.student)
+
+            # Add additional contributors
+            contributors = student.objects.filter(id__in=contributors_ids)  # Ensure model name is correct
+            new_project.contributors.add(*contributors)
+
+            # Handle technologies
+            tech_objects = [Technology.objects.get_or_create(id=tech_name)[0] for tech_name in tech_names]
+            print(tech_objects)
+
+
+# Add them to the project
+            new_project.technologies.add(*tech_objects)
+
+
+            # new_project.technologies.add(*tech_objects)
+
             new_project.save()
             return redirect('dashboard')
-        return render(request, 'dashboard.html')
+
+        students = student.objects.all()  # Fetch students for selection
+        technologies = Technology.objects.all()  # Fetch available technologies
+        return render(request, 'dashboard.html', {'students': students, 'technologies': technologies})
+
     except Exception as e:
         logging.error(f"Error in create_project: {e}")
         return HttpResponse("An error occurred.")
+
 
 @login_required
 def add_certification(request):

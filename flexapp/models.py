@@ -42,6 +42,13 @@ class Faculty(AbstractUser):
 
     def type(self):
         return "Faculty"
+    
+
+class Technology(models.Model):
+    name = models.CharField(max_length=50)
+    def __str__(self):
+        return self.name
+
 
 
 class student(AbstractUser):
@@ -98,20 +105,25 @@ class ForignLanguages(models.Model):
         return f"{self.rollno} - {self.title}"
 
 class Projects(models.Model):
-    rollno = models.ForeignKey(student,on_delete=models.CASCADE, related_name="Projects")
+    contributors = models.ManyToManyField(student, related_name="projects")
     title = models.CharField(max_length=255)
     description = models.TextField()
-    YEAR_AND_SEM_CHOICES = [("I-I", "I-I"), ("I-II", "I-II"), ("II-I", "II-I"), ("II-II", "II-II"), ("III-I", "III-I"), ("III-II", "III-II"), ("IV-I", "IV-I"), ("IV-II", "IV-II")]
+    YEAR_AND_SEM_CHOICES = [
+        ("I-I", "I-I"), ("I-II", "I-II"), ("II-I", "II-I"), ("II-II", "II-II"), 
+        ("III-I", "III-I"), ("III-II", "III-II"), ("IV-I", "IV-I"), ("IV-II", "IV-II")
+    ]
     year_and_sem = models.CharField(max_length=10, choices=YEAR_AND_SEM_CHOICES)
     github_link = models.URLField(blank=True)
-    Status_choices = [
-        ("Initialized","Initialized"),
-        ("In_progress","In Progress"),
-        ("completed","Completed"),
+    status_choices = [
+        ("Initialized", "Initialized"),
+        ("In_progress", "In Progress"),
+        ("Completed", "Completed"),
     ]
-    status = models.CharField(max_length=255,choices=Status_choices,default="Initialized")
+    status = models.CharField(max_length=255, choices=status_choices, default="Initialized")
+    technologies = models.ManyToManyField(Technology, related_name="projects", blank=True)
+
     def __str__(self):
-        return f"{self.rollno} - {self.title}"
+        return self.title
 
 
 User = get_user_model()
