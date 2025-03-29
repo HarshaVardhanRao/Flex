@@ -71,7 +71,10 @@ def search_technologies(request):
     technologies = Technology.objects.filter(name__icontains=term).values("id", "name")
     return JsonResponse(list(technologies), safe=False)
 
+import ast
 
+def clean_list(lst_str):
+    return list(map(int, ast.literal_eval(lst_str)[0].split(',')))
 @login_required
 def create_project(request):
     try:
@@ -83,6 +86,10 @@ def create_project(request):
             github_link = request.POST.get('github')
             contributors_ids = request.POST.getlist('contributors')
             tech_names = request.POST.getlist('technologies')
+            contributors_ids = clean_list(str(contributors_ids))
+            tech_names = clean_list(str(tech_names))
+            print(contributors_ids)
+            print(tech_names)
 
             # Create project instance
             new_project = Projects.objects.create(
