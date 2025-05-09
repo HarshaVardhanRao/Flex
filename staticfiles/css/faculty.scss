@@ -1,0 +1,357 @@
+$primary-color: #000000; // Black
+$primary-light: #1a1a1a; // Dark gray
+$accent-color: #f1c40f; // Yellow
+$dark-accent-color: #f39c12; // Darker yellow
+$text-color: #f5f5f5; // Very light gray for text
+$heading-color: #f1c40f; // Yellow for headings
+$shadow-color: rgba(
+	241,
+	196,
+	15,
+	0.5
+); // Semi-transparent yellow for box shadows
+$button-bg-color: $accent-color; // Button background color
+$button-text-color: $primary-color; // Button text color
+$button-hover-bg-color: $dark-accent-color; // Button hover background color
+
+$light-primary-color: rgb(255, 249, 240); // Light gray background color
+$light-primary-light: #ffffff; // Pure white for sections if needed
+$light-accent-color: #f39c12; // Darker yellow for light theme
+$light-text-color: #333333; // Darker text for better contrast
+$light-button-bg-color: $light-accent-color; // Button background for light theme
+$light-button-text-color: #ffffff; // Button text color for light theme
+$light-button-hover-bg-color: #d3a500; // Darker shade for button hover in light theme
+$light-shadow-color: rgba(0, 0, 0, 0.1); // Subtle black shadow for light theme
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: "Arial", sans-serif;
+	transition: background-color 500ms ease-in-out;
+
+	&::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background-color: $accent-color;
+		border-radius: 5px;
+
+		&.light-theme {
+			background-color: $light-accent-color;
+		}
+	}
+}
+
+body {
+	background-color: $primary-color; // Dark background
+	color: $text-color; // Light text color
+	line-height: 1.6;
+
+	&.light-theme {
+		background-color: $light-primary-color; // Light gray background
+		color: $light-text-color; // Dark text color
+	}
+}
+
+header {
+	background-color: $primary-light; // Dark header background
+	color: $text-color; // Light text color
+	padding: 0;
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	box-shadow: 0px 4px 8px $shadow-color;
+
+	&.light-theme {
+		background-color: $light-primary-light; // Light header background
+		color: $light-text-color; // Dark text color
+		box-shadow: 0px 2px 4px $light-shadow-color; // Subtle black shadow in light theme
+	}
+
+	img {
+		height: 60px;
+		border-radius: 50%;
+	}
+
+	.title {
+		h1 {
+			font-size: 2rem;
+			color: $accent-color;
+
+			&.light-theme {
+				color: $light-accent-color; // Darker yellow for light theme
+			}
+		}
+	}
+}
+
+main {
+	display: grid;
+	grid-template-columns: 20% 77%;
+	padding: 1%;
+	gap: 3%;
+	margin: 2rem auto;
+	position: relative;
+
+	&.light-theme {
+		background-color: $light-primary-color; // Light gray main background
+	}
+}
+
+.left-bar {
+	position: sticky;
+	top: 16vh;
+	height: fit-content;
+
+	& > button {
+		width: 100%;
+		text-align: center;
+		padding: 0.5rem;
+		border-radius: 10px;
+		border: none;
+		outline: none;
+		font-size: 1.1rem;
+		cursor: pointer;
+		background-color: $button-bg-color;
+		color: $button-text-color;
+
+		&:hover {
+			background-color: $button-hover-bg-color; // Button hover color
+
+			&.light-theme {
+				background-color: $light-button-hover-bg-color; // Light theme button hover color
+			}
+		}
+	}
+}
+
+aside {
+	display: flex;
+	gap: 1rem;
+	flex-direction: column;
+	background-color: $primary-light;
+	border-radius: 10px;
+	padding: 0.5rem;
+	box-shadow: 0 4px 12px $accent-color;
+
+	&.light-theme {
+		background-color: $light-primary-light; // Light background for aside
+	}
+
+	h2 {
+		color: #f1c40f;
+
+		&.light-theme {
+			color: $light-accent-color; // Darker color for light theme
+		}
+	}
+
+	hr {
+		opacity: 22%;
+		border: none;
+		height: 1px;
+		background-color: #f1c40f;
+
+		&.light-theme {
+			background-color: $light-accent-color; // Darker hr for light theme
+		}
+	}
+
+	input[type="search"], input[type="text"], input[type="number"], input[type="date"] {
+		padding: 0.5rem 0.7rem;
+		margin: 10px 0;
+		font-size: 16px;
+		outline: none;
+		border-radius: 10px;
+		border: 1px solid $accent-color; // Border color
+		background-color: transparent; // Transparent background
+		color: $text-color; // Text color
+
+		&::placeholder {
+			color: $text-color; // Placeholder text color
+			opacity: 0.7; // Slightly transparent
+		}
+
+		&:focus {
+			border-color: $dark-accent-color !important; // Darker border on focus
+			background-color: rgba(
+				241,
+				196,
+				15,
+				0.1
+			) !important; // Light background on focus
+
+			&.light-theme {
+				border-color: $light-accent-color; // Light border color
+				color: $light-text-color; // Dark text color in light theme
+			}
+		}
+	}
+
+	.radio-group {
+		display: flex;
+		align-items: center;
+		justify-content: space-around;
+
+		input[type="radio"] {
+			accent-color: $accent-color;
+		}
+	}
+
+	button {
+		width: fit-content;
+		padding: 0.5rem;
+		border-radius: 10px;
+		border: none;
+		outline: none;
+		font-size: 1.1rem;
+		cursor: pointer;
+		background-color: $button-bg-color;
+		color: $button-text-color;
+
+		&.reset {
+			background-color: #f5f5f5;
+		}
+
+		&:hover {
+			background-color: $button-hover-bg-color; // Button hover color
+
+			&.light-theme {
+				background-color: $light-button-hover-bg-color; // Light theme button hover color
+			}
+		}
+	}
+	#advanced-filters{
+		display: flex;
+		flex-direction: column;
+	}
+}
+
+.table {
+	width: 100%;
+	height: fit-content;
+	border-radius: 10px;
+	border: 5px solid $primary-light;
+	box-shadow: 0 4px 12px $accent-color;
+	transition: border 500ms ease-in-out;
+
+	&.light-theme {
+		border: 5px solid darken($light-primary-color, 2%); // Light theme table border
+	}
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	border-radius: 10px;
+
+	th,
+	td {
+		padding: 0.75rem;
+		text-align: left;
+		border-bottom: 1px solid $primary-light;
+
+		input[type="checkbox"] {
+			accent-color: $accent-color;
+		}
+
+		&.light-theme {
+			border-bottom: 1px solid darken($light-primary-color, 2%); // Light theme border
+		}
+	}
+
+	th {
+		background-color: $primary-light;
+		color: #f1c40f;
+
+		&.light-theme {
+			background-color: darken(
+				$light-primary-color,
+				2%
+			); // Light theme header background
+			color: $light-accent-color; // Light theme header text color
+		}
+	}
+
+	tbody {
+		tr a {
+			cursor: pointer;
+			background-color: #000;
+
+			&:hover {
+				background-color: $primary-light; // Highlight on hover
+			}
+			&.light-theme {
+				background-color: $light-primary-light; // Light theme hover highlight
+			}
+		}
+	}
+}
+
+.form-check-label {
+	position: fixed;
+	bottom: 1vh;
+	right: 1vw;
+	z-index: 10;
+
+	button {
+		background-color: black;
+		height: 7vh;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+		border-radius: 50%;
+		aspect-ratio: 1;
+		outline: none;
+		border: 2px solid $shadow-color;
+		box-shadow: 0px 0px 3px 2px $shadow-color;
+		transition: all 200ms ease-in-out;
+		overflow: hidden;
+
+		i {
+			background-color: black;
+			font-size: 1.8rem;
+			transition: all 200ms ease-in-out;
+			font-weight: 1000;
+			color: $accent-color;
+
+			&.light-theme {
+				background-color: white;
+			}
+		}
+
+		&.light-theme {
+			background-color: #fff; // Light theme button background
+		}
+
+		&:hover {
+			background-color: $dark-accent-color;
+			border-color: $accent-color;
+			box-shadow: 0px 0px 10px 3px $accent-color;
+
+			i {
+				color: white;
+				background-color: $dark-accent-color;
+			}
+
+			&.light-theme {
+				color: $light-text-color; // Dark text for light theme
+			}
+		}
+	}
+
+	&.light-theme {
+		color: $light-text-color; // Dark text for light theme
+	}
+
+	@media screen and (max-width: 768px) {
+		position: fixed;
+	}
+}

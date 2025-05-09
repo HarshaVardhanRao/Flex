@@ -66,7 +66,6 @@ class student(AbstractUser):
     githublink = models.URLField(default=None,null=True)
     groups = models.ManyToManyField(Group, related_name="studentGroups")
     user_permissions = models.ManyToManyField(Permission, related_name="studentPermissions")
-    github_link = models.URLField(blank=True,null=True)
     phone = models.CharField(max_length=12, default="", null=True, blank=True)
     mentor = models.ForeignKey("Faculty", on_delete=models.SET_NULL, related_name="mentees", null=True, blank=True)
 
@@ -124,7 +123,18 @@ class Projects(models.Model):
 
     def __str__(self):
         return self.title
+from django.utils import timezone
 
+class Notification(models.Model):
+    recipient = models.ForeignKey("student", on_delete=models.CASCADE, related_name="notifications")
+    project = models.ForeignKey("Projects", on_delete=models.CASCADE, related_name="notifications")
+    message = models.TextField()
+    created_at = models.DateTimeField(default=timezone.now)
+    is_read = models.BooleanField(default=False)
+    is_accepted = models.BooleanField(null=True, blank=True)  # None = pending, True = accepted, False = declined
+
+    def __str__(self):
+        return f"{self.recipient} - {self.message[:30]}"
 
 User = get_user_model()
 

@@ -1,0 +1,616 @@
+$primary-color: #000000; // Black
+$primary-light: #1a1a1a; // Dark gray
+$accent-color: #f1c40f; // Yellow
+$dark-accent-color: #f39c12; // Darker yellow
+$text-color: #f5f5f5; // Very light gray for text
+$heading-color: #f1c40f; // Yellow for headings
+$shadow-color: rgba(
+	241,
+	196,
+	15,
+	0.5
+); // Semi-transparent yellow for box shadows
+$button-bg-color: $accent-color; // Button background color
+$button-text-color: $primary-color; // Button text color
+$button-hover-bg-color: $dark-accent-color; // Button hover background color
+$button-icon-color: $text-color; // Button icon color
+
+$light-primary-color: rgb(255, 249, 240); // Light gray background color
+$light-primary-light: #ffffff; // Pure white for sections if needed
+$light-accent-color: #f39c12; // Darker yellow for light theme
+$light-text-color: #333333; // Darker text for better contrast
+$light-button-bg-color: $light-accent-color; // Button background for light theme
+$light-button-text-color: #ffffff; // Button text color for light theme
+$light-button-hover-bg-color: #d3a500; // Darker shade for button hover in light theme
+$light-shadow-color: rgba(0, 0, 0, 0.1); // Subtle black shadow for light theme
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: "Arial", sans-serif;
+	transition: background-color 500ms ease-in-out;
+
+	&::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background-color: $accent-color;
+		border-radius: 5px;
+
+		&.light-theme {
+			background-color: $light-accent-color;
+		}
+	}
+}
+
+body {
+	background-color: $primary-color; // Dark background
+	color: $text-color; // Light text color
+	line-height: 1.6;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+
+	&.light-theme {
+		background-color: $light-primary-color; // Light gray background
+		color: $light-text-color; // Dark text color
+	}
+}
+
+.blur {
+	min-height: 100vh;
+	min-width: 100vw;
+	position: absolute;
+	top: 0;
+	left: 0;
+	// transition: all 500ms ease-in-out;
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 10;
+	display: none;
+	padding: 1.5rem;
+	form {
+		aspect-ratio: 7.5;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		position: relative;
+		padding: 1.5rem;
+		border-radius: 10px;
+		background-color: $primary-light; // Dark background for form
+		box-shadow: 0px 4px 12px $shadow-color; // Shadow for form
+		// transition: all 500ms ease-in-out;
+		&.light-theme {
+			background-color: $light-primary-light; // Light background for form
+			box-shadow: 0px 2px 4px $light-shadow-color; // Subtle shadow in light theme
+		}
+
+		input[type="text"],
+		input[type="email"],
+		input[type="password"],
+		textarea,
+		select {
+			padding: 0.3rem;
+			border: 1px solid $accent-color; // Border color
+			border-radius: 5px;
+			background-color: transparent; // Transparent background
+			color: $text-color; // Text color
+			font-size: 1rem;
+			transition: border-color 0.3s, background-color 0.3s;
+
+			&::placeholder {
+				color: $text-color; // Placeholder text color
+				opacity: 0.7; // Slightly transparent
+			}
+
+			&:focus,
+			&:active {
+				outline: none; // Remove default outline
+				border-color: $dark-accent-color !important; // Darker border on focus
+				background-color: rgba(
+					241,
+					196,
+					15,
+					0.1
+				) !important; // Light background on focus
+			}
+
+			&.light-theme {
+				border-color: $light-accent-color; // Light border color
+				color: black; // Dark text color in light theme
+
+				&::placeholder {
+					color: $light-text-color; // Light theme placeholder color
+				}
+
+				&:focus {
+					border-color: $light-button-hover-bg-color; // Darker border on focus in light theme
+					background-color: rgba(
+						0,
+						0,
+						0,
+						0.1
+					); // Slightly darker background on focus
+				}
+			}
+		}
+
+		input[type="submit"] {
+			background-color: $button-bg-color; // Button background color
+			color: $button-text-color; // Button text color
+			border: none;
+			border-radius: 5px;
+			padding: 0.75rem;
+			font-size: 1rem;
+			cursor: pointer;
+			transition: background-color 0.3s;
+
+			&:hover {
+				background-color: $button-hover-bg-color; // Button hover color
+			}
+
+			&.light-theme {
+				background-color: $light-button-bg-color; // Light theme button background
+				color: $light-button-text-color; // Light theme button text color
+			}
+		}
+
+		.close-form-btn {
+			position: absolute;
+			height: 2.5rem;
+			width: 2.5rem;
+			aspect-ratio: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			outline: none;
+			border: none;
+			top: -1rem;
+			right: -1rem;
+			background-color: $button-bg-color;
+			border-radius: 50%;
+			transition: background-color 200ms linear;
+			i {
+				font-size: 2rem;
+				color: $button-text-color;
+				transition: color 200ms linear;
+				&.light-theme {
+					color: $light-button-text-color;
+				}
+				&.light-theme:hover {
+					color: $button-text-color;
+				}
+				&:hover {
+					color: $light-button-text-color;
+				}
+			}
+			&:hover {
+				background-color: red;
+			}
+			&.light-theme {
+				background-color: $light-button-bg-color;
+			}
+			&.light-theme:hover {
+				background-color: red;
+			}
+		}
+	}
+}
+
+header {
+	background-color: $primary-light; // Dark header background
+	color: $text-color; // Light text color
+	padding: 0.5rem 5rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	box-shadow: 0px 4px 8px $shadow-color;
+	animation: moveDown 300ms linear;
+
+	&.light-theme {
+		background-color: $light-primary-light; // Light header background
+		color: $light-text-color; // Dark text color
+		box-shadow: 0px 2px 4px $light-shadow-color; // Subtle black shadow in light theme
+	}
+
+	img {
+		height: 80px;
+		border-radius: 50%;
+	}
+
+	.title {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+		h1 {
+			font-size: 2rem;
+			color: $accent-color;
+			&.light-theme {
+				color: $light-accent-color; // Darker yellow for light theme
+			}
+		}
+	}
+}
+
+main {
+	width: 90%;
+	margin: 2rem auto;
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+
+	&.light-theme {
+		background-color: $light-primary-color; // Light gray main background
+	}
+}
+
+.card {
+	background-color: $primary-light; // Dark card background
+	color: $text-color; // Light text color
+	border: none;
+
+	&.light-theme {
+		background-color: $light-primary-light; // Light gray for card
+		color: $light-text-color; // Dark text color
+		box-shadow: 0px 2px 4px $light-shadow-color; // Subtle black shadow in light theme
+	}
+}
+
+.section {
+	background-color: $primary-light; // Dark section background
+	padding: 1.5rem;
+	border-radius: 10px;
+	box-shadow: 0px 4px 12px $shadow-color;
+	opacity: 0;
+
+	animation: moveUp 300ms ease-in;
+	animation-fill-mode: forwards;
+
+	&:nth-child(1) {
+		animation-delay: 100ms;
+	}
+	&:nth-child(2) {
+		animation-delay: 200ms;
+	}
+	&:nth-child(3) {
+		animation-delay: 300ms;
+	}
+
+	&.light-theme {
+		background-color: $light-primary-light; // Light gray for sections
+		box-shadow: 0px 2px 4px $light-shadow-color; // Subtle black shadow in light theme
+	}
+
+	h2 {
+		color: $accent-color;
+		text-align: center;
+		margin-bottom: 1rem;
+
+		&.light-theme {
+			color: $light-accent-color; // Darker heading color for light theme
+		}
+	}
+
+	hr {
+		border: none;
+		height: 2px;
+		background-color: $accent-color;
+		margin-bottom: 1rem;
+
+		&.light-theme {
+			background-color: $light-accent-color; // Darker hr for light theme
+		}
+	}
+
+	.multiple {
+		height: 300px;
+		overflow-y: auto;
+		padding: 0.5rem;
+		background-color: $primary-color;
+		border-radius: 10px;
+
+		&.light-theme {
+			background-color: #fff7e9; // Light background for list
+		}
+
+		li {
+			margin-bottom: 1rem;
+			position: relative;
+
+			h5 {
+				color: $accent-color;
+				margin-bottom: 0.5rem;
+
+				&.light-theme {
+					color: $light-accent-color; // Darker color for light theme
+				}
+			}
+
+			p {
+				color: $text-color;
+				margin-bottom: 0.5rem;
+
+				&.light-theme {
+					color: $light-text-color; // Dark text for light theme
+				}
+			}
+
+			a {
+				color: $accent-color;
+
+				&:hover {
+					color: $dark-accent-color; // Darker shade for hover effect
+				}
+			}
+
+			& > .buttons {
+				display: flex;
+				gap: 10px;
+			}
+
+			button {
+				border-radius: 10px;
+				border: none;
+				height: 2rem;
+				width: 2rem;
+				outline: none;
+				display: flex;
+				align-items: center;
+				background-color: #1a1a1a;
+
+				&.light-theme {
+					background-color: lighten(#f39c12, 30%);
+				}
+				i {
+					color: white;
+					font-size: 1rem;
+					margin-inline: auto;
+				}
+			}
+		}
+	}
+
+	// Button styles
+	& > button {
+		background-color: $button-bg-color;
+		color: $button-text-color;
+		border: none;
+		border-radius: 5px;
+		padding: 0.5rem 1rem;
+		font-size: 1rem;
+		cursor: pointer;
+		transition: background-color 0.3s;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		&:hover {
+			background-color: $button-hover-bg-color;
+		}
+
+		i {
+			font-size: 1.2rem;
+			color: $button-icon-color;
+			margin-right: 0.5rem;
+		}
+
+		&.light-theme {
+			background-color: $light-button-bg-color; // Button background for light theme
+			color: $light-button-text-color; // Button text color for light theme
+		}
+	}
+}
+
+i {
+	font-size: 1.5rem;
+	color: $accent-color;
+}
+
+.profile {
+	display: flex;
+	align-items: center;
+	justify-content: space-around;
+	padding: 1rem;
+	background-color: $primary-light;
+	border-radius: 10px;
+	box-shadow: 0px 4px 12px $shadow-color;
+	animation: moveRight 500ms ease-in;
+
+	&.light-theme {
+		background-color: $light-primary-light; // Light profile background
+		box-shadow: 0px 2px 4px $light-shadow-color; // Subtle black shadow in light theme
+	}
+
+	.detail {
+		p {
+			font-size: 1.2rem;
+			color: $text-color;
+
+			&.light-theme {
+				color: $light-text-color; // Dark text for light theme
+			}
+		}
+	}
+
+	.leetcode {
+		display: flex;
+		flex-direction: column;
+		h5 {
+			color: $accent-color;
+			margin-bottom: 0.5rem;
+
+			&.light-theme {
+				color: $light-accent-color; // Darker color for light theme
+			}
+		}
+
+		.leetcode-problems {
+			display: none;
+		}
+
+		.animator {
+			height: 5rem;
+			width: 100%;
+			align-self: center;
+			justify-self: center;
+
+			svg {
+				width: 100%;
+				height: 100%;
+			}
+		}
+	}
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 2rem;
+
+	@media (max-width: 768px) {
+		grid-template-columns: 1fr;
+	}
+}
+
+.form-check-label {
+	position: fixed;
+	bottom: 1vh;
+	right: 1vw;
+	z-index: 10;
+	display: flex;
+	flex-direction: column-reverse;
+	gap: 10px;
+	animation: moveLeft 300ms linear;
+
+	button {
+		background-color: black;
+		height: 7vh;
+		border-radius: 50%;
+		aspect-ratio: 1;
+		outline: none;
+		border: 2px solid $shadow-color;
+		box-shadow: 0px 0px 3px 2px $shadow-color;
+		transition: all 200ms ease-in-out;
+
+		i {
+			background-color: black;
+			font-size: 1.8rem;
+			transition: all 200ms ease-in-out;
+			font-weight: 1000;
+			color: $accent-color;
+
+			&.light-theme {
+				background-color: white;
+			}
+		}
+
+		&.light-theme {
+			background-color: #fff; // Light theme button background
+		}
+
+		&:hover {
+			background-color: $dark-accent-color;
+			border-color: $accent-color;
+			box-shadow: 0px 0px 10px 3px $accent-color;
+
+			i {
+				color: white;
+				background-color: $dark-accent-color;
+			}
+
+			&.light-theme {
+				color: $light-text-color; // Dark text for light theme
+			}
+		}
+	}
+
+	&.light-theme {
+		color: $light-text-color; // Dark text for light theme
+	}
+
+	@media screen and (max-width: 768px) {
+		position: fixed;
+	}
+}
+
+option {
+	background-color: $primary-light;
+	&.light-theme {
+		background-color: $light-primary-color;
+		color: $primary-color; // Light background for options
+	}
+}
+@keyframes blur {
+	from {
+		backdrop-filter: blur(0px);
+	}
+	to {
+		backdrop-filter: blur(8px);
+	}
+}
+
+@keyframes scaleani {
+	0% {
+		transform: scale(0.8);
+		opacity: 0;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+@keyframes moveUp {
+	from {
+		transform: translateY(150px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+@keyframes moveLeft {
+	from {
+		transform: translateX(150px);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
+
+@keyframes moveDown {
+	from {
+		transform: translateY(-10vh);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+@keyframes moveRight {
+	from {
+		transform: translateX(-90vw);
+	}
+	to {
+		transform: translateX(0);
+	}
+}
+.blur-animation {
+	animation: blur 300ms ease-in-out;
+	animation-fill-mode: forwards;
+}
+.scale-animation {
+	animation: scaleani 300ms ease-in-out;
+	animation-fill-mode: forwards;
+}

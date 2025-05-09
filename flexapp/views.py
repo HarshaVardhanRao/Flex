@@ -71,10 +71,44 @@ def search_technologies(request):
     technologies = Technology.objects.filter(name__icontains=term).values("id", "name")
     return JsonResponse(list(technologies), safe=False)
 
-import ast
-
 def clean_list(lst_str):
     return list(map(int, ast.literal_eval(lst_str)[0].split(',')))
+
+import ast
+import logging
+import requests
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.http import HttpResponse
+from .models import Projects, student, Technology
+
+def extract_languages_from_github(github_url, project_instance):
+    try:
+        if "github.com/" not in github_url:
+            return
+
+        parts = github_url.strip('/').split("github.com/")[-1].split('/')
+        if len(parts) < 2:
+            return
+
+        owner, repo = parts[0], parts[1]
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/languages"
+        response = requests.get(api_url)
+        if response.status_code != 200:
+            return
+
+        data = response.json()
+        languages = list(data.keys())
+        print(languages)
+
+        for lang in languages:
+            tech_obj, _ = Technology.objects.get_or_create(name=lang.capitalize())
+            project_instance.technologies.add(tech_obj)
+
+    except Exception as e:
+        print(f"Error extracting languages: {e}")
+
+
 @login_required
 def create_project(request):
     try:
@@ -86,12 +120,11 @@ def create_project(request):
             github_link = request.POST.get('github')
             contributors_ids = request.POST.getlist('contributors')
             tech_names = request.POST.getlist('technologies')
-            contributors_ids = clean_list(str(contributors_ids))
-            tech_names = clean_list(str(tech_names))
-            print(contributors_ids)
-            print(tech_names)
 
-            # Create project instance
+            contributors_ids = [id.strip() for id in contributors_ids if id.strip()]
+            tech_names = [tech.strip().capitalize() for tech in tech_names if tech.strip()]
+
+            # Step 1: Create project first
             new_project = Projects.objects.create(
                 title=title,
                 description=description,
@@ -100,36 +133,36 @@ def create_project(request):
                 status=status
             )
 
-            # Add the current user as a contributor (Ensure request.user is a student)
+            # Step 2: Add current user if student
             if hasattr(request.user, 'student'):
                 new_project.contributors.add(request.user.student)
 
-            # Add additional contributors
-            contributors = student.objects.filter(id__in=contributors_ids)  # Ensure model name is correct
+            # Step 3: Add additional contributors
+            contributors = student.objects.filter(id__in=contributors_ids)
             new_project.contributors.add(*contributors)
 
-            # Handle technologies
-            tech_objects = [Technology.objects.get_or_create(id=tech_name)[0] for tech_name in tech_names]
-            print(tech_objects)
-
-
-# Add them to the project
+            # Step 4: Add selected technologies
+            tech_objects = []
+            for tech_name in tech_names:
+                tech_obj, _ = Technology.objects.get_or_create(name=tech_name)
+                tech_objects.append(tech_obj)
             new_project.technologies.add(*tech_objects)
 
-
-            # new_project.technologies.add(*tech_objects)
+            # Step 5: Extract GitHub languages if none selected
+            if not tech_objects and github_link:
+                extract_languages_from_github(github_link, new_project)
 
             new_project.save()
             return redirect('dashboard')
 
-        students = student.objects.all()  # Fetch students for selection
-        technologies = Technology.objects.all()  # Fetch available technologies
+        # GET request
+        students = student.objects.all()
+        technologies = Technology.objects.all()
         return render(request, 'dashboard.html', {'students': students, 'technologies': technologies})
 
     except Exception as e:
         logging.error(f"Error in create_project: {e}")
         return HttpResponse("An error occurred.")
-
 
 @login_required
 def add_certification(request):
