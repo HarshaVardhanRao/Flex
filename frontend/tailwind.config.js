@@ -3,6 +3,10 @@ module.exports = {
 	content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
 	theme: {
 		extend: {
+			boxShadow: {
+				md: "0px 4px 12px rgba(241, 196, 15, 0.5)",
+				"dark-sm": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+			},
 			animation: {
 				moveUp: "moveUp 0.3s ease-in-out forwards",
 				moveDown: "moveDown 0.3s ease-in-out forwards",

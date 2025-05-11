@@ -1,11 +1,11 @@
 function Section({ title, data = [], onAddClick }) {
 	return (
-		<div className="bg-[#1a1a1a] text-white p-6 rounded-lg shadow-lg shadow-yellow-400 animate-moveUp">
-			<h2 className="text-center text-2xl text-yellow-400 mb-4">
+		<div className="bg-[#1a1a1a] text-white p-6 rounded-lg shadow-md animate-moveUp">
+			<h2 className="text-center text-3xl font-bold text-yellow-400 mb-4">
 				{title}
 			</h2>
 			<hr className="border-yellow-400 mb-4" />
-			<ul className="max-h-[300px] overflow-y-auto bg-black p-2 rounded-lg space-y-4">
+			<ul className="h-[300px] overflow-y-auto bg-black p-2 rounded-lg space-y-4">
 				{data.length === 0 ? (
 					<li className="text-gray-400">No data available.</li>
 				) : (
