@@ -226,7 +226,7 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.recipient} - {self.message[:30]}"
-
+################## FIllOut #########################
 User = get_user_model()
 
 class FillOutForm(models.Model):
@@ -246,15 +246,17 @@ class FillOutField(models.Model):
         ("number", "Number"),
         ("date", "Date"),
         ("choice", "Multiple Choice"),
+        ("file_awk", "Pick Certificate"),  # NEW
     ]
 
     form = models.ForeignKey(FillOutForm, on_delete=models.CASCADE, related_name="fields")
     field_name = models.CharField(max_length=255)
     field_type = models.CharField(max_length=20, choices=FIELD_TYPES)
-    options = models.TextField(blank=True, null=True)  # JSON list for multiple choices
+    options = models.TextField(blank=True, null=True)  # Optional even for file_awk
 
     def __str__(self):
         return f"{self.form.title} - {self.field_name}"
+
 
 
 class FillOutResponse(models.Model):

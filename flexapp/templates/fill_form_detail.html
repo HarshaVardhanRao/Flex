@@ -1,0 +1,44 @@
+<!-- templates/fill_form_detail.html -->
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block content %}
+<h2>{{ form.title }}</h2>
+<p>{{ form.description }}</p>
+
+<form method="post">
+    {% csrf_token %}
+    {% for field in fields %}
+    <label>{{ field.field_name }}:</label><br>
+
+    {% if field.field_type == "text" %}
+        <input type="text" name="{{ field.id }}" required><br>
+
+    {% elif field.field_type == "number" %}
+        <input type="number" name="{{ field.id }}" required><br>
+
+    {% elif field.field_type == "date" %}
+        <input type="date" name="{{ field.id }}" required><br>
+
+    {% elif field.field_type == "choice" %}
+        {% for option in field.options|split_by_comma %}
+    <input type="radio" name="{{ field.id }}" value="{{ option|trim }}" required> {{ option|trim }}<br>
+{% endfor %}
+
+
+    {% elif field.field_type == "file_awk" %}
+    <label for="{{ field.id }}">{{ field.field_name }}</label>
+    <select name="{{ field.id }}" required>
+        <option value="" selected disabled>Select a certificate</option>
+        {% for cert in certificates %}
+            <option value="{{ cert.certificate.id }}">{{ cert.name }}</option>
+        {% endfor %}
+    </select>
+{% endif %}
+
+    <br>
+{% endfor %}
+
+    <input type="submit" value="Submit">
+</form>
+{% endblock %}

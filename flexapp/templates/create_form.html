@@ -1,48 +1,122 @@
-<form id="createForm">
-    <input type="text" id="title" placeholder="Form Title" required />
-    <textarea id="description" placeholder="Description"></textarea>
-    <div id="fieldsContainer"></div>
-    <button type="button" onclick="addField()">Add Field</button>
-    <button type="submit">Create Form</button>
+<!-- templates/create_form.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Create New Form</h2>
+
+<form method="post">
+    {% csrf_token %}
+    <label>Form Title:</label><br>
+    <input type="text" name="title" required><br><br>
+
+    <label>Description:</label><br>
+    <textarea name="description"></textarea><br><br>
+
+    <h4>Filter Students (optional)</h4>
+    <label>Department:</label>
+    <select id="deptFilter" onchange="filterStudents()">
+        <option value="">All</option>
+        {% for code, name in students.first.DEPT_CHOICES %}
+            <option value="{{ code }}">{{ name }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Year:</label>
+    <select id="yearFilter" onchange="filterStudents()">
+        <option value="">All</option>
+        {% for year in years %}
+            <option value="{{ year }}">{{ year }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Section:</label>
+    <select id="sectionFilter" onchange="filterStudents()">
+        <option value="">All</option>
+        {% for sec, _ in students.first.SECTION_CHOICES %}
+            <option value="{{ sec }}">{{ sec }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Mentor:</label>
+    <select id="mentorFilter" onchange="filterStudents()">
+        <option value="">All</option>
+        {% for mentor in mentors %}
+            <option value="{{ mentor.id }}">{{ mentor.first_name }} {{ mentor.last_name }}</option>
+        {% endfor %}
+    </select>
+
+    <br><br>
+    <div id="students-list">
+        {% for student in students %}
+            <label class="student-option"
+                   data-dept="{{ student.dept }}"
+                   data-year="{{ student.year }}"
+                   data-section="{{ student.section }}"
+                   data-mentor="{% if student.mentor %}{{ student.mentor.id }}{% endif %}">
+                <input type="checkbox" name="assigned_students" value="{{ student.id }}">
+                {{ student.first_name }} ({{ student.roll_no }})
+            </label><br>
+        {% endfor %}
+    </div>
+
+    <hr>
+    <h4>Fields</h4>
+    <div id="fields-container"></div>
+    <button type="button" onclick="addField()">Add Field</button><br><br>
+
+    <input type="submit" value="Create Form">
 </form>
 
 <script>
+let fieldIndex = 0;
+
 function addField() {
-    let div = document.createElement("div");
-    div.innerHTML = `
-        <input type="text" placeholder="Field Name" class="field_name" required />
-        <select class="field_type">
-            <option value="text">Text</option>
-            <option value="number">Number</option>
-            <option value="date">Date</option>
-            <option value="choice">Multiple Choice</option>
-        </select>
-    `;
-    document.getElementById("fieldsContainer").appendChild(div);
+    const container = document.getElementById("fields-container");
+    container.insertAdjacentHTML("beforeend", `
+        <div style="margin-bottom: 15px;">
+            <label>Field Name:</label>
+            <input type="text" name="fields[${fieldIndex}][name]" required><br>
+
+            <label>Field Type:</label>
+            <select name="fields[${fieldIndex}][type]" onchange="toggleOptions(this, ${fieldIndex})">
+    <option value="text">Text</option>
+    <option value="number">Number</option>
+    <option value="date">Date</option>
+    <option value="choice">Multiple Choice</option>
+    <option value="file_awk">Pick Certificate</option>
+</select>
+        <br>
+
+            <div id="options-${fieldIndex}" style="display:none;">
+                <label>Options (comma separated):</label>
+                <input type="text" name="fields[${fieldIndex}][options]"><br>
+            </div>
+            <hr>
+        </div>
+    `);
+    fieldIndex++;
 }
 
-document.getElementById("createForm").onsubmit = async function(e) {
-    e.preventDefault();
-    let fields = [];
-    document.querySelectorAll("#fieldsContainer div").forEach(div => {
-        fields.push({
-            field_name: div.querySelector(".field_name").value,
-            field_type: div.querySelector(".field_type").value,
-        });
-    });
 
-    let response = await fetch("/create_form/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            title: document.getElementById("title").value,
-            description: document.getElementById("description").value,
-            fields: fields,
-            assigned_students: [1, 2, 3],  // Example student IDs
-        }),
-    });
+function toggleOptions(select, index) {
+    const optionsDiv = document.getElementById(`options-${index}`);
+    optionsDiv.style.display = select.value === "choice" ? "block" : "none";
+}
 
-    let result = await response.json();
-    alert(result.message);
-};
+
+function filterStudents() {
+    const dept = document.getElementById("deptFilter").value;
+    const year = document.getElementById("yearFilter").value;
+    const section = document.getElementById("sectionFilter").value;
+    const mentor = document.getElementById("mentorFilter").value;
+
+    document.querySelectorAll(".student-option").forEach(opt => {
+        const matchDept = !dept || opt.dataset.dept === dept;
+        const matchYear = !year || opt.dataset.year === year;
+        const matchSection = !section || opt.dataset.section === section;
+        const matchMentor = !mentor || opt.dataset.mentor === mentor;
+        opt.style.display = (matchDept && matchYear && matchSection && matchMentor) ? "block" : "none";
+    });
+}
 </script>
+{% endblock %}

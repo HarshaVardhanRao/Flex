@@ -1,0 +1,20 @@
+<!-- templates/fill_form_list.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Assigned Forms</h2>
+
+{% if assigned_forms %}
+    <ul>
+    {% for form in assigned_forms %}
+        <li>
+            <strong>{{ form.title }}</strong><br>
+            <small>{{ form.description }}</small><br>
+            <a href="{% url 'fill_form_detail' form.id %}">Fill This Form</a>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No forms assigned to you.</p>
+{% endif %}
+{% endblock %}

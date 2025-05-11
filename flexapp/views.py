@@ -681,3 +681,102 @@ def placement_dashboard(request):
         }
     }
     return render(request, 'dashboard/placement_dashboard.html', context)
+
+# views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import FillOutForm, FillOutField, student
+from django.contrib.auth.decorators import login_required
+import json
+
+@login_required
+def create_form(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+        assigned_ids = request.POST.getlist("assigned_students")
+
+        form = FillOutForm.objects.create(
+            title=title,
+            description=description,
+            created_by=request.user
+        )
+        form.assigned_students.set(student.objects.filter(id__in=assigned_ids))
+
+        fields_data = request.POST.dict()
+        index = 0
+        while f'fields[{index}][name]' in fields_data:
+            name = fields_data.get(f'fields[{index}][name]')
+            field_type = fields_data.get(f'fields[{index}][type]')
+            options = fields_data.get(f'fields[{index}][options]', '')
+
+            FillOutField.objects.create(
+                form=form,
+                field_name=name,
+                field_type=field_type,
+                options=json.dumps([opt.strip() for opt in options.split(',')]) if field_type == 'choice' else None
+            )
+            index += 1
+        return redirect("dashboard")
+    
+    all_students = student.objects.all()
+    mentors = Faculty.objects.all()
+    return render(request, "create_form.html", {
+        "students": all_students,
+        "mentors": mentors,
+        "years":[1,2,3,4]
+    })
+
+@login_required
+def list_assigned_forms(request):
+    assigned_forms = request.user.assigned_forms.all()
+    return render(request, "fill_form_list.html", {"assigned_forms": assigned_forms})
+
+from .models import FillOutResponse
+@login_required
+def fill_form(request, form_id):
+    form = FillOutForm.objects.get(id=form_id)
+    student = request.user
+
+    certificates = Certificate.objects.filter(rollno=student)
+
+    if request.method == "POST":
+        responses = {}
+        for field in form.fields.all():
+            responses[field.field_name] = request.POST.get(str(field.id))
+        FillOutResponse.objects.create(form=form, rollno=student, responses=responses)
+        return redirect("assigned/")  # or wherever you want
+
+    return render(request, "fill_form.html", {
+        "form": form,
+        "certificates": certificates
+    })
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import FillOutForm, FillOutField, Certificate
+
+def get_form(request, form_id):
+    form = get_object_or_404(FillOutForm, id=form_id)
+    print(form)
+    student = request.user
+    certificates = Certificate.objects.filter(rollno=student)
+    print(certificates)
+
+    if request.method == "POST":
+        responses = {}
+        for field in form.fields.all():
+            responses[field.field_name] = request.POST.get(str(field.id))
+        form_response = FillOutResponse.objects.create(
+            form=form,
+            student=student,
+            responses=responses
+        )
+        return redirect("dashboard")
+
+    return render(request, "fill_form_detail.html", {
+        "form": form,
+        "fields": form.fields.all(),
+        "certificates": certificates
+    })
+
+
+

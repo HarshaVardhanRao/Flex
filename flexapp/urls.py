@@ -28,4 +28,7 @@ urlpatterns = [
     path("search_students/", search_students, name="search_students"),
     path("search_technologies/", views.search_technologies, name="search_technologies"),
     path('dashboard/placement/', views.placement_dashboard, name='placement_dashboard'),
+    path("create/", views.create_form, name="create_form"),
+    path("assigned/", views.list_assigned_forms, name="list_assigned_forms"),
+    path("fill/<int:form_id>/", views.get_form, name="fill_form_detail"),
 ]
