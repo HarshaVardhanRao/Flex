@@ -5,3 +5,6 @@ flex/flexapp/__pycache__/
 flex/flex/__pycache__/
 flex/flexapp/migrations/__pycache__/
 .env
+frontend/node_modules/
+frontend/build/
+frontend/.env
