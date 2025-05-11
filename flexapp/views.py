@@ -151,8 +151,9 @@ def create_project(request):
             # Step 5: Extract GitHub languages if none selected
             if not tech_objects and github_link:
                 extract_languages_from_github(github_link, new_project)
-
+    
             new_project.save()
+            print(new_project," saved")
             return redirect('dashboard')
 
         # GET request
@@ -345,7 +346,7 @@ def register(request):
     except Exception as e:
         logging.error(f"Error in register: {e}")
         return HttpResponse("An error occurred.")
-from django.db.models import Count
+from django.db.models import Count, Avg
 # @login_required
 def faculty(request):
     try:
@@ -638,3 +639,45 @@ def upload_students(request):
             logging.error(f"Error in upload_students: {e}")
             return HttpResponse("An error occurred.")
     return render(request, 'upload_students.html')
+
+
+
+######################################################################################
+def placement_dashboard(request):
+    year = request.GET.get('year')
+    tech = request.GET.get('tech')
+    cert_cat = request.GET.get('cert_cat')
+    domain = request.GET.get('domain')
+
+    students = student.objects.all()
+    leetcode_data = LeetCode.objects.all()
+    cert_data = Certificate.objects.all()
+    proj_data = Projects.objects.all()
+
+    # if year:
+    #     students = students.filter(year_and_sem__icontains=year)
+    #     leetcode_data = leetcode_data.filter(rollno__year_and_sem__icontains=year)
+    #     cert_data = cert_data.filter(rollno__year_and_sem__icontains=year)
+    #     proj_data = proj_data.filter(year_and_sem__icontains=year)
+
+    if tech:
+        proj_data = proj_data.filter(technologies__name__icontains=tech)
+
+    if cert_cat:
+        cert_data = cert_data.filter(category=cert_cat)
+
+    if domain:
+        proj_data = proj_data.filter(domain__icontains=domain)
+
+    context = {
+        'leetcode_data': list(leetcode_data.values('rollno__dept').annotate(avg_total=Avg('TotalProblems'))),
+        'cert_data': list(cert_data.values('rollno__dept', 'category').annotate(count=Count('id'))),
+        'proj_data': list(proj_data.values('year_and_sem').annotate(total=Count('id'))),
+        'filters': {
+            'selected_year': year,
+            'selected_tech': tech,
+            'selected_cert_cat': cert_cat,
+            'selected_domain': domain,
+        }
+    }
+    return render(request, 'dashboard/placement_dashboard.html', context)

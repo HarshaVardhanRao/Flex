@@ -27,4 +27,5 @@ urlpatterns = [
     path('upload_students/', upload_students, name='upload_students'),
     path("search_students/", search_students, name="search_students"),
     path("search_technologies/", views.search_technologies, name="search_technologies"),
+    path('dashboard/placement/', views.placement_dashboard, name='placement_dashboard'),
 ]

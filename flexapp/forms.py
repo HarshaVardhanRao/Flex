@@ -14,7 +14,7 @@ class CertificateForm(forms.ModelForm):
 class ProjectsForm(forms.ModelForm):
     class Meta:
         model = Projects
-        fields = '__all__'
+        exclude = ['technologies']
 
 class CertificationsForm(forms.ModelForm):
     class Meta:

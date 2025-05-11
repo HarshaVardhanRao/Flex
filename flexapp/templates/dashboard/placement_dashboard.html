@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Placement Coordinator Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .chart-container { width: 80%; margin: 30px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+    </style>
+</head>
+<body>
+
+    <h2>Placement Coordinator Dashboard</h2>
+    <form method="get" style="text-align: center; margin-bottom: 20px;">
+    <label>Year/Semester:
+        <input type="text" name="year" value="{{ filters.selected_year }}">
+    </label>
+    <label>Technology:
+        <input type="text" name="tech" value="{{ filters.selected_tech }}">
+    </label>
+    <label>Certificate Category:
+        <select name="cert_cat">
+            <option value="">All</option>
+            <option value="technical" {% if filters.selected_cert_cat == "technical" %}selected{% endif %}>Technical</option>
+            <option value="foreign_language" {% if filters.selected_cert_cat == "foreign_language" %}selected{% endif %}>Foreign Language</option>
+            <option value="co_curricular" {% if filters.selected_cert_cat == "co_curricular" %}selected{% endif %}>Co-Curricular</option>
+            <option value="extra_curricular" {% if filters.selected_cert_cat == "extra_curricular" %}selected{% endif %}>Extra-Curricular</option>
+        </select>
+    </label>
+    <label>Domain:
+        <input type="text" name="domain" value="{{ filters.selected_domain }}">
+    </label>
+    <button type="submit">Apply Filters</button>
+</form>
+
+    <div class="chart-container">
+        <h3>Avg LeetCode Problems Solved by Department</h3>
+        <canvas id="leetcodeChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <h3>Certificates Count by Category & Department</h3>
+        <canvas id="certChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <h3>Projects by Semester</h3>
+        <canvas id="projectChart"></canvas>
+    </div>
+
+    <script>
+        const leetcodeData = {{ leetcode_data|safe }};
+        const certData = {{ cert_data|safe }};
+        const projData = {{ proj_data|safe }};
+
+        // LeetCode Chart
+        const deptLabels = leetcodeData.map(item => item.rollno__dept);
+        const avgProblems = leetcodeData.map(item => item.avg_total);
+
+        new Chart(document.getElementById('leetcodeChart'), {
+            type: 'bar',
+            data: {
+                labels: deptLabels,
+                datasets: [{
+                    label: 'Avg Problems Solved',
+                    data: avgProblems,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderRadius: 5
+                }]
+            }
+        });
+
+        // Certificate Chart
+        const certMap = {};
+        certData.forEach(item => {
+            if (!certMap[item.rollno__dept]) certMap[item.rollno__dept] = {};
+            certMap[item.rollno__dept][item.category] = item.count;
+        });
+
+        const depts = Object.keys(certMap);
+        const categories = ['technical', 'foreign_language', 'co_curricular', 'extra_curricular'];
+        const datasets = categories.map(cat => ({
+            label: cat,
+            data: depts.map(d => certMap[d][cat] || 0),
+            backgroundColor: `hsl(${Math.random()*360}, 60%, 70%)`
+        }));
+
+        new Chart(document.getElementById('certChart'), {
+            type: 'bar',
+            data: {
+                labels: depts,
+                datasets: datasets
+            }
+        });
+
+        // Projects Chart
+        new Chart(document.getElementById('projectChart'), {
+            type: 'line',
+            data: {
+                labels: projData.map(p => p.year_and_sem),
+                datasets: [{
+                    label: 'Total Projects',
+                    data: projData.map(p => p.total),
+                    borderColor: '#36a2eb',
+                    fill: false
+                }]
+            }
+        });
+    </script>
+</body>
+</html>
