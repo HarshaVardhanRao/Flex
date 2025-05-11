@@ -2,19 +2,51 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.contrib.auth import get_user_model
 
+from django.db import models
+
 class publications(models.Model):
+    PUBLICATION_TYPE_CHOICES = [
+        ('journal', 'Journal Article'),
+        ('conference', 'Conference Paper'),
+        ('book', 'Book/Book Chapter'),
+        ('patent', 'Patent'),
+        ('copyright', 'Copyright'),
+        ('other', 'Other'),
+    ]
+
+    STATUS_CHOICES = [
+        ('published', 'Published'),
+        ('under_review', 'Under Review'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+        ('granted', 'Granted'),  # Useful for patents
+    ]
+
     author = models.ForeignKey("Faculty", on_delete=models.CASCADE, related_name="publications")
-    title = models.CharField(max_length=100)
-    publication_date = models.DateField()
-    publication_type = models.CharField(max_length=50)
-    publication_link = models.URLField()
-    publication_area = models.CharField(max_length=50)
-    publication_volume = models.CharField(max_length=50)
-    publication_notes = models.TextField()
-    publication_status = models.CharField(max_length=50)
-    publication_journal = models.CharField(max_length=100)
-    publication_abstract = models.TextField()
-    publication_keywords = models.TextField()
+
+    title = models.CharField(max_length=200)
+    publication_type = models.CharField(max_length=30, choices=PUBLICATION_TYPE_CHOICES)
+    publication_status = models.CharField(max_length=30, choices=STATUS_CHOICES)
+
+    publication_date = models.DateField(null=True, blank=True)
+    publication_area = models.CharField(max_length=100, blank=True)
+    journal_or_publisher = models.CharField(max_length=200, blank=True)
+    volume_or_edition = models.CharField(max_length=100, blank=True)
+
+    abstract = models.TextField(blank=True)
+    keywords = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
+
+    # For patents/copyrights
+    registration_number = models.CharField(max_length=100, blank=True)
+    granted_by = models.CharField(max_length=200, blank=True)
+
+    # Link to full publication or proof
+    link = models.URLField(blank=True)
+
+    def __str__(self):
+        return f"{self.author} - {self.title} ({self.publication_type})"
+
     def __str__(self):
         return self.title
 class certifications(models.Model):
@@ -84,24 +116,83 @@ class LeetCode(models.Model):
     def __str__(self):
         return f"{self.rollno} - Total Problems Solved: {self.TotalProblems}"
 
-class ForignLanguages(models.Model):
-    rollno = models.ForeignKey(student,on_delete=models.CASCADE, related_name="ForeignLanguages")
+from django.core.validators import MinValueValidator
+from django.db import models
+
+class Certificate(models.Model):
+    rollno = models.ForeignKey(student, on_delete=models.CASCADE, related_name="certificates")
+
+    # Core details
     source = models.CharField(max_length=50)
     title = models.CharField(max_length=255)
-    certificate = models.FileField(upload_to='certificates/',null=True)
-    TECHNICAL = 'technical'
-    FOREIGN_LANGUAGE = 'foreign_language'
+    certificate = models.FileField(upload_to='certificates/', null=True)
+
+    # Extended Category Options
     CATEGORY_CHOICES = [
-        (TECHNICAL,'Technical'),
-        (FOREIGN_LANGUAGE,'Foreign Language'),
+        ('technical', 'Technical'),
+        ('foreign_language', 'Foreign Language'),
+        ('co_curricular', 'Co-Curricular'),
+        ('extra_curricular', 'Extra-Curricular'),
     ]
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default=TECHNICAL)
-    YEAR_AND_SEM_CHOICES = [("I-I", "I-I"), ("I-II", "I-II"), ("II-I", "II-I"), ("II-II", "II-II"), ("III-I", "III-I"), ("III-II", "III-II"), ("IV-I", "IV-I"), ("IV-II", "IV-II")]
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='technical')
+
+    # Year & Semester
+    YEAR_AND_SEM_CHOICES = [
+        ("I-I", "I-I"), ("I-II", "I-II"), ("II-I", "II-I"), ("II-II", "II-II"),
+        ("III-I", "III-I"), ("III-II", "III-II"), ("IV-I", "IV-I"), ("IV-II", "IV-II")
+    ]
     year_and_sem = models.CharField(max_length=10, choices=YEAR_AND_SEM_CHOICES)
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+
     course_link = models.URLField(blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    # Position or Recognition
+    RECOGNITION_CHOICES = [
+        ('participation', 'Participation'),
+        ('appreciation', 'Appreciation'),
+        ('recommendation', 'Recommendation'),
+    ]
+    rank = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
+    recognition = models.CharField(max_length=20, choices=RECOGNITION_CHOICES, blank=True)
+
+    # Type of event
+    EVENT_TYPE_CHOICES = [
+        ('hackathon', 'Hackathon'),
+        ('quiz', 'Quiz'),
+        ('workshop', 'Workshop/Webinar'),
+        ('techfest', 'Tech Fest'),
+        ('presentation', 'Presentation'),
+        ('others', 'Others'),
+    ]
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPE_CHOICES,default='others')
+
+    fest_name = models.CharField(max_length=100, blank=True)
+
+    # Course/Domain-specific info (optional)
+    course_provider = models.CharField(max_length=100, blank=True)
+    domain = models.CharField(max_length=100, blank=True)
+    duration = models.CharField(max_length=50, blank=True)
+
+    # Technologies used (only for technical category)
+    technologies = models.ManyToManyField('Technology', blank=True)
+
     def __str__(self):
-        return f"{self.rollno} - {self.title}"
+        return f"{self.rollno} - {self.title} ({self.category})"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        # Only one of rank or recognition should be filled
+        if self.rank and self.recognition:
+            raise ValidationError("Choose either a numeric rank or a recognition type, not both.")
+
+        if not self.rank and not self.recognition:
+            raise ValidationError("You must provide either a rank or a recognition type.")
+
+        # Technologies allowed only for 'technical' category
+        if self.category != 'technical' and self.technologies.exists():
+            raise ValidationError("Technologies can only be associated with Technical category.")
+
 
 class Projects(models.Model):
     contributors = models.ManyToManyField(student, related_name="projects")

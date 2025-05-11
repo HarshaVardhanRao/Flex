@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from .forms import ProjectsForm, LeetCodeForm, ForignLanguagesForm
+from .forms import *
 import logging
 from django.contrib.auth.decorators import login_required
-from .models import Projects, ForignLanguages, student, LeetCode, Faculty,FillOutForm, FillOutField, student
+from .models import Projects, Certificate, student, LeetCode, Faculty,FillOutForm, FillOutField, student
 import requests
 from django.http import HttpResponse, JsonResponse
 import json
@@ -24,8 +24,8 @@ def getStudentDetails(student):
         # projects = Projects.objects.filter(contributors=student)  # Updated line
         projects = Projects.objects.prefetch_related("technologies").filter(contributors=student)
         
-        Tech_certifications = ForignLanguages.objects.filter(rollno=student, category="Technical")
-        For_lang = ForignLanguages.objects.filter(rollno=student, category="Foreign Language")
+        Tech_certifications = Certificate.objects.filter(rollno=student, category="Technical")
+        For_lang = Certificate.objects.filter(rollno=student, category="Foreign Language")
 
         return {
             "name": student.first_name,
@@ -174,7 +174,7 @@ def add_certification(request):
             source = request.POST.get('provider')
             status = request.POST.get('status')
             course_link = request.POST.get('course-link')
-            new_course = ForignLanguages(rollno=rollno, title=title, source=source, course_link=course_link, category=course_type)
+            new_course = Certificate(rollno=rollno, title=title, source=source, course_link=course_link, category=course_type)
             new_course.save()
             return redirect('dashboard')
         return render(request, 'dashboard.html')
@@ -381,7 +381,7 @@ def edit_certification(request):
             source = request.POST.get('provider')
             title = request.POST.get('course-name')
             course_link = request.POST.get('course-link')
-            project = ForignLanguages.objects.get(id=primary_key)
+            project = Certificate.objects.get(id=primary_key)
             project.source = source
             project.title = title
             project.course_link = course_link
@@ -402,7 +402,7 @@ def delete_project(request, primary_key):
 
 def delete_certification(request, primary_key):
     try:
-        project = ForignLanguages.objects.get(id=primary_key)
+        project = Certificate.objects.get(id=primary_key)
         project.delete()
         return redirect('dashboard')
     except Exception as e:
@@ -464,8 +464,8 @@ def download_request(request):
         data = []
         for stu in students:
             leetcode = LeetCode.objects.get(rollno=stu)
-            technical = ForignLanguages.objects.filter(rollno=stu, category="Technical")
-            foreign = ForignLanguages.objects.filter(rollno=stu, category="Foreign Language")
+            technical = Certificate.objects.filter(rollno=stu, category="Technical")
+            foreign = Certificate.objects.filter(rollno=stu, category="Foreign Language")
             projects = Projects.objects.filter(rollno=stu)
             data.append({
                 'Roll No': stu.roll_no,

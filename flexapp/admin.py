@@ -3,7 +3,7 @@ from .models import *
 
 admin.site.register(student)
 admin.site.register(LeetCode)
-admin.site.register(ForignLanguages)
+admin.site.register(Certificate)
 admin.site.register(Projects)
 admin.site.register(Faculty)
 admin.site.register(publications)
