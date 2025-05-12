@@ -226,13 +226,34 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.recipient} - {self.message[:30]}"
+
+class Provider(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class CoordinatorRole(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+
+    can_view_certificates = models.BooleanField(default=False)
+    can_view_publications = models.BooleanField(default=False)
+    can_view_projects = models.BooleanField(default=False)
+
+    providers = models.ManyToManyField(Provider, blank=True)  # ⬅️ Now supports multiple providers
+    faculties = models.ManyToManyField('Faculty', related_name='coordinator_roles')
+
+    def __str__(self):
+        return self.name
+
 ################## FIllOut #########################
 User = get_user_model()
 
 class FillOutForm(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_forms")
+    created_by = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name="created_forms")
     assigned_students = models.ManyToManyField("student", related_name="assigned_forms")  # Assign to students
     created_at = models.DateTimeField(auto_now_add=True)
 

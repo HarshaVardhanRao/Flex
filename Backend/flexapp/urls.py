@@ -12,6 +12,7 @@ urlpatterns = [
     path('create-project', views.create_project, name="create_project"),
     path('add-certification', views.add_certification, name="add_certification"), 
     path('faculty', views.faculty, name="faculty"),
+    path('coordinator/dashboard/', views.coordinator_dashboard, name='coordinator_dashboard'),
     path('student/<str:rollno>', views.studentView, name="studentView"),
     path('edit_project', views.edit_project, name="edit_project"),
     path('delete_project/<int:primary_key>', views.delete_project,name="delete_project"),
@@ -31,4 +32,7 @@ urlpatterns = [
     path("create/", views.create_form, name="create_form"),
     path("assigned/", views.list_assigned_forms, name="list_assigned_forms"),
     path("fill/<int:form_id>/", views.get_form, name="fill_form_detail"),
+    path('forms/', views.form_list_view, name='form_list'),
+    path('forms/<int:form_id>/', views.form_detail_view, name='form_detail'),
+    path('forms/<int:form_id>/download/<str:download_type>/', views.download_csv, name='download_csv'),
 ]

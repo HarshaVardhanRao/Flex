@@ -9,3 +9,8 @@ def split_by_comma(value):
 @register.filter
 def trim(value):
     return value.strip() if isinstance(value, str) else value
+
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key, '')

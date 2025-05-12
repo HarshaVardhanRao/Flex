@@ -217,23 +217,26 @@ def CustomLogout(request):
 ################################FillOut##########################
 @csrf_exempt
 def create_form(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        form = FillOutForm.objects.create(
-            title=data["title"],
-            description=data.get("description", ""),
-            created_by=request.user,
-        )
-        for field in data["fields"]:
-            FillOutField.objects.create(
-                form=form,
-                field_name=field["field_name"],
-                field_type=field["field_type"],
-                options=json.dumps(field.get("options", [])),
+    if request.user.type() == "Faculty": 
+        if request.method == "POST":
+            data = json.loads(request.body)
+            form = FillOutForm.objects.create(
+                title=data["title"],
+                description=data.get("description", ""),
+                created_by=request.user,
             )
-        students = student.objects.filter(id__in=data["assigned_students"])
-        form.assigned_students.set(students)
-        return JsonResponse({"message": "Form created successfully!", "form_id": form.id})
+            for field in data["fields"]:
+                FillOutField.objects.create(
+                    form=form,
+                    field_name=field["field_name"],
+                    field_type=field["field_type"],
+                    options=json.dumps(field.get("options", [])),
+                )
+            students = student.objects.filter(id__in=data["assigned_students"])
+            form.assigned_students.set(students)
+            return JsonResponse({"message": "Form created successfully!", "form_id": form.id})
+    else:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
 
 @csrf_exempt
 def submit_response(request, form_id):
@@ -350,11 +353,64 @@ from django.db.models import Count, Avg
 # @login_required
 def faculty(request):
     try:
-        studentData = list(student.objects.filter(is_superuser=False).annotate(project_count=Count('Projects'),foreign_language_count=Count('ForeignLanguages')    ).values("roll_no", "first_name", "dept", "year", "section", "studentrollno__TotalProblems", "Projects", "ForeignLanguages"))
+        from .models import student  # or whatever your model is called
+
+        studentData = list(
+            student.objects.filter(is_superuser=False)
+            .annotate(
+                project_count=Count('projects', distinct=True),
+                certificate_count=Count('certificates', distinct=True)
+            )
+            .values(
+                'roll_no', 'first_name', 'dept', 'year', 'section',
+                'studentrollno__TotalProblems',  # double-check this name
+                'project_count', 'certificate_count'
+            )
+        )
         return render(request, 'faculty_dashboard.html', {'studentData': studentData})
+
     except Exception as e:
         logging.error(f"Error in faculty: {e}")
         return HttpResponse("An error occurred.")
+
+################################ Coordinator #####################################
+# views.py
+from django.shortcuts import render
+from .models import *
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def coordinator_dashboard(request):
+    faculty = request.user  # assumes user is Faculty instance
+    roles = faculty.coordinator_roles.all()
+
+    # For layout rendering
+    all_certificates = []
+    all_projects = []
+    all_publications = []
+
+    for role in roles:
+        if role.can_view_certificates:
+            certs = Certificate.objects.all()
+            if role.providers.exists():
+                certs = certs.filter(provider__in=role.providers.values_list('name', flat=True))
+            all_certificates.extend(list(certs))
+
+        if role.can_view_projects:
+            all_projects.extend(Projects.objects.all())
+
+        if role.can_view_publications:
+            all_publications.extend(publications.objects.all())
+
+    context = {
+        'roles': roles,
+        'certificates': all_certificates,
+        'projects': all_projects,
+        'publications': all_publications
+    }
+
+    return render(request, 'dashboard/coordinator_dashboard.html', context)
+
 ################################ FLEX #####################################
 def edit_project(request):
     try:
@@ -756,7 +812,7 @@ from .models import FillOutForm, FillOutField, Certificate
 
 def get_form(request, form_id):
     form = get_object_or_404(FillOutForm, id=form_id)
-    print(form)
+    print(form) 
     student = request.user
     certificates = Certificate.objects.filter(rollno=student)
     print(certificates)
@@ -778,5 +834,70 @@ def get_form(request, form_id):
         "certificates": certificates
     })
 
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
+from .models import FillOutForm, FillOutResponse, student
+import csv
+
+def form_list_view(request):
+    faculty = request.user
+    forms = FillOutForm.objects.filter(created_by=faculty)
+    return render(request, 'dashboard/form_list.html', {'forms': forms})
+
+
+def form_detail_view(request, form_id):
+    form = get_object_or_404(FillOutForm, id=form_id)
+    assigned_students = form.assigned_students.all()
+    responses = FillOutResponse.objects.filter(form=form)
+
+    responded_student_ids = responses.values_list('student_id', flat=True)
+    responded_students = assigned_students.filter(id__in=responded_student_ids)
+    non_responded_students = assigned_students.exclude(id__in=responded_student_ids)
+
+    context = {
+        'form': form,
+        'responses': responses,
+        'responded_students': responded_students,
+        'non_responded_students': non_responded_students,
+        'responded_count': responded_students.count(),
+        'not_responded_count': non_responded_students.count(),
+        'total': assigned_students.count(),
+    }
+
+    return render(request, 'dashboard/form_detail.html', context)
+
+
+def download_csv(request, form_id, download_type):
+    form = get_object_or_404(FillOutForm, id=form_id)
+    response = HttpResponse(content_type='text/csv')
+    
+    if download_type == "responses":
+        filename = f"{form.title}_responses.csv"
+        writer = csv.writer(response)
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        writer.writerow(["Student Roll No", "Student Name", "Submitted At"] + [f.field_name for f in form.fields.all()])
+        for r in FillOutResponse.objects.filter(form=form):
+            student_info = [r.student.roll_no, r.student.first_name, r.submitted_at]
+            answers = [r.responses.get(f.field_name, "") for f in form.fields.all()]
+            writer.writerow(student_info + answers)
+
+    elif download_type == "filled":
+        filename = f"{form.title}_filled.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        writer = csv.writer(response)
+        writer.writerow(["Roll No", "Name"])
+        for student_obj in form.assigned_students.filter(id__in=FillOutResponse.objects.filter(form=form).values_list("student_id", flat=True)):
+            writer.writerow([student_obj.roll_no, student_obj.first_name])
+
+    elif download_type == "not_filled":
+        filename = f"{form.title}_not_filled.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        writer = csv.writer(response)
+        writer.writerow(["Roll No", "Name"])
+        for student_obj in form.assigned_students.exclude(id__in=FillOutResponse.objects.filter(form=form).values_list("student_id", flat=True)):
+            writer.writerow([student_obj.roll_no, student_obj.first_name])
+
+    return response
 
 

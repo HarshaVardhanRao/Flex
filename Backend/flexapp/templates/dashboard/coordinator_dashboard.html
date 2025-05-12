@@ -1,0 +1,52 @@
+<!-- templates/dashboard/coordinator_dashboard.html -->
+{% extends "base.html" %}
+{% block content %}
+  <h2>Coordinator Dashboard</h2>
+
+  {% for role in roles %}
+    <div class="role-card">
+      <h3>{{ role.name }}</h3>
+      <p>{{ role.description }}</p>
+    </div>
+  {% endfor %}
+
+  {% if certificates %}
+    <h3>Student Certificates</h3>
+    <table>
+      <tr><th>Student</th><th>Title</th><th>Provider</th></tr>
+      {% for cert in certificates %}
+        <tr>
+          <td>{{ cert.student.first_name }}</td>
+          <td>{{ cert.title }}</td>
+          <td>{{ cert.provider }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+
+  {% if projects %}
+    <h3>Student Projects</h3>
+    <table>
+      <tr><th>Student</th><th>Project Title</th></tr>
+      {% for proj in projects %}
+        <tr>
+          <td>{{ proj.student.first_name }}</td>
+          <td>{{ proj.title }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+
+  {% if publications %}
+    <h3>Student Publications</h3>
+    <table>
+      <tr><th>Student</th><th>Publication Title</th></tr>
+      {% for pub in publications %}
+        <tr>
+          <td>{{ pub.student.first_name }}</td>
+          <td>{{ pub.title }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+{% endblock %}
