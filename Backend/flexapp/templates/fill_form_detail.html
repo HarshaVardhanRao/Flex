@@ -1,44 +1,120 @@
-<!-- templates/fill_form_detail.html -->
-{% extends "base.html" %}
-{% load custom_filters %}
+{% extends "base.html" %} {% load custom_filters %} {% block content %}
+<style>
+	.form-container {
+		max-width: 700px;
+		margin: 40px auto;
+		padding: 30px;
+		background-color: #f9f9f9;
+		border-radius: 12px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		font-family: "Segoe UI", sans-serif;
+	}
 
-{% block content %}
-<h2>{{ form.title }}</h2>
-<p>{{ form.description }}</p>
+	h2 {
+		text-align: center;
+		color: #333;
+		margin-bottom: 10px;
+	}
 
-<form method="post">
-    {% csrf_token %}
-    {% for field in fields %}
-    <label>{{ field.field_name }}:</label><br>
+	p.description {
+		text-align: center;
+		color: #555;
+		margin-bottom: 30px;
+	}
 
-    {% if field.field_type == "text" %}
-        <input type="text" name="{{ field.id }}" required><br>
+	label {
+		font-weight: 600;
+		margin-top: 15px;
+		display: block;
+		color: #444;
+	}
 
-    {% elif field.field_type == "number" %}
-        <input type="number" name="{{ field.id }}" required><br>
+	input[type="text"],
+	input[type="number"],
+	input[type="date"],
+	input[type="file"],
+	select {
+		width: 100%;
+		padding: 10px;
+		margin-top: 6px;
+		margin-bottom: 16px;
+		border: 1px solid #ccc;
+		border-radius: 6px;
+		box-sizing: border-box;
+	}
 
-    {% elif field.field_type == "date" %}
-        <input type="date" name="{{ field.id }}" required><br>
+	.radio-group {
+		margin-bottom: 16px;
+	}
 
-    {% elif field.field_type == "choice" %}
-        {% for option in field.options|split_by_comma %}
-    <input type="radio" name="{{ field.id }}" value="{{ option|trim }}" required> {{ option|trim }}<br>
-{% endfor %}
+	.radio-group input[type="radio"] {
+		margin-right: 8px;
+	}
 
+	input[type="submit"] {
+		background-color: #3498db;
+		color: white;
+		padding: 12px 20px;
+		border: none;
+		border-radius: 8px;
+		cursor: pointer;
+		width: 100%;
+		font-size: 16px;
+		transition: background-color 0.3s ease;
+	}
 
-    {% elif field.field_type == "file_awk" %}
-    <label for="{{ field.id }}">{{ field.field_name }}</label>
-    <select name="{{ field.id }}" required>
-        <option value="" selected disabled>Select a certificate</option>
-        {% for cert in certificates %}
-            <option value="{{ cert.certificate.id }}">{{ cert.name }}</option>
-        {% endfor %}
-    </select>
+	input[type="submit"]:hover {
+		background-color: #2980b9;
+	}
+</style>
+
+<div class="form-container">
+	<h2>{{ form.title }}</h2>
+	<p class="description">{{ form.description }}</p>
+
+	<form method="post" enctype="multipart/form-data">
+		{% csrf_token %} {% for field in fields %}
+		<label>{{ field.field_name }}:</label>
+
+		{% if field.field_type == "text" %}
+		<input type="text" name="{{ field.id }}" required />
+
+		{% elif field.field_type == "number" %}
+		<input type="number" name="{{ field.id }}" required />
+
+		{% elif field.field_type == "date" %}
+		<input type="date" name="{{ field.id }}" required />
+
+		{% elif field.field_type == "choice" %}
+		<div class="radio-group">
+			{% for option in field.options|split_by_comma %}
+			<label>
+				<input
+					type="radio"
+					name="{{ field.id }}"
+					value="{{ option|trim }}"
+					required
+				/>
+				{{ option|trim }} </label
+			><br />
+			{% endfor %}
+		</div>
+
+		{% elif field.field_type == "file_awk" %}
+    {% if field.related_model and model_instances|get_item:field.related_model %}
+        <select name="{{ field.id }}" required>
+            <option value="" selected disabled>Select a {{ field.related_model }}</option>
+            {% for instance in model_instances|get_item:field.related_model %}
+                <option value="{{ instance.id }}">{{ instance }}</option>
+            {% endfor %}
+        </select>
+    {% else %}
+        <input type="file" name="{{ field.id }}" required>
+    {% endif %}
 {% endif %}
+ {% endfor %}
 
-    <br>
-{% endfor %}
-
-    <input type="submit" value="Submit">
-</form>
+		<input type="submit" value="Submit" />
+	</form>
+</div>
 {% endblock %}

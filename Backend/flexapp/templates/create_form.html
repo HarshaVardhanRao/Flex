@@ -1,122 +1,244 @@
-<!-- templates/create_form.html -->
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Create Form</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				margin: 30px auto;
+				max-width: 800px;
+				background-color: rgb(219, 11, 11);
+				padding: 20px;
+				color: #333;
+				border-radius: 10px;
+				box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+			}
 
-{% block content %}
-<h2>Create New Form</h2>
+			h2,
+			h3 {
+				text-align: center;
+				color: #222;
+			}
 
-<form method="post">
-    {% csrf_token %}
-    <label>Form Title:</label><br>
-    <input type="text" name="title" required><br><br>
+			label {
+				display: block;
+				margin-top: 10px;
+				font-weight: bold;
+			}
 
-    <label>Description:</label><br>
-    <textarea name="description"></textarea><br><br>
+			input[type="text"],
+			textarea,
+			select {
+				width: 100%;
+				padding: 8px;
+				margin-top: 4px;
+				border: 1px solid #ccc;
+				border-radius: 6px;
+				box-sizing: border-box;
+			}
 
-    <h4>Filter Students (optional)</h4>
-    <label>Department:</label>
-    <select id="deptFilter" onchange="filterStudents()">
-        <option value="">All</option>
-        {% for code, name in students.first.DEPT_CHOICES %}
-            <option value="{{ code }}">{{ name }}</option>
-        {% endfor %}
-    </select>
+			textarea {
+				resize: vertical;
+			}
 
-    <label>Year:</label>
-    <select id="yearFilter" onchange="filterStudents()">
-        <option value="">All</option>
-        {% for year in years %}
-            <option value="{{ year }}">{{ year }}</option>
-        {% endfor %}
-    </select>
+			button {
+				background-color: #007bff;
+				color: white;
+				border: none;
+				padding: 10px 18px;
+				border-radius: 6px;
+				cursor: pointer;
+				margin-top: 20px;
+			}
 
-    <label>Section:</label>
-    <select id="sectionFilter" onchange="filterStudents()">
-        <option value="">All</option>
-        {% for sec, _ in students.first.SECTION_CHOICES %}
-            <option value="{{ sec }}">{{ sec }}</option>
-        {% endfor %}
-    </select>
+			button:hover {
+				background-color: #0056b3;
+			}
 
-    <label>Mentor:</label>
-    <select id="mentorFilter" onchange="filterStudents()">
-        <option value="">All</option>
-        {% for mentor in mentors %}
-            <option value="{{ mentor.id }}">{{ mentor.first_name }} {{ mentor.last_name }}</option>
-        {% endfor %}
-    </select>
+			.field-block {
+				border: 1px solid #ddd;
+				padding: 15px;
+				margin-top: 20px;
+				background-color: #fff;
+				border-radius: 8px;
+			}
 
-    <br><br>
-    <div id="students-list">
-        {% for student in students %}
-            <label class="student-option"
-                   data-dept="{{ student.dept }}"
-                   data-year="{{ student.year }}"
-                   data-section="{{ student.section }}"
-                   data-mentor="{% if student.mentor %}{{ student.mentor.id }}{% endif %}">
-                <input type="checkbox" name="assigned_students" value="{{ student.id }}">
-                {{ student.first_name }} ({{ student.roll_no }})
-            </label><br>
-        {% endfor %}
-    </div>
+			.field-block hr {
+				margin-top: 20px;
+				margin-bottom: 20px;
+			}
 
-    <hr>
-    <h4>Fields</h4>
-    <div id="fields-container"></div>
-    <button type="button" onclick="addField()">Add Field</button><br><br>
+			.form-section {
+				margin-bottom: 20px;
+			}
 
-    <input type="submit" value="Create Form">
-</form>
+			.field-block label {
+				margin-top: 10px;
+			}
+		</style>
+		<h1>Formssssssss</h1>
+		<script>
+			let fieldCount = 0;
 
-<script>
-let fieldIndex = 0;
+			function addField() {
+				const container = document.getElementById("fields-container");
 
-function addField() {
-    const container = document.getElementById("fields-container");
-    container.insertAdjacentHTML("beforeend", `
-        <div style="margin-bottom: 15px;">
-            <label>Field Name:</label>
-            <input type="text" name="fields[${fieldIndex}][name]" required><br>
+				const fieldHtml = `
+        <div class="field-block">
+          <label>Field Name:</label>
+          <input type="text" name="fields[${fieldCount}][field_name]" required>
 
-            <label>Field Type:</label>
-            <select name="fields[${fieldIndex}][type]" onchange="toggleOptions(this, ${fieldIndex})">
-    <option value="text">Text</option>
-    <option value="number">Number</option>
-    <option value="date">Date</option>
-    <option value="choice">Multiple Choice</option>
-    <option value="file_awk">Pick Certificate</option>
-</select>
-        <br>
+          <label>Field Type:</label>
+          <select name="fields[${fieldCount}][field_type]" onchange="onFieldTypeChange(this, ${fieldCount})" required>
+            <option value="">-- Select Type --</option>
+            <option value="text">Text</option>
+            <option value="number">Number</option>
+            <option value="date">Date</option>
+            <option value="choice">Multiple Choice</option>
+            <option value="file_awk">Pick Certificate or Upload File</option>
+          </select>
 
-            <div id="options-${fieldIndex}" style="display:none;">
-                <label>Options (comma separated):</label>
-                <input type="text" name="fields[${fieldIndex}][options]"><br>
-            </div>
-            <hr>
+          <div id="options-${fieldCount}" style="display: none;">
+            <label>Options (comma separated):</label>
+            <input type="text" name="fields[${fieldCount}][options]">
+          </div>
+
+          <div id="related-model-${fieldCount}" style="display: none;">
+            <label>Related Model:</label>
+            <select name="fields[${fieldCount}][related_model]">
+              <option value="">-- Select Model --</option>
+              <option value="certificate">Certificate</option>
+              <option value="project">Project</option>
+              <!-- Add more models here -->
+            </select>
+          </div>
         </div>
-    `);
-    fieldIndex++;
-}
+      `;
 
+				container.insertAdjacentHTML("beforeend", fieldHtml);
+				fieldCount++;
+			}
 
-function toggleOptions(select, index) {
-    const optionsDiv = document.getElementById(`options-${index}`);
-    optionsDiv.style.display = select.value === "choice" ? "block" : "none";
-}
+			function onFieldTypeChange(selectElem, index) {
+				const selectedType = selectElem.value;
+				document.getElementById(`options-${index}`).style.display =
+					selectedType === "choice" ? "block" : "none";
+				document.getElementById(
+					`related-model-${index}`
+				).style.display =
+					selectedType === "file_awk" ? "block" : "none";
+			}
+		</script>
+	</head>
 
+	<body>
+		<h2>Create a New Form</h2>
+		<form method="POST">
+			{% csrf_token %}
 
-function filterStudents() {
-    const dept = document.getElementById("deptFilter").value;
-    const year = document.getElementById("yearFilter").value;
-    const section = document.getElementById("sectionFilter").value;
-    const mentor = document.getElementById("mentorFilter").value;
+			<div class="form-section">
+				<label>Form Title:</label>
+				<input type="text" name="title" required />
 
-    document.querySelectorAll(".student-option").forEach(opt => {
-        const matchDept = !dept || opt.dataset.dept === dept;
-        const matchYear = !year || opt.dataset.year === year;
-        const matchSection = !section || opt.dataset.section === section;
-        const matchMentor = !mentor || opt.dataset.mentor === mentor;
-        opt.style.display = (matchDept && matchYear && matchSection && matchMentor) ? "block" : "none";
-    });
-}
-</script>
-{% endblock %}
+				<label>Description:</label>
+				<textarea name="description" rows="3"></textarea>
+
+				<h3>Assign to Students</h3>
+
+				<!-- Filters -->
+				<div>
+					<label>Department:</label>
+					<select id="filter-department" onchange="filterStudents()">
+						<option value="">-- All --</option>
+						{% for dept in student.DEPT_CHOICES %}
+						<option value="{{ dept.0 }}">{{ dept.0 }}</option>
+						{% endfor %}
+					</select>
+
+					<label>Year:</label>
+					<select id="filter-year" onchange="filterStudents()">
+						<option value="">-- All --</option>
+						{% for y in years %}
+						<option value="{{ y }}">{{ y }}</option>
+						{% endfor %}
+					</select>
+
+					<label>Section:</label>
+					<select id="filter-section" onchange="filterStudents()">
+						<option value="">-- All --</option>
+						{% for s in sections %}
+						<option value="{{ s }}">{{ s }}</option>
+						{% endfor %}
+					</select>
+
+					<label>Mentees Only:</label>
+					<input
+						type="checkbox"
+						id="filter-mentees"
+						onchange="filterStudents()"
+					/>
+				</div>
+
+				<!-- Student Checkbox List -->
+				<div id="student-list" style="margin-top: 15px">
+					<p>Select students:</p>
+					<div id="students-container"></div>
+				</div>
+
+				<script>
+					const currentFacultyId = {{ request.user.id }};
+					const allStudents = [
+					  {% for s in students %}
+					    {
+					      id: {{ s.id }},
+					      name: "{{ s.first_name }} {{ s.last_name }}",
+					      dept: "{{ s.dept }}",
+					      year: "{{ s.year }}",
+					      section: "{{ s.section }}",
+					    },
+					  {% endfor %}
+					];
+
+					function filterStudents() {
+					  const dept = document.getElementById("filter-department").value;
+					  const year = document.getElementById("filter-year").value;
+					  const section = document.getElementById("filter-section").value;
+
+					  const container = document.getElementById("students-container");
+					  container.innerHTML = "";
+
+					  const filtered = allStudents.filter(s => {
+					    return (!dept || s.dept === dept) &&
+					           (!year || s.year.toString() === year) &&
+					           (!section || s.section === section);
+					  });
+
+					  if (filtered.length === 0) {
+					    container.innerHTML = "<em>No students match your filters.</em>";
+					  } else {
+					    filtered.forEach(s => {
+					      container.innerHTML += `
+					        <label>
+					          <input type="checkbox" name="assigned_students" value="${s.id}">
+					          ${s.name} (${s.dept}, Year ${s.year}, Section ${s.section})
+					        </label><br>
+					      `;
+					    });
+					  }
+					}
+
+					// Load all students initially
+					window.onload = filterStudents;
+				</script>
+			</div>
+
+			<h3>Form Fields</h3>
+			<div id="fields-container"></div>
+			<button type="button" onclick="addField()">+ Add Field</button>
+
+			<div style="text-align: center">
+				<button type="submit">Create Form</button>
+			</div>
+		</form>
+	</body>
+</html>
