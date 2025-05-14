@@ -1,7 +1,7 @@
-<!-- templates/dashboard/form_detail.html -->
 {% load custom_filters %}
 <h2>{{ form.title }} - Responses Overview</h2>
 
+<!-- Summary Statistics -->
 <div style="display: flex; gap: 20px; margin-bottom: 20px">
 	<div style="padding: 10px; border: 1px solid #ccc">
 		<strong>Total Assigned:</strong> {{ total }}
@@ -14,6 +14,7 @@
 	</div>
 </div>
 
+<!-- Download Links -->
 <div style="margin-bottom: 20px">
 	<a href="{% url 'download_csv' form.id 'responses' %}"
 		>📥 Download Responses CSV</a
@@ -29,26 +30,62 @@
 </div>
 
 <h3>Submitted Responses</h3>
-<table border="1" cellpadding="5" cellspacing="0">
+
+<!-- Responses Table -->
+<table
+	border="1"
+	cellpadding="5"
+	cellspacing="0"
+	style="border-collapse: collapse; width: 100%"
+>
 	<tr>
-		<th>Student</th>
+		<th style="padding: 8px; text-align: left">Student</th>
 		{% for field in form.fields.all %}
-		<th>{{ field.field_name }}</th>
+		<th style="padding: 8px; text-align: left">{{ field.field_name }}</th>
 		{% endfor %}
-		<th>Submitted At</th>
+		<th style="padding: 8px; text-align: left">Submitted At</th>
 	</tr>
+
+	<!-- Loop over each response -->
 	{% for r in responses %}
-	<tr>
-		<td>{{ r.student.first_name }}</td>
-		{% for field in form.fields.all %}
-		<td>{{ r.responses|get_item:field.field_name }}</td>
-		{% endfor %}
-		<td>{{ r.submitted_at }}</td>
-	</tr>
-	{% endfor %}
+<tr>
+    <td style="padding: 8px">{{ r.student.first_name }}</td>
+
+    {% for field in form.fields.all %}
+    <td style="padding: 8px">
+        {% with response_value=r.responses|get_item:field.field_name %}
+            {% if field.field_type == "file_awk" %}
+                {% if field.related_model %}
+				{{ field.related_model }}
+				{{ model_instances|get_item:r.responses|get_item:field.field_name }}
+				{% if model_instances|get_item:r.responses|get_item:field.field_name %}
+				{% if model_instances|get_item:r.responses|get_item:field.field_name.certificate %}
+					<img src="{{ model_instances|get_item:r.responses|get_item:field.field_name.certificate.url }}" alt="Certificate" style="width: 100px; height: auto;" />
+				{% else %}
+					No certificate uploaded
+				{% endif %}
+			{% else %}
+				No instance found
+			{% endif %}
+                {% else %}
+                    No related model
+                {% endif %}
+            {% else %}
+                {{ response_value }}
+            {% endif %}
+        {% endwith %}
+    </td>
+    {% endfor %}
+
+    <td style="padding: 8px">{{ r.submitted_at }}</td>
+</tr>
+{% endfor %}
+
+	
 </table>
 
 <h3 style="margin-top: 40px">Students Who Didn't Respond</h3>
+<!-- List of students who didn't respond -->
 <ul>
 	{% for s in non_responded_students %}
 	<li>{{ s.roll_no }} - {{ s.first_name }}</li>

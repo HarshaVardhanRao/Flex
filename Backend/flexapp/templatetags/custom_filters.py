@@ -12,5 +12,10 @@ def trim(value):
 
 
 @register.filter
-def get_item(dictionary, key):
-    return dictionary.get(key, '')
+def get_item(value, key):
+    try:
+        if isinstance(value, str):
+            value = json.loads(value)  # parse JSON string into a dictionary
+        return value.get(key)
+    except Exception:
+        return None

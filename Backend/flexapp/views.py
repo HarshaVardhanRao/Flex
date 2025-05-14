@@ -908,26 +908,36 @@ def form_list_view(request):
     return render(request, 'dashboard/form_list.html', {'forms': forms})
 
 
+from django.apps import apps
+from django.shortcuts import render, get_object_or_404
+from .models import FillOutForm, FillOutResponse
+
 def form_detail_view(request, form_id):
     form = get_object_or_404(FillOutForm, id=form_id)
-    assigned_students = form.assigned_students.all()
-    responses = FillOutResponse.objects.filter(form=form)
+    responses = FillOutResponse.objects.filter(form=form).select_related("student")
 
-    responded_student_ids = responses.values_list('student_id', flat=True)
-    responded_students = assigned_students.filter(id__in=responded_student_ids)
-    non_responded_students = assigned_students.exclude(id__in=responded_student_ids)
+    model_instance_map = {}
+
+    for response in responses:
+        for field in form.fields.filter(field_type="file_awk"):
+            field_name = field.field_name
+            model_name = field_name  # Assuming model is named same as field
+
+            id_value = response.responses.get(field_name)
+            if id_value:
+                try:
+                    model = apps.get_model("flexapp", model_name)
+                    instance = model.objects.get(id=id_value)
+                    model_instance_map[(response.id, field_name)] = instance
+                except Exception:
+                    model_instance_map[(response.id, field_name)] = None
 
     context = {
-        'form': form,
-        'responses': responses,
-        'responded_students': responded_students,
-        'non_responded_students': non_responded_students,
-        'responded_count': responded_students.count(),
-        'not_responded_count': non_responded_students.count(),
-        'total': assigned_students.count(),
+        "form": form,
+        "responses": responses,
+        "model_instance_map": model_instance_map,
     }
-
-    return render(request, 'dashboard/form_detail.html', context)
+    return render(request, "dashboard/form_detail.html", context)
 
 
 def download_csv(request, form_id, download_type):

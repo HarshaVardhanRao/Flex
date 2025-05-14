@@ -1,120 +1,68 @@
-{% extends "base.html" %} {% load custom_filters %} {% block content %}
-<style>
-	.form-container {
-		max-width: 700px;
-		margin: 40px auto;
-		padding: 30px;
-		background-color: #f9f9f9;
-		border-radius: 12px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-		font-family: "Segoe UI", sans-serif;
-	}
+{% load custom_filters %}
+<h2>{{ form.title }} - Responses Overview</h2>
 
-	h2 {
-		text-align: center;
-		color: #333;
-		margin-bottom: 10px;
-	}
-
-	p.description {
-		text-align: center;
-		color: #555;
-		margin-bottom: 30px;
-	}
-
-	label {
-		font-weight: 600;
-		margin-top: 15px;
-		display: block;
-		color: #444;
-	}
-
-	input[type="text"],
-	input[type="number"],
-	input[type="date"],
-	input[type="file"],
-	select {
-		width: 100%;
-		padding: 10px;
-		margin-top: 6px;
-		margin-bottom: 16px;
-		border: 1px solid #ccc;
-		border-radius: 6px;
-		box-sizing: border-box;
-	}
-
-	.radio-group {
-		margin-bottom: 16px;
-	}
-
-	.radio-group input[type="radio"] {
-		margin-right: 8px;
-	}
-
-	input[type="submit"] {
-		background-color: #3498db;
-		color: white;
-		padding: 12px 20px;
-		border: none;
-		border-radius: 8px;
-		cursor: pointer;
-		width: 100%;
-		font-size: 16px;
-		transition: background-color 0.3s ease;
-	}
-
-	input[type="submit"]:hover {
-		background-color: #2980b9;
-	}
-</style>
-
-<div class="form-container">
-	<h2>{{ form.title }}</h2>
-	<p class="description">{{ form.description }}</p>
-
-	<form method="post" enctype="multipart/form-data">
-		{% csrf_token %} {% for field in fields %}
-		<label>{{ field.field_name }}:</label>
-
-		{% if field.field_type == "text" %}
-		<input type="text" name="{{ field.id }}" required />
-
-		{% elif field.field_type == "number" %}
-		<input type="number" name="{{ field.id }}" required />
-
-		{% elif field.field_type == "date" %}
-		<input type="date" name="{{ field.id }}" required />
-
-		{% elif field.field_type == "choice" %}
-		<div class="radio-group">
-			{% for option in field.options|split_by_comma %}
-			<label>
-				<input
-					type="radio"
-					name="{{ field.id }}"
-					value="{{ option|trim }}"
-					required
-				/>
-				{{ option|trim }} </label
-			><br />
-			{% endfor %}
-		</div>
-
-		{% elif field.field_type == "file_awk" %}
-    {% if field.related_model and model_instances|get_item:field.related_model %}
-        <select name="{{ field.id }}" required>
-            <option value="" selected disabled>Select a {{ field.related_model }}</option>
-            {% for instance in model_instances|get_item:field.related_model %}
-                <option value="{{ instance.id }}">{{ instance }}</option>
-            {% endfor %}
-        </select>
-    {% else %}
-        <input type="file" name="{{ field.id }}" required>
-    {% endif %}
-{% endif %}
- {% endfor %}
-
-		<input type="submit" value="Submit" />
-	</form>
+<!-- Summary -->
+<div style="display: flex; gap: 20px; margin-bottom: 20px">
+    <div style="padding: 10px; border: 1px solid #ccc"><strong>Total Assigned:</strong> {{ total }}</div>
+    <div style="padding: 10px; border: 1px solid #ccc"><strong>Responded:</strong> {{ responded_count }}</div>
+    <div style="padding: 10px; border: 1px solid #ccc"><strong>Not Responded:</strong> {{ not_responded_count }}</div>
 </div>
-{% endblock %}
+
+<!-- Downloads -->
+<div style="margin-bottom: 20px">
+    <a href="{% url 'download_csv' form.id 'responses' %}">📥 Download Responses CSV</a> |
+    <a href="{% url 'download_csv' form.id 'filled' %}">📥 Filled Students CSV</a> |
+    <a href="{% url 'download_csv' form.id 'not_filled' %}">📥 Not Filled Students CSV</a>
+</div>
+
+<!-- Response Table -->
+<h3>Submitted Responses</h3>
+<table border="1" cellpadding="5" cellspacing="0">
+    <tr>
+        <th>Student</th>
+        {% for field in form.fields.all %}
+        <th>{{ field.field_name }}</th>
+        {% endfor %}
+        <th>Submitted At</th>
+    </tr>
+
+    {% for r in responses %}
+    <tr>
+        <td style="padding: 8px">{{ r.student.first_name }}</td>
+
+        {% for field in form.fields.all %}
+        <td style="padding: 8px">
+            {% with field_name=field.field_name %}
+                {% with response_value=r.responses|get_item:field_name %}
+                    {% if field.field_type == "file_awk" %}
+                        {% with instance=model_instance_map|get_item:(r.id, field_name) %}
+                            {% if instance %}
+                                {% if instance.image_field %}
+                                    <img src="{{ instance.image_field.url }}" alt="Certificate" style="width: 100px;" />
+                                {% else %}
+                                    {{ instance }}
+                                {% endif %}
+                            {% else %}
+                                No instance found
+                            {% endif %}
+                        {% endwith %}
+                    {% else %}
+                        {{ response_value }}
+                    {% endif %}
+                {% endwith %}
+            {% endwith %}
+        </td>
+        {% endfor %}
+
+        <td style="padding: 8px">{{ r.submitted_at }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<!-- Not Responded -->
+<h3 style="margin-top: 40px">Students Who Didn't Respond</h3>
+<ul>
+    {% for s in non_responded_students %}
+    <li>{{ s.roll_no }} - {{ s.first_name }}</li>
+    {% endfor %}
+</ul>
