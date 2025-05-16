@@ -6,6 +6,9 @@ class LeetCodeForm(forms.ModelForm):
         model = LeetCode
         exclude = ['rollno']
 
+from django import forms
+from .models import Certificate
+
 class CertificateForm(forms.ModelForm):
     technologies = forms.ModelMultipleChoiceField(
         queryset=Technology.objects.all(),

@@ -3,8 +3,8 @@ from . import views
 from .views import upload_students, search_students
 
 urlpatterns = [
-
-    path('',views.CustomLogin,name="login"),
+    path('',views.index,name="index"),
+    path('login',views.CustomLogin,name="login"),
     path('logout', views.CustomLogout, name="logout"),
     path('dashboard', views.dashboard, name="dashboard"),
     # path('updateLeet/<int:count>',views.UpdateLeet, name="updateLeet"),
@@ -29,6 +29,7 @@ urlpatterns = [
     path("search_students/", search_students, name="search_students"),
     path("search_technologies/", views.search_technologies, name="search_technologies"),
     path('dashboard/placement/', views.placement_dashboard, name='placement_dashboard'),
+    path('fillout',views.fillout,name="fillout"),
     path("create/", views.create_form, name="create_form"),
     path("assigned/", views.list_assigned_forms, name="list_assigned_forms"),
     path("fill/<int:form_id>/", views.get_form, name="fill_form_detail"),
@@ -50,4 +51,6 @@ urlpatterns = [
     path('api/login/', views.api_login, name='api-login'),
     path('api/logout/', views.api_logout, name='api-logout'),
     path('api/current-user/', views.api_current_user, name='api-current-user'),
+    path('certificateForm', views.certificate_create, name='certificate_create'),
+    path("api/student-models/<str:model_name>/", views.student_model_instances)
 ]

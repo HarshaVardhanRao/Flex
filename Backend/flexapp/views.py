@@ -21,6 +21,16 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import StudentSerializer, ProjectSerializer, CertificateSerializer, TechnologySerializer
 
+def index(request):
+    if request.user.is_authenticated:
+        print(request.user)
+        if request.user.type() == "student":                
+            return redirect('dashboard')
+        if request.user.type() == "Faculty":
+            return redirect('faculty')
+    print("redirecting to Login")
+    return redirect('login')
+
 logging.basicConfig(level=logging.DEBUG)
 
 # REST API endpoints
@@ -356,16 +366,24 @@ def add_certification(request):
         return HttpResponse("An error occurred.")
 
 def CustomLogin(request):
+    print("LoginBlock")
     try:
         if request.user.is_authenticated:
+            print(request.user)
             if request.user.type() == "student":
                 return redirect('dashboard')
             if request.user.type() == "Faculty":
                 return redirect('faculty')
+            if request.user.is_superuser:
+                return redirect('admin')
+
+            
         if request.method == 'POST':
             rollno = request.POST.get('rollno')
             password = request.POST.get('password')
+            print(rollno,password)
             user = authenticate(request=request, username=rollno, password=password)
+            print(user)
             if user is not None:
                 login(request, user)
                 if user.type() == "student":
@@ -387,28 +405,81 @@ def CustomLogout(request):
         return HttpResponse("An error occurred.")
     
 ################################FillOut##########################
-@csrf_exempt
+@login_required
+def fillout(request):
+    if request.user.type() == "Faculty":
+        return redirect('forms/')
+    else:
+        return redirect('assigned/')
+
 def create_form(request):
-    if request.user.type() == "Faculty": 
-        if request.method == "POST":
-            data = json.loads(request.body)
+    if request.user.type() != "Faculty":
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    if request.method == "POST":
+        try:
+            title = request.POST.get("title")
+            description = request.POST.get("description", "")
+            assigned_ids = request.POST.get("assigned_students", "").split(",")
+
             form = FillOutForm.objects.create(
-                title=data["title"],
-                description=data.get("description", ""),
+                title=title,
+                description=description,
                 created_by=request.user,
             )
-            for field in data["fields"]:
-                FillOutField.objects.create(
-                    form=form,
-                    field_name=field["field_name"],
-                    field_type=field["field_type"],
-                    options=json.dumps(field.get("options", [])),
-                )
-            students = student.objects.filter(id__in=data["assigned_students"])
-            form.assigned_students.set(students)
-            return JsonResponse({"message": "Form created successfully!", "form_id": form.id})
-    else:
+
+            # Process fields
+            fields = []
+            for key in request.POST:
+                if "field_name" in key:
+                    idx = key.split("[")[1].split("]")[0]
+                    field_name = request.POST.get(f"fields[{idx}][field_name]")
+                    field_type = request.POST.get(f"fields[{idx}][field_type]")
+                    options = request.POST.get(f"fields[{idx}][options]", None)
+                    related_model = request.POST.get(f"fields[{idx}][related_model]", None)
+
+                    fields.append(FillOutField(
+                        form=form,
+                        field_name=field_name,
+                        field_type=field_type,
+                        options=json.dumps([o.strip() for o in options.split(",")]) if options else None,
+                        related_model=related_model if field_type == "file_awk" else None
+                    ))
+
+            FillOutField.objects.bulk_create(fields)
+            form.assigned_students.set(student.objects.filter(id__in=assigned_ids))
+            return JsonResponse({"message": "Form created", "form_id": form.id})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+    print("Html Requested")
+    all_students = student.objects.select_related("mentor").all()
+    years = student.objects.values_list("year", flat=True).distinct()
+    sections = student.objects.values_list("section", flat=True).distinct()
+
+    return render(request, "create_form.html", {
+        "students": all_students,
+        "years": years,
+        "sections": sections,
+    })
+
+
+def student_model_instances(request, model_name):
+    if not request.user.is_authenticated:
         return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    model_map = {
+        "certificate": Certificate,
+        "project": Project,
+    }
+
+    model = model_map.get(model_name)
+    if not model:
+        return JsonResponse({"error": "Invalid model"}, status=400)
+
+    instances = model.objects.filter(student=request.user)
+    data = [{"id": obj.id, "label": str(obj)} for obj in instances]
+    return JsonResponse(data, safe=False)
+
 
 @csrf_exempt
 def submit_response(request, form_id):
@@ -544,6 +615,33 @@ def faculty(request):
     except Exception as e:
         logging.error(f"Error in faculty: {e}")
         return HttpResponse("An error occurred.")
+############################### DEMO #############################
+from django.shortcuts import render, redirect
+from .forms import CertificateForm
+from .models import Certificate
+
+def certificate_create(request):
+    if request.method == 'POST':
+        form = CertificateForm(request.POST, request.FILES)
+        if form.is_valid():
+            cert = form.save(commit=False)
+            cert.rollno = request.user  # Assuming OneToOne link
+            cert.save()
+            form.save_m2m()
+            return redirect('/')
+    else:
+        form = CertificateForm()
+
+    context = {
+        'form': form,
+        'distinct_sources': Certificate.objects.values_list('source', flat=True).distinct(),
+        'distinct_providers': Certificate.objects.values_list('course_provider', flat=True).distinct(),
+        'distinct_domains': Certificate.objects.values_list('domain', flat=True).distinct(),
+        'distinct_fests': Certificate.objects.values_list('fest_name', flat=True).distinct(),
+    }
+
+    return render(request, 'certificate_form.html', context)
+
 
 ################################ Coordinator #####################################
 # views.py
@@ -916,43 +1014,6 @@ from .models import FillOutForm, FillOutField, student
 from django.contrib.auth.decorators import login_required
 import json
 
-@login_required
-def create_form(request):
-    if request.method == "POST":
-        title = request.POST.get("title")
-        description = request.POST.get("description")
-        assigned_ids = request.POST.getlist("assigned_students")
-
-        form = FillOutForm.objects.create(
-            title=title,
-            description=description,
-            created_by=request.user
-        )
-        form.assigned_students.set(student.objects.filter(id__in=assigned_ids))
-
-        fields_data = request.POST.dict()
-        index = 0
-        while f'fields[{index}][name]' in fields_data:
-            name = fields_data.get(f'fields[{index}][name]')
-            field_type = fields_data.get(f'fields[{index}][type]')
-            options = fields_data.get(f'fields[{index}][options]', '')
-
-            FillOutField.objects.create(
-                form=form,
-                field_name=name,
-                field_type=field_type,
-                options=json.dumps([opt.strip() for opt in options.split(',')]) if field_type == 'choice' else None
-            )
-            index += 1
-        return redirect("dashboard")
-    
-    all_students = student.objects.all()
-    mentors = Faculty.objects.all()
-    return render(request, "create_form.html", {
-        "students": all_students,
-        "mentors": mentors,
-        "years":[1,2,3,4]
-    })
 
 @login_required
 def list_assigned_forms(request):
@@ -1003,8 +1064,10 @@ def get_form(request, form_id):
     return render(request, "fill_form_detail.html", {
         "form": form,
         "fields": form.fields.all(),
-        "certificates": certificates
-    })
+        "model_instances": {
+        "certificate": Certificate.objects.filter(rollno=request.user),
+        "project": Projects.objects.filter(contributors=request.user),}
+        })
 
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
@@ -1017,26 +1080,36 @@ def form_list_view(request):
     return render(request, 'dashboard/form_list.html', {'forms': forms})
 
 
+from django.apps import apps
+from django.shortcuts import render, get_object_or_404
+from .models import FillOutForm, FillOutResponse
+
 def form_detail_view(request, form_id):
     form = get_object_or_404(FillOutForm, id=form_id)
-    assigned_students = form.assigned_students.all()
-    responses = FillOutResponse.objects.filter(form=form)
+    responses = FillOutResponse.objects.filter(form=form).select_related("student")
 
-    responded_student_ids = responses.values_list('student_id', flat=True)
-    responded_students = assigned_students.filter(id__in=responded_student_ids)
-    non_responded_students = assigned_students.exclude(id__in=responded_student_ids)
+    model_instance_map = {}
+
+    for response in responses:
+        for field in form.fields.filter(field_type="file_awk"):
+            field_name = field.field_name
+            model_name = field_name  # Assuming model is named same as field
+
+            id_value = response.responses.get(field_name)
+            if id_value:
+                try:
+                    model = apps.get_model("flexapp", model_name)
+                    instance = model.objects.get(id=id_value)
+                    model_instance_map[(response.id, field_name)] = instance
+                except Exception:
+                    model_instance_map[(response.id, field_name)] = None
 
     context = {
-        'form': form,
-        'responses': responses,
-        'responded_students': responded_students,
-        'non_responded_students': non_responded_students,
-        'responded_count': responded_students.count(),
-        'not_responded_count': non_responded_students.count(),
-        'total': assigned_students.count(),
+        "form": form,
+        "responses": responses,
+        "model_instance_map": model_instance_map,
     }
-
-    return render(request, 'dashboard/form_detail.html', context)
+    return render(request, "dashboard/form_detail.html", context)
 
 
 def download_csv(request, form_id, download_type):

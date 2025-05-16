@@ -151,6 +151,9 @@ class Certificate(models.Model):
         ('participation', 'Participation'),
         ('appreciation', 'Appreciation'),
         ('recommendation', 'Recommendation'),
+        ('completion','Completion'),
+        ('recognition','Recognition'),
+        ('rankcard','Rankcard'),
     ]
     rank = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
     recognition = models.CharField(max_length=20, choices=RECOGNITION_CHOICES, blank=True)
@@ -267,23 +270,46 @@ class FillOutField(models.Model):
         ("number", "Number"),
         ("date", "Date"),
         ("choice", "Multiple Choice"),
-        ("file_awk", "Pick Certificate"),  # NEW
+        ("file_awk", "Pick from your own instances or upload file"),
     ]
 
     form = models.ForeignKey(FillOutForm, on_delete=models.CASCADE, related_name="fields")
     field_name = models.CharField(max_length=255)
     field_type = models.CharField(max_length=20, choices=FIELD_TYPES)
-    options = models.TextField(blank=True, null=True)  # Optional even for file_awk
+    options = models.TextField(blank=True, null=True)  # for multiple-choice
+    related_model = models.CharField(
+        max_length=100, blank=True, null=True,
+        help_text="Model name (e.g., 'certificate', 'project')"
+    )
 
     def __str__(self):
         return f"{self.form.title} - {self.field_name}"
 
 
 
+
+
 class FillOutResponse(models.Model):
     form = models.ForeignKey(FillOutForm, on_delete=models.CASCADE, related_name="responses")
     student = models.ForeignKey("student", on_delete=models.CASCADE, related_name="form_responses")
-    responses = models.JSONField()  # Store responses as JSON
+
+    # responses structure:
+    # [
+    #   {
+    #     "field_id": 1,
+    #     "field_name": "Upload Certificate",
+    #     "field_type": "file_awk",
+    #     "value": {
+    #         "file_url": "/media/certs/sample.pdf",
+    #         OR
+    #         "model": "certificate",
+    #         "instance_id": 5,
+    #         "display": "Python Certification"
+    #     }
+    #   },
+    #   ...
+    # ]
+    responses = models.JSONField()  
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
