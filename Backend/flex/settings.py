@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
+    'rest_framework',
     'flexapp',
 ]
 EMAIL_BACKEND =  'django.core.mail.backends.smtp.EmailBackend'
@@ -48,6 +50,7 @@ EMAIL_USE_TLS =  str(os.getenv("EMAIL_USE_TLS"))
 EMAIL_HOST_USER =  str(os.getenv("EMAIL_HOST_USER"))
 EMAIL_HOST_PASSWORD =  str(os.getenv("EMAIL_HOST_PASSWORD"))
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -173,4 +176,17 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# CORS Settings
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# If you want to allow all origins (not recommended for production)
+# CORS_ALLOW_ALL_ORIGINS = True
 

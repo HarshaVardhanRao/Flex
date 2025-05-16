@@ -15,8 +15,180 @@ from django.core.mail import send_mail
 import random
 from flex import settings
 from django.core.files.storage import FileSystemStorage
+from rest_framework import viewsets
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from .serializers import StudentSerializer, ProjectSerializer, CertificateSerializer, TechnologySerializer
 
 logging.basicConfig(level=logging.DEBUG)
+
+# REST API endpoints
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_overview(request):
+    api_urls = {
+        'Student List': '/api/students/',
+        'Student Detail': '/api/student/<str:rollno>/',
+        'Projects': '/api/projects/',
+        'Certificates': '/api/certificates/',
+    }
+    return Response(api_urls)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def student_list(request):
+    students = student.objects.all()
+    serializer = StudentSerializer(students, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def student_detail(request, rollno):
+    student_obj = get_object_or_404(student, rollno=rollno)
+    serializer = StudentSerializer(student_obj)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@csrf_exempt
+def api_login(request):
+    rollno = request.data.get('username')
+    password = request.data.get('password')
+    
+    if not rollno or not password:
+        return Response({'error': 'Please provide both username and password'}, status=400)
+        
+    user = authenticate(request=request, username=rollno, password=password)
+    
+    if user is not None:
+        login(request, user)
+        try:
+            if user.type() == "student":
+                serializer = StudentSerializer(user)
+                return Response(serializer.data)
+            else:
+                return Response({'error': 'Only student login supported via API'}, status=403)
+        except AttributeError:
+            return Response({'error': 'User type not supported'}, status=500)
+    else:
+        # Log the failed attempt for debugging
+        logging.debug(f"Failed login attempt for username: {rollno}")
+        return Response({'error': 'Invalid credentials. Please check your username and password.'}, status=401)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])  # Allow any access to check auth status
+def api_current_user(request):
+    if not request.user.is_authenticated:
+        return Response({'error': 'Not authenticated'}, status=401)
+    
+    try:
+        user_type = request.user.type()
+        if user_type == "student":
+            serializer = StudentSerializer(request.user)
+            return Response(serializer.data)
+        else:
+            return Response({'error': 'Currently only student accounts are supported'}, status=403)
+    except AttributeError:
+        return Response({'error': 'User type not supported'}, status=403)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])  # Allow any user to logout
+@csrf_exempt
+def api_logout(request):
+    if request.user.is_authenticated:
+        logout(request)
+    return Response({"message": "Successfully logged out"})
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def technology_list(request):
+    technologies = Technology.objects.all()
+    serializer = TechnologySerializer(technologies, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def project_list(request):
+    projects = Projects.objects.all()
+    serializer = ProjectSerializer(projects, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_project_api(request):
+    """API endpoint for creating a new project"""
+    try:
+        # Get current user
+        current_user = request.user
+        
+        # Check if the user is a student
+        if not hasattr(current_user, 'type') or current_user.type() != "student":
+            return Response({"error": "Only students can create projects"}, status=403)
+            
+        # Create a form with the request data
+        form = ProjectsForm(request.data, student=current_user)
+        
+        if form.is_valid():
+            project = form.save(commit=False)
+            project.save()
+            
+            # Save many-to-many relationships
+            form.save_m2m()
+            
+            # Add current user as contributor if not already added
+            if current_user not in project.contributors.all():
+                project.contributors.add(current_user)
+                
+            serializer = ProjectSerializer(project)
+            return Response(serializer.data, status=201)
+        else:
+            return Response({"errors": form.errors}, status=400)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def certificate_list(request):
+    certificates = Certificate.objects.all()
+    serializer = CertificateSerializer(certificates, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_certificate_api(request):
+    """API endpoint for creating a new certificate"""
+    try:
+        # Get current user
+        current_user = request.user
+        
+        # Check if the user is a student
+        if not hasattr(current_user, 'type') or current_user.type() != "student":
+            return Response({"error": "Only students can add certificates"}, status=403)
+        
+        # Handle file upload if present
+        certificate_file = request.FILES.get('certificate')
+        
+        # Create a copy of the data that can be modified
+        data = request.data.copy()
+        
+        # Create a form with the request data
+        form = CertificateForm(data, request.FILES, student=current_user)
+        
+        if form.is_valid():
+            certificate = form.save(commit=False)
+            certificate.rollno = current_user
+            certificate.save()
+            
+            # Save many-to-many relationships
+            form.save_m2m()
+            
+            serializer = CertificateSerializer(certificate)
+            return Response(serializer.data, status=201)
+        else:
+            return Response({"errors": form.errors}, status=400)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
 
 def getStudentDetails(student):
     try:

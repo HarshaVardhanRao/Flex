@@ -35,4 +35,19 @@ urlpatterns = [
     path('forms/', views.form_list_view, name='form_list'),
     path('forms/<int:form_id>/', views.form_detail_view, name='form_detail'),
     path('forms/<int:form_id>/download/<str:download_type>/', views.download_csv, name='download_csv'),
+    
+    # API Endpoints
+    path('api/', views.api_overview, name='api-overview'),
+    path('api/students/', views.student_list, name='api-students'),
+    path('api/student/<str:rollno>/', views.student_detail, name='api-student-detail'),
+    path('api/technologies/', views.technology_list, name='api-technologies'),
+    path('api/projects/', views.project_list, name='api-projects'),
+    path('api/projects/create/', views.create_project_api, name='api-create-project'),
+    path('api/certificates/', views.certificate_list, name='api-certificates'),
+    path('api/certificates/create/', views.create_certificate_api, name='api-create-certificate'),
+    
+    # API Auth Endpoints
+    path('api/login/', views.api_login, name='api-login'),
+    path('api/logout/', views.api_logout, name='api-logout'),
+    path('api/current-user/', views.api_current_user, name='api-current-user'),
 ]
