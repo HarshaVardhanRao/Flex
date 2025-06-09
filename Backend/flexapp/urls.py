@@ -10,7 +10,7 @@ urlpatterns = [
     # path('updateLeet/<int:count>',views.UpdateLeet, name="updateLeet"),
     # path('register', views.register, name="register"),
     path('create-project', views.create_project, name="create_project"),
-    path('add-certification', views.add_certification, name="add_certification"), 
+    path('add-certification', views.add_certification, name="add_certification"),
     path('faculty', views.faculty, name="faculty"),
     path('coordinator/dashboard/', views.coordinator_dashboard, name='coordinator_dashboard'),
     path('student/<str:rollno>', views.studentView, name="studentView"),
@@ -36,17 +36,18 @@ urlpatterns = [
     path('forms/', views.form_list_view, name='form_list'),
     path('forms/<int:form_id>/', views.form_detail_view, name='form_detail'),
     path('forms/<int:form_id>/download/<str:download_type>/', views.download_csv, name='download_csv'),
-    
+
     # API Endpoints
     path('api/', views.api_overview, name='api-overview'),
     path('api/students/', views.student_list, name='api-students'),
     path('api/student/<str:rollno>/', views.student_detail, name='api-student-detail'),
     path('api/technologies/', views.technology_list, name='api-technologies'),
     path('api/projects/', views.project_list, name='api-projects'),
+    path('api/projects/<int:project_id>/', views.project_detail, name='api-project-detail'),
     path('api/projects/create/', views.create_project_api, name='api-create-project'),
     path('api/certificates/', views.certificate_list, name='api-certificates'),
     path('api/certificates/create/', views.create_certificate_api, name='api-create-certificate'),
-    
+
     # API Auth Endpoints
     path('api/login/', views.api_login, name='api-login'),
     path('api/logout/', views.api_logout, name='api-logout'),

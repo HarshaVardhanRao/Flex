@@ -1,282 +1,409 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import ApiService from '../services/api';
-import ErrorBanner from './ErrorBanner';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import ApiService from "../services/api";
+import ErrorBanner from "./ErrorBanner";
+import { useAuth } from "../context/AuthContext";
+import Autocomplete from "./Autocomplete";
+import TagList from "./TagList";
 
-const ProjectForm = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    year_and_sem: '',
-    github_link: '',
-    status: 'Initialized',
-    technologies: [],
-    contributors: []
-  });
-  
-  const [technologies, setTechnologies] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [yearAndSemOptions, setYearAndSemOptions] = useState([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  
-  useEffect(() => {
-    // Fetch technologies and students for selection
-    const fetchData = async () => {
-      try {
-        // Fetch technologies
-        const techResponse = await ApiService.getTechnologies();
-        setTechnologies(techResponse.data || []);
-        
-        // Fetch students for contributors
-        const studentsResponse = await ApiService.getStudents();
-        setStudents(studentsResponse.data || []);
-        
-        // If current user is a student, add them to contributors by default
-        if (user) {
-          setFormData(prev => ({
+const ProjectForm = ({ action = "create", projectData = null }) => {
+	const navigate = useNavigate();
+	const { user } = useAuth();
+
+	// Set initial form data, either from provided projectData or default values
+	const [formData, setFormData] = useState({
+		title: projectData?.title || "",
+		description: projectData?.description || "",
+		year_and_sem: projectData?.year_and_sem || "",
+		github_link: projectData?.github_link || "",
+		status: projectData?.status || "Initialized",
+		technologies: projectData?.technologies || [], // This will store technology objects now, not just IDs
+		contributors: projectData?.contributors || [], // This will store contributor objects now, not just IDs
+	});
+
+	const [technologies, setTechnologies] = useState([]);
+	const [students, setStudents] = useState([]);
+	const [yearAndSemOptions, setYearAndSemOptions] = useState([]);
+	const [error, setError] = useState("");
+	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		// Fetch technologies and students for selection
+		const fetchData = async () => {
+			try {
+				// Fetch technologies
+				const techResponse = await ApiService.getTechnologies();
+				setTechnologies(techResponse.data || []);
+
+				// Fetch students for contributors
+				const studentsResponse = await ApiService.getStudents();
+				setStudents(studentsResponse.data || []);
+        if (action === "create") {
+          // If creating a new project, add current user as a contributor
+          setFormData((prev) => ({
             ...prev,
-            contributors: [user.id]
+            contributors: [user],
           }));
         }
-      } catch (error) {
-        console.error('Error fetching form data:', error);
-        setError('Failed to load form data. Please try again later.');
-      }
-    };
-    
-    // Set year and semester options
-    setYearAndSemOptions([
-      "I-I", "I-II", "II-I", "II-II", "III-I", "III-II", "IV-I", "IV-II"
-    ]);
-    
-    fetchData();
-  }, [user]);
-  
-  // Handle change for text inputs
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-  
-  // Handle technology selection with checkboxes
-  const handleTechChange = (e) => {
-    const { value, checked } = e.target;
-    if (checked) {
-      setFormData({
-        ...formData,
-        technologies: [...formData.technologies, value]
-      });
-    } else {
-      setFormData({
-        ...formData,
-        technologies: formData.technologies.filter(tech => tech !== value)
-      });
-    }
-  };
-  
-  // Handle contributors selection with checkboxes
-  const handleContributorChange = (e) => {
-    const { value, checked } = e.target;
-    if (checked) {
-      setFormData({
-        ...formData,
-        contributors: [...formData.contributors, value]
-      });
-    } else {
-      // If current user is deselecting themselves, don't allow it
-      if (value === user?.id) {
-        return;
-      }
-      setFormData({
-        ...formData,
-        contributors: formData.contributors.filter(id => id !== value)
-      });
-    }
-  };
-  
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    
-    try {
-      // Validate form
-      if (!formData.title || !formData.description || !formData.year_and_sem) {
-        throw new Error('Please fill all required fields');
-      }
-      
-      // Validate GitHub link format if provided
-      if (formData.github_link && !formData.github_link.match(/^https?:\/\/github\.com\/[\w-]+\/[\w.-]+\/?$/)) {
-        throw new Error('Please enter a valid GitHub repository URL');
-      }
-      
-      // Ensure at least one contributor is selected
-      if (formData.contributors.length === 0) {
-        throw new Error('Please select at least one contributor');
-      }
-      
-      // Convert contributors and technologies to integer IDs
-      const payload = {
-        ...formData,
-        contributors: formData.contributors.map(id => parseInt(id)),
-        technologies: formData.technologies.map(id => parseInt(id)),
-      };
-      
-      // Submit the form
-      const response = await ApiService.createProject(payload);
-      
-      // Handle success
-      alert('Project created successfully!');
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.errors || err.message || 'An error occurred while submitting the form');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-md max-w-3xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-6">Create New Project</h2>
-      
-      {error && <ErrorBanner message={error} />}
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Title */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Project Title *</label>
-          <input 
-            type="text" 
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-            placeholder="Project Title"
-            required
-          />
-        </div>
-        
-        {/* Description */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Description *</label>
-          <textarea 
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows="4"
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-            placeholder="Provide a detailed description of your project"
-            required
-          />
-        </div>
-        
-        {/* Year and Semester */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Year and Semester *</label>
-          <select 
-            name="year_and_sem"
-            value={formData.year_and_sem}
-            onChange={handleChange}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-            required
-          >
-            <option value="">Select Year & Semester</option>
-            {yearAndSemOptions.map(option => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
-        </div>
-        
-        {/* GitHub Link */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">GitHub Repository</label>
-          <input 
-            type="url" 
-            name="github_link"
-            value={formData.github_link}
-            onChange={handleChange}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-            placeholder="https://github.com/username/project"
-          />
-          <p className="text-xs text-gray-500 mt-1">Format: https://github.com/username/repository</p>
-        </div>
-        
-        {/* Project Status */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Project Status</label>
-          <select 
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-          >
-            <option value="Initialized">Initialized</option>
-            <option value="In_progress">In Progress</option>
-            <option value="Completed">Completed</option>
-          </select>
-        </div>
-        
-        {/* Technologies */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Technologies Used</label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto p-2 border border-gray-200 rounded">
-            {technologies.map(tech => (
-              <label key={tech.id} className="inline-flex items-center">
-                <input 
-                  type="checkbox" 
-                  value={tech.id}
-                  checked={formData.technologies.includes(tech.id)}
-                  onChange={handleTechChange}
-                  className="form-checkbox"
-                />
-                <span className="ml-2">{tech.name}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-        
-        {/* Contributors */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Contributors *</label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto p-2 border border-gray-200 rounded">
-            {students.map(student => (
-              <label key={student.id} className="inline-flex items-center">
-                <input 
-                  type="checkbox" 
-                  value={student.id}
-                  checked={formData.contributors.includes(student.id)}
-                  onChange={handleContributorChange}
-                  disabled={student.id === user?.id} // Disable current user to prevent deselection
-                  className="form-checkbox"
-                />
-                <span className="ml-2">{student.first_name} ({student.roll_no})</span>
-              </label>
-            ))}
-          </div>
-        </div>
-        
-        {/* Submit Button */}
-        <div className="pt-4">
-          <button 
-            type="submit" 
-            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            disabled={loading}
-          >
-            {loading ? 'Creating Project...' : 'Create Project'}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
+			} catch (error) {
+				console.error("Error fetching form data:", error);
+				setError("Failed to load form data. Please try again later.");
+			}
+		};
+
+		// Set year and semester options
+		setYearAndSemOptions([
+			"I-I",
+			"I-II",
+			"II-I",
+			"II-II",
+			"III-I",
+			"III-II",
+			"IV-I",
+			"IV-II",
+		]);
+
+		fetchData();
+	}, [user]);
+
+	// Effect to populate form data when editing an existing project
+	useEffect(() => {
+		if (action === "edit" && projectData) {
+			setFormData({
+				title: projectData.title || "",
+				description: projectData.description || "",
+				year_and_sem: projectData.year_and_sem || "",
+				github_link: projectData.github_link || "",
+				status: projectData.status || "Initialized",
+				technologies: projectData.technologies || [],
+				contributors: projectData.contributors || [],
+			});
+		}
+	}, [action, projectData]);
+
+	// Handle change for text inputs
+	const handleChange = (e) => {
+		const { name, value } = e.target;
+		setFormData({
+			...formData,
+			[name]: value,
+		});
+	};
+
+	// Handle adding a new technology
+	const handleAddTechnology = (tech) => {
+		setFormData((prev) => ({
+			...prev,
+			technologies: [...prev.technologies, tech],
+		}));
+	};
+
+	// Handle removing a technology
+	const handleRemoveTechnology = (techToRemove) => {
+		setFormData((prev) => ({
+			...prev,
+			technologies: prev.technologies.filter(
+				(tech) => tech.id !== techToRemove.id
+			),
+		}));
+	};
+
+	// Handle adding a contributor
+	const handleAddContributor = (contributor) => {
+		setFormData((prev) => ({
+			...prev,
+			contributors: [...prev.contributors, contributor],
+		}));
+	};
+
+	// Handle removing a contributor
+	const handleRemoveContributor = (contributorToRemove) => {
+		// Prevent removing current user
+		if (contributorToRemove.id === user?.id) {
+			return;
+		}
+
+		setFormData((prev) => ({
+			...prev,
+			contributors: prev.contributors.filter(
+				(contributor) => contributor.id !== contributorToRemove.id
+			),
+		}));
+	};
+
+	// Get label for technology tag
+	const getTechnologyLabel = (tech) => {
+		return tech.name || tech;
+	};
+
+	// Get label for contributor tag
+	const getContributorLabel = (contributor) => {
+		if (typeof contributor === "string" || contributor instanceof String)
+			return contributor;
+		return `${contributor.name || ""} ${contributor.last_name || ""}`;
+	};
+
+	// Handle form submission
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		setLoading(true);
+		setError("");
+
+		try {
+			// Format data for API - extract IDs and handle new items
+			const formattedData = {
+				name: formData.title,
+				description: formData.description,
+				year_and_sem: formData.year_and_sem,
+				github_link: formData.github_link,
+				status: formData.status,
+				technologies: formData.technologies.map((tech) => {
+					// If it's a new technology, send the name
+					if (tech.isNew) {
+						return { name: tech.name };
+					}
+					// Otherwise send the ID
+					return tech.id;
+				}),
+				contributors: formData.contributors.map((contributor) => {
+					// If it's a new contributor, send the name/details
+					if (contributor.isNew) {
+						return { name: contributor.name };
+					}
+					// Otherwise send the ID
+					return contributor.id;
+				}),
+			};
+
+			if (action === "edit" && projectData?.id) {
+				// Update existing project
+				await ApiService.updateProject(projectData.id, formattedData);
+				// Success message or handling
+				console.log("Project updated successfully");
+			} else {
+				// Create new project
+				await ApiService.createProject(formattedData);
+				// Success message or handling
+				console.log("Project created successfully");
+			}
+
+			// Redirect back to dashboard
+			navigate("/dashboard");
+		} catch (error) {
+			console.error(
+				`Error ${action === "edit" ? "updating" : "creating"} project:`,
+				error
+			);
+			setError(
+				error.response?.data?.detail ||
+					`Failed to ${
+						action === "edit" ? "update" : "create"
+					} project. Please try again.`
+			);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	return (
+		<div className="container mx-auto p-4">
+			<h1 className="text-3xl font-bold mb-6 text-flex-yellow text-center">
+				{action === "edit" ? "Edit Project" : "Create New Project"}
+			</h1>
+
+			{error && <ErrorBanner message={error} />}
+
+			<form
+				onSubmit={handleSubmit}
+				className="bg-flex-dark p-6 rounded-lg shadow-flex max-w-2xl mx-auto"
+			>
+				{/* Title */}
+				<div className="mb-4">
+					<label className="block text-white mb-2" htmlFor="title">
+						Project Title*
+					</label>
+					<input
+						type="text"
+						id="title"
+						name="title"
+						value={formData.title}
+						onChange={handleChange}
+						required
+						className="w-full p-2 bg-neutral-800 border border-gray-700 rounded text-white focus:outline-none focus:border-flex-yellow"
+					/>
+				</div>
+
+				{/* Description */}
+				<div className="mb-4">
+					<label
+						className="block text-white mb-2"
+						htmlFor="description"
+					>
+						Description*
+					</label>
+					<textarea
+						id="description"
+						name="description"
+						value={formData.description}
+						onChange={handleChange}
+						required
+						rows="4"
+						className="w-full p-2 bg-neutral-800 border border-gray-700 rounded text-white focus:outline-none focus:border-flex-yellow"
+					></textarea>
+				</div>
+
+				{/* Year and Semester */}
+				<div className="mb-4">
+					<label
+						className="block text-white mb-2"
+						htmlFor="year_and_sem"
+					>
+						Year and Semester*
+					</label>
+					<select
+						id="year_and_sem"
+						name="year_and_sem"
+						value={formData.year_and_sem}
+						onChange={handleChange}
+						required
+						className="w-full p-2 bg-neutral-800 border border-gray-700 rounded text-white focus:outline-none focus:border-flex-yellow"
+					>
+						<option value="">Select Year and Semester</option>
+						{yearAndSemOptions.map((option) => (
+							<option key={option} value={option}>
+								{option}
+							</option>
+						))}
+					</select>
+				</div>
+
+				{/* GitHub Link */}
+				<div className="mb-4">
+					<label
+						className="block text-white mb-2"
+						htmlFor="github_link"
+					>
+						GitHub Link (optional)
+					</label>
+					<input
+						type="url"
+						id="github_link"
+						name="github_link"
+						value={formData.github_link}
+						onChange={handleChange}
+						className="w-full p-2 bg-neutral-800 border border-gray-700 rounded text-white focus:outline-none focus:border-flex-yellow"
+						placeholder="https://github.com/username/repository"
+					/>
+				</div>
+
+				{/* Status */}
+				<div className="mb-4">
+					<label className="block text-white mb-2" htmlFor="status">
+						Project Status*
+					</label>
+					<select
+						id="status"
+						name="status"
+						value={formData.status}
+						onChange={handleChange}
+						required
+						className="w-full p-2 bg-neutral-800 border border-gray-700 rounded text-white focus:outline-none focus:border-flex-yellow"
+					>
+						<option value="Initialized">Initialized</option>
+						<option value="In Progress">In Progress</option>
+						<option value="Completed">Completed</option>
+					</select>
+				</div>
+
+				{/* Technologies with Autocomplete */}
+				<div className="mb-4">
+					<label className="block text-white mb-2">
+						Technologies Used*
+					</label>
+					<Autocomplete
+						id="technologies"
+						suggestions={technologies}
+						placeholder="Type to search or add new technologies..."
+						onSelect={handleAddTechnology}
+						selectedItems={formData.technologies.map(
+							(tech) => tech.id
+						)}
+						allowNew={true}
+					/>
+
+					{formData.technologies.length > 0 && (
+						<TagList
+							items={formData.technologies}
+							onRemove={handleRemoveTechnology}
+							getItemLabel={getTechnologyLabel}
+						/>
+					)}
+
+					{formData.technologies.length === 0 && (
+						<p className="text-gray-400 mt-2 text-sm">
+							No technologies selected. Add at least one
+							technology.
+						</p>
+					)}
+				</div>
+				{/* Contributors with Autocomplete */}
+				<div className="mb-6">
+					<label className="block text-white mb-2">
+						Contributors*
+					</label>
+					<Autocomplete
+						id="contributors"
+						suggestions={students}
+						placeholder="Type to search or add new contributors..."
+						onSelect={handleAddContributor}
+						selectedItems={formData.contributors.map(
+							(contributor) => contributor.id
+						)}
+						allowNew={true}
+					/>
+
+					{formData.contributors.length > 0 && (
+						<TagList
+							items={formData.contributors}
+							onRemove={handleRemoveContributor}
+							getItemLabel={getContributorLabel}
+						/>
+					)}
+
+					{formData.contributors.length === 0 && (
+						<p className="text-gray-400 mt-2 text-sm">
+							No contributors selected. Add at least one
+							contributor.
+						</p>
+					)}
+				</div>
+
+				{/* Submit Button */}
+				<div className="flex justify-between">
+					<button
+						type="button"
+						onClick={() => navigate("/dashboard")}
+						className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
+					>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						className="px-4 py-2 bg-flex-yellow text-flex-black rounded hover:bg-flex-yellow-dark transition-colors"
+						disabled={loading}
+					>
+						{loading
+							? action === "edit"
+								? "Updating..."
+								: "Creating..."
+							: action === "edit"
+							? "Update Project"
+							: "Create Project"}
+					</button>
+				</div>
+			</form>
+		</div>
+	);
 };
 
 export default ProjectForm;

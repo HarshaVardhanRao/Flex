@@ -58,8 +58,8 @@ class certifications(models.Model):
     certification_area = models.CharField(max_length=50)
     def __str__(self):
         return self.title
-    
-class Faculty(AbstractUser): 
+
+class Faculty(AbstractUser):
     SECTION_CHOICES = [
         ("A","A"),("B","B"),("C","C"),("D","D"),("E","E"),("F","F")
     ]
@@ -74,7 +74,7 @@ class Faculty(AbstractUser):
 
     def type(self):
         return "Faculty"
-    
+
 
 class Technology(models.Model):
     name = models.CharField(max_length=50)
@@ -202,11 +202,11 @@ class Projects(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     YEAR_AND_SEM_CHOICES = [
-        ("I-I", "I-I"), ("I-II", "I-II"), ("II-I", "II-I"), ("II-II", "II-II"), 
+        ("I-I", "I-I"), ("I-II", "I-II"), ("II-I", "II-I"), ("II-II", "II-II"),
         ("III-I", "III-I"), ("III-II", "III-II"), ("IV-I", "IV-I"), ("IV-II", "IV-II")
     ]
     year_and_sem = models.CharField(max_length=10, choices=YEAR_AND_SEM_CHOICES)
-    github_link = models.URLField(blank=True)
+    github_link = models.URLField(blank=True, null=True)
     status_choices = [
         ("Initialized", "Initialized"),
         ("In_progress", "In Progress"),
@@ -309,7 +309,7 @@ class FillOutResponse(models.Model):
     #   },
     #   ...
     # ]
-    responses = models.JSONField()  
+    responses = models.JSONField()
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

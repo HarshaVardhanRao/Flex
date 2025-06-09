@@ -20,11 +20,13 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import StudentSerializer, ProjectSerializer, CertificateSerializer, TechnologySerializer
+from django.db.models import F
+
 
 def index(request):
     if request.user.is_authenticated:
         print(request.user)
-        if request.user.type() == "student":                
+        if request.user.type() == "student":
             return redirect('dashboard')
         if request.user.type() == "Faculty":
             return redirect('faculty')
@@ -48,7 +50,7 @@ def api_overview(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def student_list(request):
-    students = student.objects.all()
+    students = student.objects.values('id', 'roll_no', 'dept', 'section', 'first_name')
     serializer = StudentSerializer(students, many=True)
     return Response(serializer.data)
 
@@ -65,12 +67,12 @@ def student_detail(request, rollno):
 def api_login(request):
     rollno = request.data.get('username')
     password = request.data.get('password')
-    
+
     if not rollno or not password:
         return Response({'error': 'Please provide both username and password'}, status=400)
-        
+
     user = authenticate(request=request, username=rollno, password=password)
-    
+
     if user is not None:
         login(request, user)
         try:
@@ -91,7 +93,7 @@ def api_login(request):
 def api_current_user(request):
     if not request.user.is_authenticated:
         return Response({'error': 'Not authenticated'}, status=401)
-    
+
     try:
         user_type = request.user.type()
         if user_type == "student":
@@ -131,25 +133,25 @@ def create_project_api(request):
     try:
         # Get current user
         current_user = request.user
-        
+
         # Check if the user is a student
         if not hasattr(current_user, 'type') or current_user.type() != "student":
             return Response({"error": "Only students can create projects"}, status=403)
-            
+
         # Create a form with the request data
         form = ProjectsForm(request.data, student=current_user)
-        
+
         if form.is_valid():
             project = form.save(commit=False)
             project.save()
-            
+
             # Save many-to-many relationships
             form.save_m2m()
-            
+
             # Add current user as contributor if not already added
             if current_user not in project.contributors.all():
                 project.contributors.add(current_user)
-                
+
             serializer = ProjectSerializer(project)
             return Response(serializer.data, status=201)
         else:
@@ -171,28 +173,28 @@ def create_certificate_api(request):
     try:
         # Get current user
         current_user = request.user
-        
+
         # Check if the user is a student
         if not hasattr(current_user, 'type') or current_user.type() != "student":
             return Response({"error": "Only students can add certificates"}, status=403)
-        
+
         # Handle file upload if present
         certificate_file = request.FILES.get('certificate')
-        
+
         # Create a copy of the data that can be modified
         data = request.data.copy()
-        
+
         # Create a form with the request data
         form = CertificateForm(data, request.FILES, student=current_user)
-        
+
         if form.is_valid():
             certificate = form.save(commit=False)
             certificate.rollno = current_user
             certificate.save()
-            
+
             # Save many-to-many relationships
             form.save_m2m()
-            
+
             serializer = CertificateSerializer(certificate)
             return Response(serializer.data, status=201)
         else:
@@ -205,7 +207,7 @@ def getStudentDetails(student):
         # Ensure we are querying the correct model field
         # projects = Projects.objects.filter(contributors=student)  # Updated line
         projects = Projects.objects.prefetch_related("technologies").filter(contributors=student)
-        
+
         Tech_certifications = Certificate.objects.filter(rollno=student, category="Technical")
         For_lang = Certificate.objects.filter(rollno=student, category="Foreign Language")
 
@@ -333,7 +335,7 @@ def create_project(request):
             # Step 5: Extract GitHub languages if none selected
             if not tech_objects and github_link:
                 extract_languages_from_github(github_link, new_project)
-    
+
             new_project.save()
             print(new_project," saved")
             return redirect('dashboard')
@@ -377,7 +379,7 @@ def CustomLogin(request):
             if request.user.is_superuser:
                 return redirect('admin')
 
-            
+
         if request.method == 'POST':
             rollno = request.POST.get('rollno')
             password = request.POST.get('password')
@@ -403,7 +405,7 @@ def CustomLogout(request):
     except Exception as e:
         logging.error(f"Error in CustomLogout: {e}")
         return HttpResponse("An error occurred.")
-    
+
 ################################FillOut##########################
 @login_required
 def fillout(request):
@@ -576,7 +578,7 @@ def register(request):
             request.session['leetcode_user'] = request.POST.get('leetcode_user')
 
             stu_email = f"{request.session['rollno']}@mits.ac.in"
-            
+
             try:
                 otp = send_otp(stu_email)
                 request.session['otp'] = otp
@@ -682,24 +684,84 @@ def coordinator_dashboard(request):
     return render(request, 'dashboard/coordinator_dashboard.html', context)
 
 ################################ FLEX #####################################
+@csrf_exempt  # Exempt from CSRF for cross-origin requests
 def edit_project(request):
     try:
         if request.method == 'POST':
-            primary_key = request.POST.get('id')
-            title = request.POST.get('project-name')
-            description = request.POST.get('description')
-            status = request.POST.get('status')
-            github_link = request.POST.get('github')
+            # Check if we have JSON data
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                primary_key = data.get('id')
+                title = data.get('name')
+                description = data.get('description')
+                status = data.get('status')
+                github_link = data.get('github_link')
+                year_and_sem = data.get('year_and_sem')
+                technologies = data.get('technologies')
+                new_technologies = data.get('new_technologies', [])
+                contributors = data.get('contributors', [])
+            else:
+                # Handle form data
+                primary_key = request.POST.get('id')
+                title = request.POST.get('name')
+                description = request.POST.get('description')
+                status = request.POST.get('status')
+                github_link = request.POST.get('github_link')
+                year_and_sem = request.POST.get('year_and_sem')
+                technologies = request.POST.getlist('technologies')
+                new_technologies = request.POST.getlist('new_technologies')
+                contributors = request.POST.getlist('contributors')
+
+            print(f"Editing project with ID: {primary_key}, Title: {title}, Description: {description}, Status: {status}, GitHub Link: {github_link}")
+
             project = Projects.objects.get(id=primary_key)
             project.title = title
             project.description = description
             project.status = status
+            project.year_and_sem = year_and_sem
             project.github_link = github_link
             project.save()
-            return redirect('dashboard')
+            print(f"{technologies} saved")
+            # Handle technologies if present
+            if technologies:
+                print(f"Selected technologies: {technologies}")
+                for tech_id in technologies:
+                    try:
+                        tech = Technology.objects.get(id=tech_id)
+                        project.technologies.add(tech)
+                    except Technology.DoesNotExist:
+                        pass
+            if new_technologies != []:
+                print(f"New technologies: {new_technologies}")
+                for tech_name in new_technologies:
+                    tech_name = tech_name.strip().capitalize()
+                    if tech_name:
+                        tech, created = Technology.objects.get_or_create(name=tech_name)
+                        project.technologies.add(tech)
+
+            print(f"Contributors: {contributors}")
+            if contributors:
+                project.contributors.clear()
+                for contributor_id in contributors:
+                    try:
+                        contributor = student.objects.get(id=contributor_id)
+                        project.contributors.add(contributor)
+                    except student.DoesNotExist:
+                        pass
+
+            # Check the Accept header to decide the response format
+            if 'application/json' in request.headers.get('Accept', ''):
+                # Return JSON response for API requests
+                return JsonResponse({'status': 'success', 'message': 'Project updated successfully'})
+            else:
+                # Return redirect for browser requests
+                return redirect('dashboard')
     except Exception as e:
         logging.error(f"Error in edit_project: {e}")
-        return HttpResponse("An error occurred.")
+        if 'application/json' in request.headers.get('Accept', ''):
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        else:
+            return HttpResponse(f"An error occurred: {e}")
 
 def edit_certification(request):
     try:
@@ -722,7 +784,7 @@ def delete_project(request, primary_key):
     try:
         project = Projects.objects.get(id=primary_key)
         project.delete()
-        return redirect('dashboard')
+        return JSONResponse({'status': 'success', 'message': 'Project deleted successfully', 'status_code': 200})
     except Exception as e:
         logging.error(f"Error in delete_project: {e}")
         return HttpResponse("An error occurred.")
@@ -731,7 +793,7 @@ def delete_certification(request, primary_key):
     try:
         project = Certificate.objects.get(id=primary_key)
         project.delete()
-        return redirect('dashboard')
+        return JSONResponse({'status': 'success', 'message': 'Certification deleted successfully', 'status_code': 200})
     except Exception as e:
         logging.error(f"Error in delete_certification: {e}")
         return HttpResponse("An error occurred.")
@@ -780,7 +842,7 @@ def leetcode_request(request, leetcode_user):
     except Exception as e:
         logging.error(f"Error in leetcode_request: {e}")
         return JsonResponse({'error': 'An error occurred.'}, status=500)
-    
+
 ################################ Download #####################################
 
 def download_request(request):
@@ -805,7 +867,7 @@ def download_request(request):
                 'Foreign Languages': ",".join([project.title for project in foreign]),
                 'Technical Certificates': ",".join([project.title for project in technical]),
             })
-        
+
         df = pd.DataFrame(data)
 
         # Create a response object and specify the content type for Excel
@@ -879,41 +941,41 @@ def reset_password(request):
 @login_required
 def student_profile(request):
     user = request.user  # Get the currently logged-in user
-    
+
     if request.method == "POST":
         # Only update fields provided in the POST request
         updated_fields = {}
-        
+
         if 'name' in request.POST:
             name = request.POST.get("name")
             if name and name != user.first_name:
                 user.first_name = name
                 updated_fields['name'] = name
-        
+
         if 'username' in request.POST:
             username = request.POST.get("username")
             if username and username != user.username:
                 user.username = username
                 updated_fields['username'] = username
-        
+
         if 'leetcode_user' in request.POST:
             leetcode_user = request.POST.get("leetcode_user")
             if leetcode_user and leetcode_user != user.leetcode_user:
                 user.leetcode_user = leetcode_user
                 updated_fields['leetcode_user'] = leetcode_user
-        
+
         if 'year' in request.POST:
             year = request.POST.get("year")
             if year and str(year) != str(user.year):
                 user.year = year
                 updated_fields['year'] = year
-        
+
         if 'section' in request.POST:
             section = request.POST.get("section")
             if section and section != user.section:
                 user.section = section
                 updated_fields['section'] = section
-        
+
         if updated_fields:
             try:
                 user.save()
@@ -922,7 +984,7 @@ def student_profile(request):
                 messages.error(request, f"An error occurred: {e}")
         else:
             messages.info(request, "No changes were made.")
-        
+
         return redirect('profile')
     return render(request, 'student_profile_edit.html', {'user': user})
 
@@ -943,10 +1005,10 @@ def upload_students(request):
             fs = FileSystemStorage()
             filename = fs.save(file.name, file)
             file_path = fs.path(filename)
-            
+
             # Read the Excel file
             df = pd.read_excel(file_path)
-            
+
             # Iterate through the rows and add details to the student model
             for index, row in df.iterrows():
                 s = student(
@@ -958,7 +1020,7 @@ def upload_students(request):
                 )
                 s.set_password(row['Roll'])
                 s.save()
-            
+
             messages.success(request, "Students added successfully.")
             return redirect('dashboard')
         except Exception as e:
@@ -1045,7 +1107,7 @@ from .models import FillOutForm, FillOutField, Certificate
 
 def get_form(request, form_id):
     form = get_object_or_404(FillOutForm, id=form_id)
-    print(form) 
+    print(form)
     student = request.user
     certificates = Certificate.objects.filter(rollno=student)
     print(certificates)
@@ -1115,7 +1177,7 @@ def form_detail_view(request, form_id):
 def download_csv(request, form_id, download_type):
     form = get_object_or_404(FillOutForm, id=form_id)
     response = HttpResponse(content_type='text/csv')
-    
+
     if download_type == "responses":
         filename = f"{form.title}_responses.csv"
         writer = csv.writer(response)
@@ -1144,5 +1206,38 @@ def download_csv(request, form_id, download_type):
             writer.writerow([student_obj.roll_no, student_obj.first_name])
 
     return response
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def project_detail(request, project_id):
+    try:
+        project = get_object_or_404(Projects, id=project_id)
+        serializer = ProjectSerializer(project, context={'request': request})
+
+        # Include additional details for editing
+        response_data = serializer.data
+
+        # Add technologies
+        response_data['technologies'] = []
+        for tech in project.technologies.all():
+            response_data['technologies'].append({
+                'id': tech.id,
+                'name': tech.name
+            })
+
+        # Add contributors
+        response_data['contributors'] = []
+        for contributor in project.contributors.all():
+            response_data['contributors'].append({
+                'id': contributor.id,
+                'rollno': contributor.roll_no,
+                'name': contributor.first_name,
+                'last_name': contributor.last_name
+            })
+
+        return Response(response_data)
+    except Exception as e:
+        logging.error(f"Error in project_detail: {e}")
+        return Response({'error': str(e)}, status=500)
 
 
