@@ -58,8 +58,8 @@ class certifications(models.Model):
     certification_area = models.CharField(max_length=50)
     def __str__(self):
         return self.title
-    
-class Faculty(AbstractUser): 
+
+class Faculty(AbstractUser):
     SECTION_CHOICES = [
         ("A","A"),("B","B"),("C","C"),("D","D"),("E","E"),("F","F")
     ]
@@ -74,7 +74,7 @@ class Faculty(AbstractUser):
 
     def type(self):
         return "Faculty"
-    
+
 
 class Technology(models.Model):
     name = models.CharField(max_length=50)
@@ -151,6 +151,9 @@ class Certificate(models.Model):
         ('participation', 'Participation'),
         ('appreciation', 'Appreciation'),
         ('recommendation', 'Recommendation'),
+        ('completion','Completion'),
+        ('recognition','Recognition'),
+        ('rankcard','Rankcard'),
     ]
     rank = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
     recognition = models.CharField(max_length=20, choices=RECOGNITION_CHOICES, blank=True)
@@ -199,11 +202,11 @@ class Projects(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     YEAR_AND_SEM_CHOICES = [
-        ("I-I", "I-I"), ("I-II", "I-II"), ("II-I", "II-I"), ("II-II", "II-II"), 
+        ("I-I", "I-I"), ("I-II", "I-II"), ("II-I", "II-I"), ("II-II", "II-II"),
         ("III-I", "III-I"), ("III-II", "III-II"), ("IV-I", "IV-I"), ("IV-II", "IV-II")
     ]
     year_and_sem = models.CharField(max_length=10, choices=YEAR_AND_SEM_CHOICES)
-    github_link = models.URLField(blank=True)
+    github_link = models.URLField(blank=True, null=True)
     status_choices = [
         ("Initialized", "Initialized"),
         ("In_progress", "In Progress"),
@@ -226,13 +229,34 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.recipient} - {self.message[:30]}"
+
+class Provider(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class CoordinatorRole(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+
+    can_view_certificates = models.BooleanField(default=False)
+    can_view_publications = models.BooleanField(default=False)
+    can_view_projects = models.BooleanField(default=False)
+
+    providers = models.ManyToManyField(Provider, blank=True)  # ⬅️ Now supports multiple providers
+    faculties = models.ManyToManyField('Faculty', related_name='coordinator_roles')
+
+    def __str__(self):
+        return self.name
+
 ################## FIllOut #########################
 User = get_user_model()
 
 class FillOutForm(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_forms")
+    created_by = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name="created_forms")
     assigned_students = models.ManyToManyField("student", related_name="assigned_forms")  # Assign to students
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -246,23 +270,46 @@ class FillOutField(models.Model):
         ("number", "Number"),
         ("date", "Date"),
         ("choice", "Multiple Choice"),
-        ("file_awk", "Pick Certificate"),  # NEW
+        ("file_awk", "Pick from your own instances or upload file"),
     ]
 
     form = models.ForeignKey(FillOutForm, on_delete=models.CASCADE, related_name="fields")
     field_name = models.CharField(max_length=255)
     field_type = models.CharField(max_length=20, choices=FIELD_TYPES)
-    options = models.TextField(blank=True, null=True)  # Optional even for file_awk
+    options = models.TextField(blank=True, null=True)  # for multiple-choice
+    related_model = models.CharField(
+        max_length=100, blank=True, null=True,
+        help_text="Model name (e.g., 'certificate', 'project')"
+    )
 
     def __str__(self):
         return f"{self.form.title} - {self.field_name}"
 
 
 
+
+
 class FillOutResponse(models.Model):
     form = models.ForeignKey(FillOutForm, on_delete=models.CASCADE, related_name="responses")
     student = models.ForeignKey("student", on_delete=models.CASCADE, related_name="form_responses")
-    responses = models.JSONField()  # Store responses as JSON
+
+    # responses structure:
+    # [
+    #   {
+    #     "field_id": 1,
+    #     "field_name": "Upload Certificate",
+    #     "field_type": "file_awk",
+    #     "value": {
+    #         "file_url": "/media/certs/sample.pdf",
+    #         OR
+    #         "model": "certificate",
+    #         "instance_id": 5,
+    #         "display": "Python Certification"
+    #     }
+    #   },
+    #   ...
+    # ]
+    responses = models.JSONField()
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

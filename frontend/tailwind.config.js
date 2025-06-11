@@ -1,11 +1,18 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-	content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+	content: ["./src/**/*.{js,jsx,ts,tsx}", "./public/index.html"],
 	theme: {
 		extend: {
+			colors: {
+				"flex-black": "#000000",
+				"flex-dark": "#1a1a1a",
+				"flex-yellow": "#f1c40f",
+				"flex-yellow-dark": "#f39c12",
+			},
 			boxShadow: {
 				md: "0px 4px 12px rgba(241, 196, 15, 0.5)",
 				"dark-sm": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+				flex: "0 4px 12px rgba(241, 196, 15, 0.4)",
 			},
 			animation: {
 				moveUp: "moveUp 0.3s ease-in-out forwards",

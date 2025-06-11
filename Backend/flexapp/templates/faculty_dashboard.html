@@ -134,6 +134,7 @@
 		</main>
 		<div class="form-check-label">
 			<button id="themeToggle"><i class="bi bi-moon-fill"></i></button>
+			<button id="FormToggle"><i class="bi bi-book-fill"></i></button>
 			<button id="Gear"><i class="bi bi-gear"></i></button>
 			<button id="logout"><i class="bi bi-box-arrow-right"></i></button>
 		</div>
@@ -269,7 +270,24 @@
 						a.remove();
 					});
 			}
-
+			document.querySelector('#FormToggle').addEventListener('click', () => {
+				fetch("{% url 'fillout' %}", {
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+				})
+					.then((response) => {
+						if (response.ok) {
+							window.location.href = "{% url 'fillout' %}";
+						} else {
+							throw new Error('Network response was not ok');
+						}
+					})
+					.catch((error) => {
+						console.error('Error:', error);
+					});
+			});
 			document.querySelector('#logout').addEventListener('click', () => {
 				fetch("{% url 'logout' %}", {
 					method: 'GET',
@@ -319,7 +337,6 @@
 				icon.classList.toggle("bi-moon-fill");
 				icon.classList.toggle("bi-brightness-high-fill");
 			});
-
 		</script>
 	</body>
 </html>

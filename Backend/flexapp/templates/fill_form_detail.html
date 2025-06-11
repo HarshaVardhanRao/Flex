@@ -1,44 +1,68 @@
-<!-- templates/fill_form_detail.html -->
-{% extends "base.html" %}
 {% load custom_filters %}
+<h2>{{ form.title }} - Responses Overview</h2>
 
-{% block content %}
-<h2>{{ form.title }}</h2>
-<p>{{ form.description }}</p>
+<!-- Summary -->
+<div style="display: flex; gap: 20px; margin-bottom: 20px">
+    <div style="padding: 10px; border: 1px solid #ccc"><strong>Total Assigned:</strong> {{ total }}</div>
+    <div style="padding: 10px; border: 1px solid #ccc"><strong>Responded:</strong> {{ responded_count }}</div>
+    <div style="padding: 10px; border: 1px solid #ccc"><strong>Not Responded:</strong> {{ not_responded_count }}</div>
+</div>
 
-<form method="post">
-    {% csrf_token %}
-    {% for field in fields %}
-    <label>{{ field.field_name }}:</label><br>
+<!-- Downloads -->
+<div style="margin-bottom: 20px">
+    <a href="{% url 'download_csv' form.id 'responses' %}">📥 Download Responses CSV</a> |
+    <a href="{% url 'download_csv' form.id 'filled' %}">📥 Filled Students CSV</a> |
+    <a href="{% url 'download_csv' form.id 'not_filled' %}">📥 Not Filled Students CSV</a>
+</div>
 
-    {% if field.field_type == "text" %}
-        <input type="text" name="{{ field.id }}" required><br>
-
-    {% elif field.field_type == "number" %}
-        <input type="number" name="{{ field.id }}" required><br>
-
-    {% elif field.field_type == "date" %}
-        <input type="date" name="{{ field.id }}" required><br>
-
-    {% elif field.field_type == "choice" %}
-        {% for option in field.options|split_by_comma %}
-    <input type="radio" name="{{ field.id }}" value="{{ option|trim }}" required> {{ option|trim }}<br>
-{% endfor %}
-
-
-    {% elif field.field_type == "file_awk" %}
-    <label for="{{ field.id }}">{{ field.field_name }}</label>
-    <select name="{{ field.id }}" required>
-        <option value="" selected disabled>Select a certificate</option>
-        {% for cert in certificates %}
-            <option value="{{ cert.certificate.id }}">{{ cert.name }}</option>
+<!-- Response Table -->
+<h3>Submitted Responses</h3>
+<table border="1" cellpadding="5" cellspacing="0">
+    <tr>
+        <th>Student</th>
+        {% for field in form.fields.all %}
+        <th>{{ field.field_name }}</th>
         {% endfor %}
-    </select>
-{% endif %}
+        <th>Submitted At</th>
+    </tr>
 
-    <br>
-{% endfor %}
+    {% for r in responses %}
+    <tr>
+        <td style="padding: 8px">{{ r.student.first_name }}</td>
 
-    <input type="submit" value="Submit">
-</form>
-{% endblock %}
+        {% for field in form.fields.all %}
+        <td style="padding: 8px">
+            {% with field_name=field.field_name %}
+                {% with response_value=r.responses|get_item:field_name %}
+                    {% if field.field_type == "file_awk" %}
+                        {% with instance=model_instance_map|get_item:(r.id, field_name) %}
+                            {% if instance %}
+                                {% if instance.image_field %}
+                                    <img src="{{ instance.image_field.url }}" alt="Certificate" style="width: 100px;" />
+                                {% else %}
+                                    {{ instance }}
+                                {% endif %}
+                            {% else %}
+                                No instance found
+                            {% endif %}
+                        {% endwith %}
+                    {% else %}
+                        {{ response_value }}
+                    {% endif %}
+                {% endwith %}
+            {% endwith %}
+        </td>
+        {% endfor %}
+
+        <td style="padding: 8px">{{ r.submitted_at }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<!-- Not Responded -->
+<h3 style="margin-top: 40px">Students Who Didn't Respond</h3>
+<ul>
+    {% for s in non_responded_students %}
+    <li>{{ s.roll_no }} - {{ s.first_name }}</li>
+    {% endfor %}
+</ul>

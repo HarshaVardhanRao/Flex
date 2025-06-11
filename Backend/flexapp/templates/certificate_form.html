@@ -1,0 +1,112 @@
+{% extends "base.html" %} {% block content %}
+<h2>{{ form.instance.pk|yesno:"Edit Certificate,Add Certificate" }}</h2>
+
+<form method="post" enctype="multipart/form-data">
+	{% csrf_token %}
+
+	<div>
+		<label for="id_source">Source:</label>
+		{{ form.source }}
+		<datalist id="source_list">
+			{% for val in distinct_sources %}
+			<option value="{{ val }}">{% endfor %}</option>
+		</datalist>
+	</div>
+
+	<div>
+		<label for="id_title">Title:</label>
+		{{ form.title }}
+	</div>
+
+	<div>
+		<label for="id_certificate">Upload Certificate:</label>
+		{{ form.certificate }}
+	</div>
+
+	<div>
+		<label for="id_category">Category:</label>
+		{{ form.category }}
+	</div>
+
+	<div>
+		<label for="id_year_and_sem">Year and Semester:</label>
+		{{ form.year_and_sem }}
+	</div>
+
+	<div>
+		<label for="id_course_link">Course Link:</label>
+		{{ form.course_link }}
+	</div>
+
+	<div>
+		<label for="id_rank">Rank (if any):</label>
+		{{ form.rank }}
+	</div>
+
+	<div>
+		<label for="id_recognition">Recognition (if any):</label>
+		{{ form.recognition }}
+	</div>
+
+	<div>
+		<label for="id_event_type">Event Type:</label>
+		{{ form.event_type }}
+	</div>
+
+	<div>
+		<label for="id_fest_name">Fest Name:</label>
+		{{ form.fest_name }}
+		<datalist id="fest_name_list">
+			{% for val in distinct_fests %}
+			<option value="{{ val }}">{% endfor %}</option>
+		</datalist>
+	</div>
+
+	<div>
+		<label for="id_course_provider">Course Provider:</label>
+		{{ form.course_provider }}
+		<datalist id="course_provider_list">
+			{% for val in distinct_providers %}
+			<option value="{{ val }}">{% endfor %}</option>
+		</datalist>
+	</div>
+
+	<div>
+		<label for="id_domain">Domain:</label>
+		{{ form.domain }}
+		<datalist id="domain_list">
+			{% for val in distinct_domains %}
+			<option value="{{ val }}">{% endfor %}</option>
+		</datalist>
+	</div>
+
+	<div>
+		<label for="id_duration">Duration:</label>
+		{{ form.duration }}
+	</div>
+
+	<div id="tech-wrapper">
+		<label for="id_technologies">Technologies (only for Technical):</label>
+		{{ form.technologies }}
+	</div>
+
+	<button type="submit">Submit</button>
+</form>
+
+<script>
+	// Show/Hide technologies field based on category
+	const categoryField = document.getElementById("id_category");
+	const techWrapper = document.getElementById("tech-wrapper");
+
+	function toggleTechnologies() {
+		if (categoryField.value === "technical") {
+			techWrapper.style.display = "block";
+		} else {
+			techWrapper.style.display = "none";
+		}
+	}
+
+	categoryField.addEventListener("change", toggleTechnologies);
+	document.addEventListener("DOMContentLoaded", toggleTechnologies);
+</script>
+{% endblock %}

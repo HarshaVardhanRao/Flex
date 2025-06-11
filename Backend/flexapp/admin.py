@@ -12,3 +12,10 @@ admin.site.register(Technology)
 admin.site.register(FillOutForm)
 admin.site.register(FillOutResponse)
 admin.site.register(FillOutField)
+
+@admin.register(CoordinatorRole)
+class CoordinatorRoleAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description')
+    filter_horizontal = ('faculties', 'providers')
+
+admin.site.register(Provider)
