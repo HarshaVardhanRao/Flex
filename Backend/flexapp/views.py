@@ -119,9 +119,15 @@ def create_project(request):
             status = request.POST.get('status', 'Initialized')
             github_link = request.POST.get('github')
             contributors_ids = request.POST.getlist('contributors')
+            print(type(contributors_ids))
             tech_names = request.POST.getlist('technologies')
 
-            contributors_ids = [id.strip() for id in contributors_ids if id.strip()]
+            from itertools import chain
+            contributors_ids = list(
+                chain.from_iterable(id_str.split(',') for id_str in contributors_ids)
+            )
+            contributors_ids = [int(id.strip()) for id in contributors_ids if id.strip().isdigit()]
+
             tech_names = [tech.strip().capitalize() for tech in tech_names if tech.strip()]
 
             # Step 1: Create project first
