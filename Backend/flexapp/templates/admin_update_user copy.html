@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Update {{ is_student|yesno:"Student,Faculty,User" }}: {{ user_obj.username }}</h2>
+<form method="post">
+    {% csrf_token %}
+    <label>Email: <input type="email" name="email" value="{{ user_obj.email }}"></label><br>
+    <label>New Password: <input type="password" name="password"></label><br>
+    {% if is_student %}
+        <label>Roll No: <input type="text" name="roll_no" value="{{ user_obj.roll_no }}"></label><br>
+        <label>Year: <input type="number" name="year" value="{{ user_obj.year }}"></label><br>
+        <label>Section: <input type="text" name="section" value="{{ user_obj.section }}"></label><br>
+        <label>Dept: <input type="text" name="dept" value="{{ user_obj.dept }}"></label><br>
+    {% elif is_faculty %}
+        <label>Dept: <input type="text" name="dept" value="{{ user_obj.dept }}"></label><br>
+        <label>Year: <input type="number" name="default_year" value="{{ user_obj.default_year }}"></label><br>
+        <label>Section: <input type="text" name="default_section" value="{{ user_obj.default_section }}"></label><br>
+    {% endif %}
+    <input type="submit" value="Update {{ is_student|yesno:"Student,Faculty,User" }}">
+</form>
+<a href="{% url 'admin_dashboard' %}">Back to Dashboard</a>
+{% endblock %}

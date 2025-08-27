@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Update User: {{ user_obj.username }}</h2>
+<form method="post">
+    {% csrf_token %}
+    <label>Email: <input type="email" name="email" value="{{ user_obj.email }}"></label><br>
+    <label>New Password: <input type="password" name="password"></label><br>
+    <label>Is Superuser: <input type="checkbox" name="is_superuser" {% if user_obj.is_superuser %}checked{% endif %}></label><br>
+    <input type="submit" value="Update User">
+</form>
+<a href="{% url 'admin_dashboard' %}">Back to Dashboard</a>
+{% endblock %}

@@ -15,7 +15,10 @@ def trim(value):
 def get_item(value, key):
     try:
         if isinstance(value, str):
-            value = json.loads(value)  # parse JSON string into a dictionary
+            value = json.loads(value)
+        if isinstance(key, str) and ":" in key:
+            rid, fname = key.split(":", 1)
+            return value.get((int(rid), fname))
         return value.get(key)
     except Exception:
         return None

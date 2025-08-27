@@ -33,24 +33,23 @@
         {% for field in form.fields.all %}
         <td style="padding: 8px">
             {% with field_name=field.field_name %}
-                {% with response_value=r.responses|get_item:field_name %}
-                    {% if field.field_type == "file_awk" %}
-                        {% with instance=model_instance_map|get_item:(r.id, field_name) %}
-                            {% if instance %}
-                                {% if instance.image_field %}
-                                    <img src="{{ instance.image_field.url }}" alt="Certificate" style="width: 100px;" />
-                                {% else %}
-                                    {{ instance }}
-                                {% endif %}
-                            {% else %}
-                                No instance found
-                            {% endif %}
-                        {% endwith %}
+    {% with response_value=r.responses|get_item:field_name %}
+        {% if field.field_type == "file_awk" %}
+            {% with model_instance_map|get_item:r.id|stringformat:"s"|add:":"|add:field_name as instance %}
+                {% if instance %}
+                    {% if instance.image_field %}
+                        <img src="{{ instance.image_field.url }}" alt="Certificate" style="width: 100px;" />
                     {% else %}
-                        {{ response_value }}
+                        {{ instance }}
                     {% endif %}
-                {% endwith %}
+                {% else %}
+                    No instance found
+                {% endif %}
             {% endwith %}
+        {% endif %}
+    {% endwith %}
+{% endwith %}
+
         </td>
         {% endfor %}
 
