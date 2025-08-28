@@ -1,113 +1,152 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Placement Coordinator Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-        .chart-container { width: 80%; margin: 30px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #333; }
-    </style>
-</head>
-<body>
 
-    <h2>Placement Coordinator Dashboard</h2>
-    <form method="get" style="text-align: center; margin-bottom: 20px;">
-    <label>Year/Semester:
-        <input type="text" name="year" value="{{ filters.selected_year }}">
-    </label>
-    <label>Technology:
-        <input type="text" name="tech" value="{{ filters.selected_tech }}">
-    </label>
-    <label>Certificate Category:
-        <select name="cert_cat">
+{% extends 'base.html' %}
+{% block title %}Placement Dashboard{% endblock %}
+{% block content %}
+<h2 style="text-align:center;">📊 Placement Dashboard</h2>
+
+<!-- 1. Top Summary Cards -->
+<div class="summary-cards" style="display:flex; flex-wrap:wrap; gap:1rem; justify-content:center; margin-bottom:2rem;">
+    <div class="card">Total Students Eligible: <b>{{ summary.total_eligible|default:'N/A' }}</b></div>
+    <div class="card">Total Students Placed: <b>{{ summary.total_placed|default:'N/A' }}</b></div>
+    <div class="card">Placement %: <b>{{ summary.placement_percentage|default:'N/A' }}%</b></div>
+    <div class="card">Highest Package: <b>{{ summary.highest_package|default:'N/A' }}</b></div>
+    <div class="card">Average Package: <b>{{ summary.average_package|default:'N/A' }}</b></div>
+    <div class="card">Companies Visited: <b>{{ summary.companies_visited|default:'N/A' }}</b></div>
+</div>
+
+<!-- 2. Filters & Search -->
+<form method="get" style="text-align:center; margin-bottom:2rem;">
+    <label>Year:
+        <select name="year">
             <option value="">All</option>
-            <option value="technical" {% if filters.selected_cert_cat == "technical" %}selected{% endif %}>Technical</option>
-            <option value="foreign_language" {% if filters.selected_cert_cat == "foreign_language" %}selected{% endif %}>Foreign Language</option>
-            <option value="co_curricular" {% if filters.selected_cert_cat == "co_curricular" %}selected{% endif %}>Co-Curricular</option>
-            <option value="extra_curricular" {% if filters.selected_cert_cat == "extra_curricular" %}selected{% endif %}>Extra-Curricular</option>
+            {% for y in filters.years %}<option value="{{ y }}" {% if filters.selected_year == y %}selected{% endif %}>{{ y }}</option>{% endfor %}
         </select>
     </label>
-    <label>Domain:
-        <input type="text" name="domain" value="{{ filters.selected_domain }}">
+    <label>Department:
+        <select name="dept">
+            <option value="">All</option>
+            {% for d in filters.depts %}<option value="{{ d }}" {% if filters.selected_dept == d %}selected{% endif %}>{{ d }}</option>{% endfor %}
+        </select>
     </label>
-    <button type="submit">Apply Filters</button>
+    <label>Section:
+        <select name="section">
+            <option value="">All</option>
+            {% for s in filters.sections %}<option value="{{ s }}" {% if filters.selected_section == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+    </label>
+    <label>Search:
+        <input type="text" name="search" value="{{ filters.search }}" placeholder="Name/Roll No">
+    </label>
+    <button type="submit">Apply</button>
 </form>
 
-    <div class="chart-container">
-        <h3>Avg LeetCode Problems Solved by Department</h3>
-        <canvas id="leetcodeChart"></canvas>
-    </div>
+<!-- 3. Analytics & Charts -->
+<div class="chart-container">
+    <h3>Dept-wise Placement %</h3>
+    <canvas id="deptChart"></canvas>
+</div>
+<div class="chart-container">
+    <h3>Year-wise Placement Trend</h3>
+    <canvas id="yearChart"></canvas>
+</div>
+<div class="chart-container">
+    <h3>Package Distribution</h3>
+    <canvas id="packageChart"></canvas>
+</div>
+<div class="chart-container">
+    <h3>Skills vs Placement</h3>
+    <canvas id="skillsChart"></canvas>
+</div>
 
-    <div class="chart-container">
-        <h3>Certificates Count by Category & Department</h3>
-        <canvas id="certChart"></canvas>
-    </div>
+<!-- 4. Student Placement Readiness -->
+<h3>Student Placement Readiness</h3>
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>Roll No</th><th>Name</th><th>Dept</th><th>Year</th><th>Section</th><th>CGPA</th><th>Projects</th><th>Certifications</th><th>LeetCode</th><th>Publications</th><th>Mentor</th><th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stu in students %}
+        <tr>
+            <td>{{ stu.roll_no }}</td>
+            <td>{{ stu.name }}</td>
+            <td>{{ stu.dept }}</td>
+            <td>{{ stu.year }}</td>
+            <td>{{ stu.section }}</td>
+            <td>{{ stu.cgpa }}</td>
+            <td>{{ stu.projects }}</td>
+            <td>{{ stu.certifications }}</td>
+            <td>{{ stu.leetcode }}</td>
+            <td>{{ stu.publications }}</td>
+            <td>{{ stu.mentor }}</td>
+            <td>{{ stu.placement_status }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-    <div class="chart-container">
-        <h3>Projects by Semester</h3>
-        <canvas id="projectChart"></canvas>
-    </div>
+<!-- 5. Company Insights -->
+<h3>Company Insights</h3>
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>Company</th><th>Offers</th><th>Min Package</th><th>Max Package</th><th>Avg Package</th><th>Students Hired</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for comp in companies %}
+        <tr>
+            <td>{{ comp.name }}</td>
+            <td>{{ comp.offers }}</td>
+            <td>{{ comp.min_package }}</td>
+            <td>{{ comp.max_package }}</td>
+            <td>{{ comp.avg_package }}</td>
+            <td>{{ comp.students_hired }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-    <script>
-        const leetcodeData = {{ leetcode_data|safe }};
-        const certData = {{ cert_data|safe }};
-        const projData = {{ proj_data|safe }};
+<!-- 6. Notifications & Alerts -->
+<h3>Notifications & Alerts</h3>
+<ul>
+    {% for note in notifications %}
+    <li>{{ note }}</li>
+    {% endfor %}
+</ul>
 
-        // LeetCode Chart
-        const deptLabels = leetcodeData.map(item => item.rollno__dept);
-        const avgProblems = leetcodeData.map(item => item.avg_total);
-
-        new Chart(document.getElementById('leetcodeChart'), {
-            type: 'bar',
-            data: {
-                labels: deptLabels,
-                datasets: [{
-                    label: 'Avg Problems Solved',
-                    data: avgProblems,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderRadius: 5
-                }]
-            }
-        });
-
-        // Certificate Chart
-        const certMap = {};
-        certData.forEach(item => {
-            if (!certMap[item.rollno__dept]) certMap[item.rollno__dept] = {};
-            certMap[item.rollno__dept][item.category] = item.count;
-        });
-
-        const depts = Object.keys(certMap);
-        const categories = ['technical', 'foreign_language', 'co_curricular', 'extra_curricular'];
-        const datasets = categories.map(cat => ({
-            label: cat,
-            data: depts.map(d => certMap[d][cat] || 0),
-            backgroundColor: `hsl(${Math.random()*360}, 60%, 70%)`
-        }));
-
-        new Chart(document.getElementById('certChart'), {
-            type: 'bar',
-            data: {
-                labels: depts,
-                datasets: datasets
-            }
-        });
-
-        // Projects Chart
-        new Chart(document.getElementById('projectChart'), {
-            type: 'line',
-            data: {
-                labels: projData.map(p => p.year_and_sem),
-                datasets: [{
-                    label: 'Total Projects',
-                    data: projData.map(p => p.total),
-                    borderColor: '#36a2eb',
-                    fill: false
-                }]
-            }
-        });
-    </script>
-</body>
-</html>
+<!-- 7. Reports & Exports -->
+<h3>Reports & Exports</h3>
+<form method="post" action="{% url 'export_placement_report' %}">
+    {% csrf_token %}
+    <button type="submit" name="type" value="college">College Summary</button>
+    <button type="submit" name="type" value="dept">Department Summary</button>
+    <button type="submit" name="type" value="excel">Export to Excel</button>
+    <button type="submit" name="type" value="pdf">Export to PDF</button>
+</form>
+<div class="chart-container">
+    <h3>Graphical Placement Analysis (NAAC/NBA)</h3>
+    <canvas id="accreditationChart"></canvas>
+</div>
+{% endblock %}
+{% block extra_head %}
+<style>
+    .summary-cards .card {
+        background: #fff;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        font-size: 1.1rem;
+        min-width: 180px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Example chart data usage, replace with actual context variables
+    // Chart rendering logic for deptChart, yearChart, packageChart, skillsChart, accreditationChart
+</script>
+{% endblock %}

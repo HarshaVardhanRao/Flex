@@ -1,3 +1,23 @@
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+
+# Export Placement Report View
+@csrf_exempt
+def export_placement_report(request):
+    if request.method == 'POST':
+        report_type = request.POST.get('type')
+        # Dummy implementation: return a simple response for now
+        if report_type == 'college':
+            return HttpResponse('College Summary Report (dummy)', content_type='text/plain')
+        elif report_type == 'dept':
+            return HttpResponse('Department Summary Report (dummy)', content_type='text/plain')
+        elif report_type == 'excel':
+            return HttpResponse('Excel Export (dummy)', content_type='text/plain')
+        elif report_type == 'pdf':
+            return HttpResponse('PDF Export (dummy)', content_type='text/plain')
+        else:
+            return HttpResponse('Unknown report type', content_type='text/plain')
+    return HttpResponse('Invalid request', content_type='text/plain')
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
@@ -26,6 +46,8 @@ from django.db.models import F
 def index(request):
     if request.user.is_authenticated:
         print(request.user)
+        if request.user.is_superuser:
+            return redirect('admin_dashboard')
         if request.user.type() == "student":
             return redirect('dashboard')
         if request.user.type() == "Faculty":
@@ -415,12 +437,12 @@ def CustomLogin(request):
     try:
         if request.user.is_authenticated:
             print(request.user)
+            if request.user.is_superuser:
+                return redirect('admin')
             if request.user.type() == "student":
                 return redirect('dashboard')
             if request.user.type() == "Faculty":
                 return redirect('faculty')
-            if request.user.is_superuser:
-                return redirect('admin')
 
 
         if request.method == 'POST':
@@ -452,7 +474,7 @@ def CustomLogout(request):
 ################################FillOut##########################
 @login_required
 def fillout(request):
-    if request.user.type() == "Faculty":
+    if request.user.is_superuser or request.user.type() == "Faculty":
         return redirect('forms/')
     else:
         return redirect('assigned/')

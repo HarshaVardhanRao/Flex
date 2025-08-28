@@ -40,6 +40,7 @@ urlpatterns = [
     path("search_technologies/", views.search_technologies, name="search_technologies"),
     path("create_technology/", views.create_technology, name="create_technology"),
     path('dashboard/placement/', views.placement_dashboard, name='placement_dashboard'),
+    path('dashboard/placement/export/', views.export_placement_report, name='export_placement_report'),
     path('fillout',views.fillout,name="fillout"),
     path("create/", views.create_form, name="create_form"),
     path("assigned/", views.list_assigned_forms, name="list_assigned_forms"),

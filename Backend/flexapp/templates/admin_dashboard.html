@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Admin Dashboard - MITS FLEX{% endblock %}
+{% block title %}Create Form - MITS FLEX{% endblock %}
 
 {% block content %}
 <div class="section">
@@ -122,6 +122,64 @@
         </form>
     </div>
 </div>
+
+<div class="section">
+    <h3>Faculty</h3>
+    <table border="1">
+        <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Year</th>
+            <th>Section</th>
+            <th>Actions</th>
+        </tr>
+        {% for f in faculty %}
+        <tr>
+            <td>{{ f.username }}</td>
+            <td>{{ f.email }}</td>
+            <td>{{ f.dept }}</td>
+            <td>{{ f.default_year }}</td>
+            <td>{{ f.default_section }}</td>
+            <td>
+                <form method="get" action="{% url 'admin_update_faculty' f.id %}" style="display:inline;">
+                    <input type="submit" value="Edit">
+                </form>
+                <form method="post" action="{% url 'admin_delete_faculty' f.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="submit" value="Delete" onclick="return confirm('Are you sure?');">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="section">
+    <h3>Create New Faculty</h3>
+    <form method="post" action="{% url 'admin_create_faculty' %}">
+        {% csrf_token %}
+        <label>Username: <input type="text" name="username" required></label><br>
+        <label>Email: <input type="email" name="email" required></label><br>
+        <label>Password: <input type="password" name="password" required></label><br>
+        <label>Dept: <input type="text" name="dept" required></label><br>
+        <label>Year: <input type="number" name="default_year" min="1" max="4"></label><br>
+        <label>Section: <input type="text" name="default_section"></label><br>
+        <input type="submit" value="Create Faculty">
+    </form>
+</div>
+
+<div class="section">
+    <h3>Create New User</h3>
+    <form method="post" action="{% url 'admin_create_user' %}">
+        {% csrf_token %}
+        <label>Username: <input type="text" name="username" required></label><br>
+        <label>Email: <input type="email" name="email" required></label><br>
+        <label>Password: <input type="password" name="password" required></label><br>
+        <label>Is Superuser: <input type="checkbox" name="is_superuser"></label><br>
+        <input type="submit" value="Create User">
+    </form>
+</div>
 {% endblock %}
 
 {% block extra_head %}
@@ -212,58 +270,4 @@
         }
     }
 </script>
-{% endblock %}
-
-
-<h3>Faculty</h3>
-<table border="1">
-    <tr>
-        <th>Username</th>
-        <th>Email</th>
-        <th>Department</th>
-        <th>Year</th>
-        <th>Section</th>
-        <th>Actions</th>
-    </tr>
-    {% for f in faculty %}
-    <tr>
-        <td>{{ f.username }}</td>
-        <td>{{ f.email }}</td>
-        <td>{{ f.dept }}</td>
-        <td>{{ f.default_year }}</td>
-        <td>{{ f.default_section }}</td>
-        <td>
-            <form method="get" action="{% url 'admin_update_faculty' f.id %}" style="display:inline;">
-                <input type="submit" value="Edit">
-            </form>
-            <form method="post" action="{% url 'admin_delete_faculty' f.id %}" style="display:inline;">
-                {% csrf_token %}
-                <input type="submit" value="Delete" onclick="return confirm('Are you sure?');">
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-
-<h3>Create New Faculty</h3>
-<form method="post" action="{% url 'admin_create_faculty' %}">
-    {% csrf_token %}
-    <label>Username: <input type="text" name="username" required></label><br>
-    <label>Email: <input type="email" name="email" required></label><br>
-    <label>Password: <input type="password" name="password" required></label><br>
-    <label>Dept: <input type="text" name="dept" required></label><br>
-    <label>Year: <input type="number" name="default_year" min="1" max="4"></label><br>
-    <label>Section: <input type="text" name="default_section"></label><br>
-    <input type="submit" value="Create Faculty">
-</form>
-
-<h3>Create New User</h3>
-<form method="post" action="{% url 'admin_create_user' %}">
-    {% csrf_token %}
-    <label>Username: <input type="text" name="username" required></label><br>
-    <label>Email: <input type="email" name="email" required></label><br>
-    <label>Password: <input type="password" name="password" required></label><br>
-    <label>Is Superuser: <input type="checkbox" name="is_superuser"></label><br>
-    <input type="submit" value="Create User">
-</form>
 {% endblock %}
