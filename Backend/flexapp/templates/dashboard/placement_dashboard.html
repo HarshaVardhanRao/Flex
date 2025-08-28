@@ -63,7 +63,7 @@
 <table class="admin-table">
     <thead>
         <tr>
-            <th>Roll No</th><th>Name</th><th>Dept</th><th>Year</th><th>Section</th><th>CGPA</th><th>Projects</th><th>Certifications</th><th>LeetCode</th><th>Publications</th><th>Mentor</th><th>Status</th>
+            <th>Roll No</th><th>Name</th><th>Dept</th><th>Year</th><th>Section</th><th>CGPA</th><th>Projects</th><th>Certifications</th><th>LeetCode</th><th>Publications</th><th>Mentor</th><th>Status</th><th>Offers</th><th>Offer Count</th>
         </tr>
     </thead>
     <tbody>
@@ -81,6 +81,21 @@
             <td>{{ stu.publications }}</td>
             <td>{{ stu.mentor }}</td>
             <td>{{ stu.placement_status }}</td>
+            <td>
+                <ul>
+                {% for offer in stu.placement_offers %}
+                    <li>
+                        <b>{{ offer.company }}</b> - ₹{{ offer.package }}<br>
+                        Type: {{ offer.placement_type|default:'-' }}<br>
+                        Date: {{ offer.offer_date|date:'Y-m-d' }}<br>
+                        {% if offer.accepted %}<span style="color:green;">Accepted</span>{% else %}<span style="color:orange;">Offered</span>{% endif %}
+                    </li>
+                {% empty %}
+                    <li>No offers</li>
+                {% endfor %}
+                </ul>
+            </td>
+            <td>{{ stu.offer_count }}</td>
         </tr>
         {% endfor %}
     </tbody>

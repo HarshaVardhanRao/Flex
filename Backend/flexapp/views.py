@@ -1,23 +1,3 @@
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
-
-# Export Placement Report View
-@csrf_exempt
-def export_placement_report(request):
-    if request.method == 'POST':
-        report_type = request.POST.get('type')
-        # Dummy implementation: return a simple response for now
-        if report_type == 'college':
-            return HttpResponse('College Summary Report (dummy)', content_type='text/plain')
-        elif report_type == 'dept':
-            return HttpResponse('Department Summary Report (dummy)', content_type='text/plain')
-        elif report_type == 'excel':
-            return HttpResponse('Excel Export (dummy)', content_type='text/plain')
-        elif report_type == 'pdf':
-            return HttpResponse('PDF Export (dummy)', content_type='text/plain')
-        else:
-            return HttpResponse('Unknown report type', content_type='text/plain')
-    return HttpResponse('Invalid request', content_type='text/plain')
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
@@ -41,6 +21,60 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import StudentSerializer, ProjectSerializer, CertificateSerializer, TechnologySerializer
 from django.db.models import F
+from .forms import PlacementOfferForm
+
+# Faculty: Add placement offer for any student
+@login_required
+def add_placement_offer_faculty(request):
+    if request.user.type() != "Faculty":
+        return HttpResponse("Unauthorized", status=403)
+    if request.method == 'POST':
+        form = PlacementOfferForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Placement offer added successfully!")
+            return redirect('faculty_dashboard')  # Change to your faculty dashboard name
+    else:
+        form = PlacementOfferForm()
+    return render(request, 'add_placement_offer_faculty.html', {'form': form})
+
+# Student: Add placement offer for self
+@login_required
+def add_placement_offer_student(request):
+    if request.user.type() != "student":
+        return HttpResponse("Unauthorized", status=403)
+    if request.method == 'POST':
+        form = PlacementOfferForm(request.POST)
+        if form.is_valid():
+            offer = form.save(commit=False)
+            offer.student = request.user
+            offer.save()
+            messages.success(request, "Placement offer added successfully!")
+            return redirect('dashboard')
+    else:
+        form = PlacementOfferForm()
+        form.fields['student'].widget = forms.HiddenInput()
+    return render(request, 'add_placement_offer_student.html', {'form': form})
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+
+# Export Placement Report View
+@csrf_exempt
+def export_placement_report(request):
+    if request.method == 'POST':
+        report_type = request.POST.get('type')
+        # Dummy implementation: return a simple response for now
+        if report_type == 'college':
+            return HttpResponse('College Summary Report (dummy)', content_type='text/plain')
+        elif report_type == 'dept':
+            return HttpResponse('Department Summary Report (dummy)', content_type='text/plain')
+        elif report_type == 'excel':
+            return HttpResponse('Excel Export (dummy)', content_type='text/plain')
+        elif report_type == 'pdf':
+            return HttpResponse('PDF Export (dummy)', content_type='text/plain')
+        else:
+            return HttpResponse('Unknown report type', content_type='text/plain')
+    return HttpResponse('Invalid request', content_type='text/plain')
 
 
 def index(request):
@@ -660,7 +694,7 @@ def register(request):
         logging.error(f"Error in register: {e}")
         return HttpResponse("An error occurred.")
 from django.db.models import Count, Avg
-# @login_required
+@login_required
 def faculty(request):
     try:
         from .models import student  # or whatever your model is called

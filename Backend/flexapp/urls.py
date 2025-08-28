@@ -65,5 +65,7 @@ urlpatterns = [
     path('api/logout/', views.api_logout, name='api-logout'),
     path('api/current-user/', views.api_current_user, name='api-current-user'),
     path('certificateForm', views.certificate_create, name='certificate_create'),
-    path("api/student-models/<str:model_name>/", views.student_model_instances)
+    path("api/student-models/<str:model_name>/", views.student_model_instances),
+    path('add_placement_offer_faculty/', views.add_placement_offer_faculty, name='add_placement_offer_faculty'),
+    path('add_placement_offer_student/', views.add_placement_offer_student, name='add_placement_offer_student'),
 ]

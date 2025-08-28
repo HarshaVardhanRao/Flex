@@ -1,5 +1,11 @@
+from .models import PlacementOffer
 from django import forms
 from .models import LeetCode, Certificate, Projects, certifications, publications, Technology, student
+
+class PlacementOfferForm(forms.ModelForm):
+    class Meta:
+        model = PlacementOffer
+        fields = ['student', 'company', 'package', 'offer_date', 'placement_year', 'placement_type', 'accepted', 'remarks']
 
 class LeetCodeForm(forms.ModelForm):
     class Meta:

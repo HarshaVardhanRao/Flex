@@ -316,3 +316,29 @@ class FillOutResponse(models.Model):
         return f"{self.student.first_name} - {self.form.title}"
 
 
+# PlacementOffer model: each student can have multiple offers
+class PlacementOffer(models.Model):
+    student = models.ForeignKey('student', on_delete=models.CASCADE, related_name='placement_offers')
+    company = models.CharField(max_length=255)
+    package = models.DecimalField(max_digits=8, decimal_places=2)
+    offer_date = models.DateField(blank=True, null=True)
+    placement_year = models.IntegerField(blank=True, null=True)
+    placement_type = models.CharField(max_length=50, blank=True, null=True, help_text="Type of placement (e.g., Internship, Full-time)")
+    accepted = models.BooleanField(default=False, help_text="Whether the student accepted this offer")
+    remarks = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        status = "Accepted" if self.accepted else "Offered"
+        return f"{self.student.roll_no} - {self.company} ({status})"
+
+# Placement model: aggregate status for student (optional, can be omitted if not needed)
+class Placement(models.Model):
+    student = models.OneToOneField('student', on_delete=models.CASCADE, related_name='placement_status')
+    is_placed = models.BooleanField(default=False)
+    remarks = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.student.roll_no} - {'Placed' if self.is_placed else 'Not Placed'}"
+
+    def offer_count(self):
+        return self.student.placement_offers.count()
