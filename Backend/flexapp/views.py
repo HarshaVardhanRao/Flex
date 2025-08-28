@@ -1,3 +1,4 @@
+
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
@@ -1515,3 +1516,68 @@ def admin_delete_user(request, user_id):
         messages.success(request, 'User deleted successfully!')
         return redirect('admin_dashboard')
     return redirect('admin_dashboard')
+
+
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.shortcuts import render
+from django.http import JsonResponse
+from .models import student, Certificate, Projects, PlacementOffer, LeetCode
+import requests
+import os
+
+def is_coordinator(user):
+    return hasattr(user, 'coordinatorrole') and user.coordinatorrole is not None
+
+import os
+import requests
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+import requests
+
+@login_required
+def flexon_dashboard(request):
+    if request.method == 'POST':
+        query = request.POST.get('query', '').strip()
+        if not query:
+            return JsonResponse({'error': 'Query is required'}, status=400)
+
+        # Build prompt context for Gemini
+        system_preamble = (
+            "You are an assistant for a Django dashboard called FlexOn. "
+            "Faculty and placement coordinators will ask queries about students, projects, placements, certificates, LeetCode, etc. "
+            "Your job is to parse the query and return a Django ORM filter or aggregation, plus a short explanation. "
+            "If the query is ambiguous, ask for clarification. "
+            "Example: Query: 'Students with more than 2 Python projects'. ORM: student.objects.annotate(project_count=models.Count('projects', filter=models.Q(projects__technologies__name__icontains='python'))).filter(project_count__gt=2)."
+        )
+        prompt_text = f"{system_preamble}\nUser: {query}\nAssistant:"
+
+        GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent"
+        GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyBx6_D4L8RiUdqQbIPGnluSZKJBCOJrz4k")  # set in .env or server
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "contents": [
+                {"parts": [{"text": prompt_text}]}
+            ]
+        }
+        url = f"{GEMINI_API_URL}?key={GEMINI_API_KEY}"
+
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=15)
+            response.raise_for_status()
+            ai_output = response.json()
+            # Extract Gemini response text
+            parsed = ai_output.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', str(ai_output))
+        except Exception as e:
+            parsed = f"Gemini parsing error: {e}"
+
+        return JsonResponse({
+            'clarification': None,
+            'results': [[parsed]],
+            'columns': ['AI Output'],
+            'chart': None,
+        })
+
+    return render(request, 'flexon_dashboard.html')

@@ -19,6 +19,7 @@ urlpatterns = [
     path('delete_certification/<int:primary_key>', views.delete_certification, name="delete_certification"),
     path('edit_certification', views.edit_certification, name="edit_certification"),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('flexon/', views.flexon_dashboard, name='flexon_dashboard'),
     path('admin-create-student/', views.admin_create_student, name='admin_create_student'),
     path('admin-update-student/<int:student_id>/', views.admin_update_student, name='admin_update_student'),
     path('admin-delete-student/<int:student_id>/', views.admin_delete_student, name='admin_delete_student'),
