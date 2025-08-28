@@ -1,14 +1,195 @@
-<!DOCTYPE html>
-<html>
-	<head>
-		<title>Upload Students</title>
-	</head>
-	<body>
-		<h1>Upload Students</h1>
-		<form method="post" enctype="multipart/form-data">
-			{% csrf_token %}
-			<input type="file" name="file" accept=".xlsx" />
-			<button type="submit">Upload</button>
-		</form>
-	</body>
-</html>
+{% extends 'base.html' %}
+
+{% block title %}Upload Students - MITS FLEX{% endblock %}
+
+{% block content %}
+<div class="section">
+    <h2>Upload Students</h2>
+    <hr />
+    
+    <div style="margin-bottom: 2rem;">
+        <p>Upload an Excel file (.xlsx) containing student information to add multiple students at once.</p>
+        
+        <div class="info-box">
+            <h3>File Requirements:</h3>
+            <ul>
+                <li>File must be in Excel format (.xlsx)</li>
+                <li>Required columns: Name, Roll Number, Department, Year, Section</li>
+                <li>Optional columns: Email, Phone, LeetCode Username</li>
+            </ul>
+        </div>
+    </div>
+    
+    <form method="post" enctype="multipart/form-data" class="upload-form">
+        {% csrf_token %}
+        
+        <div class="file-upload-wrapper">
+            <input type="file" name="file" id="file" accept=".xlsx" required />
+            <label for="file" class="file-upload-label">
+                <i class="bi bi-cloud-upload"></i>
+                <span>Choose Excel File</span>
+            </label>
+        </div>
+        
+        <div style="text-align: center; margin-top: 2rem;">
+            <input type="submit" value="Upload Students" />
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .info-box {
+        background-color: rgba(241, 196, 15, 0.1);
+        border: 1px solid rgba(241, 196, 15, 0.3);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .light-theme .info-box {
+        background-color: rgba(243, 156, 18, 0.1);
+        border-color: rgba(243, 156, 18, 0.3);
+    }
+
+    .info-box h3 {
+        color: #f1c40f;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .light-theme .info-box h3 {
+        color: #f39c12;
+    }
+
+    .info-box ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+
+    .info-box li {
+        padding: 0.25rem 0;
+        position: relative;
+        padding-left: 1.5rem;
+    }
+
+    .info-box li::before {
+        content: "•";
+        color: #f1c40f;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+    }
+
+    .light-theme .info-box li::before {
+        color: #f39c12;
+    }
+
+    .upload-form {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .file-upload-wrapper {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .file-upload-wrapper input[type="file"] {
+        opacity: 0;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+
+    .file-upload-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 2rem;
+        border: 2px dashed #f1c40f;
+        border-radius: 8px;
+        background-color: rgba(241, 196, 15, 0.1);
+        color: #f1c40f;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .file-upload-label:hover {
+        background-color: rgba(241, 196, 15, 0.2);
+        border-color: #f39c12;
+    }
+
+    .light-theme .file-upload-label {
+        border-color: #f39c12;
+        background-color: rgba(243, 156, 18, 0.1);
+        color: #f39c12;
+    }
+
+    .light-theme .file-upload-label:hover {
+        background-color: rgba(243, 156, 18, 0.2);
+        border-color: #d3a500;
+    }
+
+    .file-upload-label i {
+        font-size: 2rem;
+    }
+
+    .file-upload-label span {
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+
+    .section p {
+        color: #f5f5f5;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .light-theme .section p {
+        color: #333333;
+    }
+
+    @media (max-width: 768px) {
+        .upload-form {
+            max-width: 100%;
+        }
+        
+        .file-upload-label {
+            padding: 1.5rem 1rem;
+        }
+        
+        .file-upload-label i {
+            font-size: 1.5rem;
+        }
+        
+        .file-upload-label span {
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Show selected file name
+    document.getElementById('file').addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name;
+        const label = document.querySelector('.file-upload-label span');
+        
+        if (fileName) {
+            label.textContent = fileName;
+            document.querySelector('.file-upload-label').style.borderColor = '#28a745';
+            document.querySelector('.file-upload-label').style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+        } else {
+            label.textContent = 'Choose Excel File';
+        }
+    });
+</script>
+{% endblock %}

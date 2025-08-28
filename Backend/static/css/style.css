@@ -35,8 +35,7 @@ body.light-theme {
   position: absolute;
   top: 0;
   left: 0;
-  -webkit-backdrop-filter: blur(8px);
-          backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,10 +71,6 @@ body.light-theme {
   font-size: 1rem;
   transition: border-color 0.3s, background-color 0.3s;
 }
-.blur form input[type=text]::-moz-placeholder, .blur form input[type=email]::-moz-placeholder, .blur form input[type=password]::-moz-placeholder, .blur form textarea::-moz-placeholder, .blur form select::-moz-placeholder {
-  color: #f5f5f5;
-  opacity: 0.7;
-}
 .blur form input[type=text]::placeholder,
 .blur form input[type=email]::placeholder,
 .blur form input[type=password]::placeholder,
@@ -104,9 +99,6 @@ body.light-theme {
 .blur form select.light-theme {
   border-color: #f39c12;
   color: black;
-}
-.blur form input[type=text].light-theme::-moz-placeholder, .blur form input[type=email].light-theme::-moz-placeholder, .blur form input[type=password].light-theme::-moz-placeholder, .blur form textarea.light-theme::-moz-placeholder, .blur form select.light-theme::-moz-placeholder {
-  color: #333333;
 }
 .blur form input[type=text].light-theme::placeholder,
 .blur form input[type=email].light-theme::placeholder,
@@ -323,7 +315,7 @@ main.light-theme {
   background-color: #1a1a1a;
 }
 .section .multiple li button.light-theme {
-  background-color: #fad9a4;
+  background-color: #f7c768;
 }
 .section .multiple li button i {
   color: white;
@@ -482,12 +474,10 @@ option.light-theme {
 
 @keyframes blur {
   from {
-    -webkit-backdrop-filter: blur(0px);
-            backdrop-filter: blur(0px);
+    backdrop-filter: blur(0px);
   }
   to {
-    -webkit-backdrop-filter: blur(8px);
-            backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
   }
 }
 @keyframes scaleani {
@@ -546,4 +536,6 @@ option.light-theme {
 .scale-animation {
   animation: scaleani 300ms ease-in-out;
   animation-fill-mode: forwards;
-}/*# sourceMappingURL=style.css.map */
+}
+
+/*# sourceMappingURL=style.css.map */

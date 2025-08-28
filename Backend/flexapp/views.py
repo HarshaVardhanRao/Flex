@@ -206,7 +206,8 @@ def getStudentDetails(student):
     try:
         # Ensure we are querying the correct model field
         # projects = Projects.objects.filter(contributors=student)  # Updated line
-        projects = Projects.objects.prefetch_related("technologies").filter(contributors=student)
+        projects = student.projects.all()
+        print(Projects.objects.all().values())
 
         Tech_certifications = Certificate.objects.filter(rollno=student, category="Technical")
         For_lang = Certificate.objects.filter(rollno=student, category="Foreign Language")

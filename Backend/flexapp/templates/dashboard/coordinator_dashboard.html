@@ -1,52 +1,128 @@
 <!-- templates/dashboard/coordinator_dashboard.html -->
 {% extends "base.html" %}
+
+{% block title %}Coordinator Dashboard - MITS FLEX{% endblock %}
+
 {% block content %}
+<div class="section">
   <h2>Coordinator Dashboard</h2>
+  <hr />
 
-  {% for role in roles %}
-    <div class="role-card">
-      <h3>{{ role.name }}</h3>
-      <p>{{ role.description }}</p>
+  <div class="grid">
+    {% for role in roles %}
+      <div class="section">
+        <h3>{{ role.name }}</h3>
+        <p>{{ role.description }}</p>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if certificates %}
+  <div class="section">
+    <h2>Student Certificates</h2>
+    <hr />
+    <div class="multiple">
+      <table class="dashboard-table">
+        <thead>
+          <tr><th>Student</th><th>Title</th><th>Provider</th></tr>
+        </thead>
+        <tbody>
+          {% for cert in certificates %}
+            <tr>
+              <td>{{ cert.student.first_name }}</td>
+              <td>{{ cert.title }}</td>
+              <td>{{ cert.provider }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-  {% endfor %}
+  </div>
+{% endif %}
 
-  {% if certificates %}
-    <h3>Student Certificates</h3>
-    <table>
-      <tr><th>Student</th><th>Title</th><th>Provider</th></tr>
-      {% for cert in certificates %}
-        <tr>
-          <td>{{ cert.student.first_name }}</td>
-          <td>{{ cert.title }}</td>
-          <td>{{ cert.provider }}</td>
-        </tr>
-      {% endfor %}
-    </table>
-  {% endif %}
+{% if projects %}
+  <div class="section">
+    <h2>Student Projects</h2>
+    <hr />
+    <div class="multiple">
+      <table class="dashboard-table">
+        <thead>
+          <tr><th>Student</th><th>Project Title</th></tr>
+        </thead>
+        <tbody>
+          {% for proj in projects %}
+            <tr>
+              <td>{{ proj.student.first_name }}</td>
+              <td>{{ proj.title }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}
 
-  {% if projects %}
-    <h3>Student Projects</h3>
-    <table>
-      <tr><th>Student</th><th>Project Title</th></tr>
-      {% for proj in projects %}
-        <tr>
-          <td>{{ proj.student.first_name }}</td>
-          <td>{{ proj.title }}</td>
-        </tr>
-      {% endfor %}
-    </table>
-  {% endif %}
+{% if publications %}
+  <div class="section">
+    <h2>Student Publications</h2>
+    <hr />
+    <div class="multiple">
+      <table class="dashboard-table">
+        <thead>
+          <tr><th>Student</th><th>Publication Title</th></tr>
+        </thead>
+        <tbody>
+          {% for pub in publications %}
+            <tr>
+              <td>{{ pub.student.first_name }}</td>
+              <td>{{ pub.title }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
 
-  {% if publications %}
-    <h3>Student Publications</h3>
-    <table>
-      <tr><th>Student</th><th>Publication Title</th></tr>
-      {% for pub in publications %}
-        <tr>
-          <td>{{ pub.student.first_name }}</td>
-          <td>{{ pub.title }}</td>
-        </tr>
-      {% endfor %}
-    </table>
-  {% endif %}
+{% block extra_head %}
+<style>
+  .dashboard-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .dashboard-table th,
+  .dashboard-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(241, 196, 15, 0.3);
+  }
+
+  .dashboard-table th {
+    background-color: rgba(241, 196, 15, 0.1);
+    color: #f1c40f;
+    font-weight: bold;
+  }
+
+  .dashboard-table tr:hover {
+    background-color: rgba(241, 196, 15, 0.05);
+  }
+
+  .light-theme .dashboard-table th {
+    background-color: rgba(243, 156, 18, 0.1);
+    color: #f39c12;
+  }
+
+  .light-theme .dashboard-table th,
+  .light-theme .dashboard-table td {
+    border-bottom: 1px solid rgba(243, 156, 18, 0.3);
+  }
+
+  .light-theme .dashboard-table tr:hover {
+    background-color: rgba(243, 156, 18, 0.05);
+  }
+</style>
+{% endblock %}
 {% endblock %}

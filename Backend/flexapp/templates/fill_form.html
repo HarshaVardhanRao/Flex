@@ -1,42 +1,228 @@
-<form id="fillForm">
-    <div id="formContainer"></div>
-    <button type="submit">Submit</button>
-</form>
+{% extends 'base.html' %}
 
+{% block title %}Fill Form - MITS FLEX{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div id="formHeader">
+        <h2>Loading Form...</h2>
+        <hr />
+    </div>
+    
+    <form id="fillForm">
+        <div id="formContainer"></div>
+        <div style="text-align: center; margin-top: 2rem;">
+            <input type="submit" value="Submit" />
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    #formContainer {
+        margin: 2rem 0;
+    }
+
+    #formContainer .form-field {
+        margin-bottom: 1.5rem;
+    }
+
+    #formContainer label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #f1c40f;
+        font-weight: 500;
+    }
+
+    .light-theme #formContainer label {
+        color: #f39c12;
+    }
+
+    #formContainer input,
+    #formContainer select,
+    #formContainer textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #f1c40f;
+        border-radius: 5px;
+        background-color: transparent;
+        color: #f5f5f5;
+        font-size: 1rem;
+        transition: border-color 0.3s, background-color 0.3s;
+    }
+
+    #formContainer input:focus,
+    #formContainer select:focus,
+    #formContainer textarea:focus {
+        outline: none;
+        border-color: #f39c12;
+        background-color: rgba(241, 196, 15, 0.1);
+    }
+
+    .light-theme #formContainer input,
+    .light-theme #formContainer select,
+    .light-theme #formContainer textarea {
+        border-color: #f39c12;
+        color: #333333;
+    }
+
+    .light-theme #formContainer input:focus,
+    .light-theme #formContainer select:focus,
+    .light-theme #formContainer textarea:focus {
+        border-color: #d3a500;
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    #formContainer .form-description {
+        color: #f5f5f5;
+        font-style: italic;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background-color: rgba(241, 196, 15, 0.1);
+        border-radius: 8px;
+        border-left: 4px solid #f1c40f;
+    }
+
+    .light-theme #formContainer .form-description {
+        color: #333333;
+        background-color: rgba(243, 156, 18, 0.1);
+        border-left-color: #f39c12;
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #f1c40f;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-left: 10px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
 async function loadForm(formId) {
-    let response = await fetch(`/get_form/${formId}/`);
-    let formData = await response.json();
+    try {
+        let response = await fetch(`/get_form/${formId}/`);
+        let formData = await response.json();
 
-    let container = document.getElementById("formContainer");
-    container.innerHTML = `<h3>${formData.title}</h3><p>${formData.description}</p>`;
+        let container = document.getElementById("formContainer");
+        let headerContainer = document.getElementById("formHeader");
+        
+        headerContainer.innerHTML = `
+            <h2>${formData.title}</h2>
+            <hr />
+        `;
 
-    formData.fields.forEach(field => {
-        let input = document.createElement("input");
-        input.placeholder = field.field_name;
-        input.name = field.field_name;
-        if (field.field_type === "number") input.type = "number";
-        if (field.field_type === "date") input.type = "date";
-        container.appendChild(input);
-    });
+        if (formData.description) {
+            container.innerHTML = `<div class="form-description">${formData.description}</div>`;
+        } else {
+            container.innerHTML = '';
+        }
+
+        formData.fields.forEach(field => {
+            let fieldDiv = document.createElement("div");
+            fieldDiv.className = "form-field";
+            
+            let label = document.createElement("label");
+            label.textContent = field.field_name;
+            fieldDiv.appendChild(label);
+
+            let input;
+            
+            if (field.field_type === "choice" && field.options) {
+                input = document.createElement("select");
+                let defaultOption = document.createElement("option");
+                defaultOption.value = "";
+                defaultOption.textContent = `-- Select ${field.field_name} --`;
+                input.appendChild(defaultOption);
+                
+                field.options.split(',').forEach(option => {
+                    let opt = document.createElement("option");
+                    opt.value = option.trim();
+                    opt.textContent = option.trim();
+                    input.appendChild(opt);
+                });
+            } else {
+                input = document.createElement("input");
+                input.placeholder = field.field_name;
+                
+                if (field.field_type === "number") input.type = "number";
+                else if (field.field_type === "date") input.type = "date";
+                else if (field.field_type === "email") input.type = "email";
+                else input.type = "text";
+            }
+            
+            input.name = field.field_name;
+            input.required = true;
+            fieldDiv.appendChild(input);
+            container.appendChild(fieldDiv);
+        });
+    } catch (error) {
+        console.error('Error loading form:', error);
+        document.getElementById("formHeader").innerHTML = `
+            <h2>Error Loading Form</h2>
+            <hr />
+        `;
+        document.getElementById("formContainer").innerHTML = `
+            <p style="color: red;">Unable to load form. Please try again later.</p>
+        `;
+    }
 }
 
 document.getElementById("fillForm").onsubmit = async function(e) {
     e.preventDefault();
-    let responses = {};
-    document.querySelectorAll("#formContainer input").forEach(input => {
-        responses[input.name] = input.value;
-    });
+    
+    let submitButton = e.target.querySelector('input[type="submit"]');
+    let originalValue = submitButton.value;
+    submitButton.value = "Submitting...";
+    submitButton.disabled = true;
+    
+    try {
+        let responses = {};
+        document.querySelectorAll("#formContainer input, #formContainer select").forEach(input => {
+            responses[input.name] = input.value;
+        });
 
-    let response = await fetch(`/submit_response/1/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ responses: responses }),
-    });
+        let response = await fetch(`/submit_response/1/`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ responses: responses }),
+        });
 
-    let result = await response.json();
-    alert(result.message);
+        let result = await response.json();
+        
+        if (response.ok) {
+            alert("Form submitted successfully!");
+            // Optionally redirect or reset form
+            e.target.reset();
+        } else {
+            alert(result.message || "Error submitting form");
+        }
+    } catch (error) {
+        console.error('Error submitting form:', error);
+        alert("Error submitting form. Please try again.");
+    } finally {
+        submitButton.value = originalValue;
+        submitButton.disabled = false;
+    }
 };
 
-loadForm(1);
+// Load form with ID 1 by default, or get from URL
+const urlParams = new URLSearchParams(window.location.search);
+const formId = urlParams.get('form_id') || 1;
+loadForm(formId);
 </script>
+{% endblock %}

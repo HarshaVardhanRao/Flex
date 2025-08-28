@@ -15,7 +15,7 @@
 			href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
 		/>
 		<title>FLEX</title>
-		<link rel="stylesheet" href="{% static 'css/style.css' %}" />
+		<link rel="stylesheet" href="{% static 'css/style.min.css' %}" />
 		<style>
 			@media screen and (max-width: 600px) {
 				.profile-icon {
@@ -65,7 +65,7 @@
 		</header>
 
 		<main>
-			<div class="profile border-custom">
+			<div class="profile">
 				<div
 					style="
 						display: flex;
@@ -185,7 +185,7 @@
 				</div>
 			</div>
 			<div class="grid">
-				<div class="section border-custom">
+				<div class="section">
 					<h2 id="project">Projects</h2>
 					<hr />
 					<ul class="multiple" id="projects">
@@ -215,7 +215,6 @@
 						<!-- More list items -->
 					</ul>
 					<button
-						class="btn btn-primary"
 						data-category="projects"
 						onclick="new_item(this);"
 					>
@@ -223,7 +222,7 @@
 						Project
 					</button>
 				</div>
-				<div class="section border-custom">
+				<div class="section">
 					<h2 id="languages">Foreign Languages</h2>
 					<hr />
 					<ul class="multiple" id="foreign_languages">
@@ -253,7 +252,6 @@
 						<!-- More list items -->
 					</ul>
 					<button
-						class="btn btn-primary"
 						data-category="languages"
 						onclick="new_item(this);"
 					>
@@ -261,7 +259,7 @@
 						Language
 					</button>
 				</div>
-				<div class="section border-custom">
+				<div class="section">
 					<h2 id="technical">Technical Certifications</h2>
 					<hr />
 					<ul class="multiple" id="technical_certificates">
@@ -290,7 +288,6 @@
 						<!-- More list items -->
 					</ul>
 					<button
-						class="btn btn-primary"
 						data-category="certificates"
 						onclick="new_item(this);"
 					>
