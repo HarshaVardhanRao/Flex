@@ -38,6 +38,7 @@ urlpatterns = [
     path('upload_students/', upload_students, name='upload_students'),
     path("search_students/", search_students, name="search_students"),
     path("search_technologies/", views.search_technologies, name="search_technologies"),
+    path("create_technology/", views.create_technology, name="create_technology"),
     path('dashboard/placement/', views.placement_dashboard, name='placement_dashboard'),
     path('fillout',views.fillout,name="fillout"),
     path("create/", views.create_form, name="create_form"),

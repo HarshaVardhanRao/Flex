@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from .forms import *
 import logging
 from django.contrib.auth.decorators import login_required
-from .models import Projects, Certificate, student, LeetCode, Faculty,FillOutForm, FillOutField, student
+from .models import Projects, Certificate, student, LeetCode, Faculty,FillOutForm, FillOutField, student, Technology
 import requests
 from django.http import HttpResponse, JsonResponse
 import json
@@ -205,9 +205,9 @@ def create_certificate_api(request):
 def getStudentDetails(student):
     try:
         # Ensure we are querying the correct model field
-        # projects = Projects.objects.filter(contributors=student)  # Updated line
-        projects = student.projects.all()
-        print(Projects.objects.all().values())
+        projects = Projects.objects.filter(contributors=student)  # Updated line
+        # projects = student.projects.all()
+        print(projects)
 
         Tech_certifications = Certificate.objects.filter(rollno=student, category="Technical")
         For_lang = Certificate.objects.filter(rollno=student, category="Foreign Language")
@@ -255,6 +255,41 @@ def search_technologies(request):
     term = request.GET.get("term", "")
     technologies = Technology.objects.filter(name__icontains=term).values("id", "name")
     return JsonResponse(list(technologies), safe=False)
+
+@csrf_exempt
+def create_technology(request):
+    if request.method == 'POST':
+        import json
+        try:
+            data = json.loads(request.body)
+            name = data.get('name', '').strip()
+            
+            if not name:
+                return JsonResponse({'error': 'Technology name is required'}, status=400)
+            
+            # Check if technology already exists (case-insensitive)
+            existing_tech = Technology.objects.filter(name__iexact=name).first()
+            if existing_tech:
+                return JsonResponse({
+                    'id': existing_tech.id,
+                    'name': existing_tech.name,
+                    'message': 'Technology already exists'
+                })
+            
+            # Create new technology
+            new_tech = Technology.objects.create(name=name.capitalize())
+            return JsonResponse({
+                'id': new_tech.id,
+                'name': new_tech.name,
+                'message': 'Technology created successfully'
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Only POST method allowed'}, status=405)
 
 def clean_list(lst_str):
     return list(map(int, ast.literal_eval(lst_str)[0].split(',')))
@@ -312,6 +347,7 @@ def create_project(request):
                 chain.from_iterable(id_str.split(',') for id_str in contributors_ids)
             )
             contributors_ids = [int(id.strip()) for id in contributors_ids if id.strip().isdigit()]
+            print(contributors_ids)
 
             tech_names = [tech.strip().capitalize() for tech in tech_names if tech.strip()]
 
@@ -325,8 +361,8 @@ def create_project(request):
             )
 
             # Step 2: Add current user if student
-            if hasattr(request.user, 'student'):
-                new_project.contributors.add(request.user.student)
+            if request.user.type() == "student":
+                new_project.contributors.add(request.user.id)
 
             # Step 3: Add additional contributors
             contributors = student.objects.filter(id__in=contributors_ids)

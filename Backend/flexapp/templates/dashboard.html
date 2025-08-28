@@ -49,6 +49,22 @@
 				cursor: pointer;
 				font-size: 14px;
 			}
+			
+			.add-new-tech {
+				border-top: 1px solid rgba(243, 156, 18, 0.3) !important;
+				background-color: rgba(241, 196, 15, 0.05) !important;
+				transition: all 0.2s ease;
+			}
+			
+			.add-new-tech:hover {
+				background-color: rgba(241, 196, 15, 0.15) !important;
+				color: #f1c40f !important;
+			}
+			
+			.add-new-tech i {
+				margin-right: 5px;
+				color: #f39c12;
+			}
 		</style>
 	</head>
 
@@ -469,7 +485,7 @@
 			<div id="selected-contributors-container"></div>
 
 			            <label for="technologies-search">Technologies</label>
-			<input type="text" id="technologies-search" placeholder="Search and select technologies..." class="${body.classList.contains("light-theme") ? "light-theme" : ""}">
+			<input type="text" id="technologies-search" placeholder="Search or type new technologies (comma or Enter to add)..." class="${body.classList.contains("light-theme") ? "light-theme" : ""}">
 			<div id="technologies-list" class="dropdown-list"></div>
 			<input type="hidden" name="technologies" id="selected-technologies">
 			<div id="selected-technologies-container"></div>
@@ -700,12 +716,17 @@
 
 			techSearchInput.addEventListener("input", function () {
 			    const query = techSearchInput.value.trim();
-			    if (query.length < 2) return;
+			    if (query.length < 2) {
+			        techResultsContainer.innerHTML = "";
+			        return;
+			    }
 
 			    fetch(`/search_technologies/?term=${query}`)  // Ensure this endpoint returns tech options
 			        .then(response => response.json())
 			        .then(data => {
 			            techResultsContainer.innerHTML = "";
+			            
+			            // Show existing technologies
 			            data.forEach(tech => {
 			                if (!selectedTechnologies.includes(tech.id)) {
 			                    const item = document.createElement("div");
@@ -721,9 +742,128 @@
 			                    techResultsContainer.appendChild(item);
 			                }
 			            });
+			            
+			            // Always show option to add new technology
+			            const addNewItem = document.createElement("div");
+			            addNewItem.classList.add("dropdown-item", "add-new-tech");
+			            addNewItem.innerHTML = `<i class="bi bi-plus"></i> Add "${query}" as new technology`;
+			            addNewItem.style.borderTop = data.length > 0 ? "1px solid #ccc" : "none";
+			            addNewItem.style.fontStyle = "italic";
+			            addNewItem.style.color = "#f39c12";
+			            
+			            addNewItem.addEventListener("click", function () {
+			                createAndAddTechnology(query);
+			                techSearchInput.value = "";
+			                techResultsContainer.innerHTML = "";
+			            });
+			            
+			            techResultsContainer.appendChild(addNewItem);
 			        })
 			        .catch(error => console.error("Error fetching technologies:", error));
 			});
+			
+			// Add keydown event listener for Enter key and comma separation
+			techSearchInput.addEventListener("keydown", function (event) {
+			    if (event.key === "Enter" || event.key === ",") {
+			        event.preventDefault();
+			        const query = techSearchInput.value.trim();
+			        if (query.length >= 2) {
+			            // Check if there's an exact match in the dropdown
+			            const dropdownItems = techResultsContainer.querySelectorAll('.dropdown-item:not(.add-new-tech)');
+			            let exactMatch = false;
+			            
+			            dropdownItems.forEach(item => {
+			                if (item.textContent.toLowerCase() === query.toLowerCase()) {
+			                    item.click();
+			                    exactMatch = true;
+			                }
+			            });
+			            
+			            // If no exact match, create new technology
+			            if (!exactMatch) {
+			                createAndAddTechnology(query);
+			                techSearchInput.value = "";
+			                techResultsContainer.innerHTML = "";
+			            }
+			        }
+			    }
+			});
+			
+			// Add support for pasting comma-separated technologies
+			techSearchInput.addEventListener("paste", function(event) {
+			    setTimeout(() => {
+			        const value = techSearchInput.value.trim();
+			        if (value.includes(',')) {
+			            event.preventDefault();
+			            const technologies = value.split(',').map(tech => tech.trim()).filter(tech => tech.length >= 2);
+			            techSearchInput.value = "";
+			            techResultsContainer.innerHTML = "";
+			            
+			            // Add each technology
+			            technologies.forEach((tech, index) => {
+			                setTimeout(() => {
+			                    createAndAddTechnology(tech);
+			                }, index * 100); // Small delay between each creation to avoid overwhelming the server
+			            });
+			        }
+			    }, 10);
+			});
+			
+			// Close dropdown when clicking outside
+			document.addEventListener('click', function(event) {
+			    if (!techSearchInput.contains(event.target) && !techResultsContainer.contains(event.target)) {
+			        techResultsContainer.innerHTML = "";
+			    }
+			});
+			
+			function createAndAddTechnology(name) {
+			    const trimmedName = name.trim();
+			    if (!trimmedName) return;
+			    
+			    // Check if technology already exists in selected list by name (case-insensitive)
+			    const existingTechSpan = Array.from(selectedTechContainer.children).find(span => 
+			        span.textContent.replace('✖', '').trim().toLowerCase() === trimmedName.toLowerCase()
+			    );
+			    
+			    if (existingTechSpan) {
+			        alert('This technology is already added!');
+			        return;
+			    }
+			    
+			    // Show loading state
+			    techSearchInput.disabled = true;
+			    techSearchInput.placeholder = 'Creating technology...';
+			    
+			    // Create technology in the database
+			    fetch('/create_technology/', {
+			        method: 'POST',
+			        headers: {
+			            'Content-Type': 'application/json',
+			            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+			        },
+			        body: JSON.stringify({ name: trimmedName })
+			    })
+			    .then(response => response.json())
+			    .then(data => {
+			        if (data.id) {
+			            addTechnology(data.id, data.name);
+			            if (data.message) {
+			                console.log(data.message);
+			            }
+			        } else if (data.error) {
+			            alert('Error creating technology: ' + data.error);
+			        }
+			    })
+			    .catch(error => {
+			        console.error('Error creating technology:', error);
+			        alert('Error creating technology. Please try again.');
+			    })
+			    .finally(() => {
+			        // Reset loading state
+			        techSearchInput.disabled = false;
+			        techSearchInput.placeholder = 'Search or type new technologies (comma or Enter to add)...';
+			    });
+			}
 
 			function addTechnology(id, name) {
 			    if (!selectedTechnologies.includes(id)) {
