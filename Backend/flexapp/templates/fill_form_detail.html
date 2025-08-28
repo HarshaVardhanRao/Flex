@@ -1,67 +1,641 @@
-{% load custom_filters %}
-<h2>{{ form.title }} - Responses Overview</h2>
+{% extends 'base.html' %}
 
-<!-- Summary -->
-<div style="display: flex; gap: 20px; margin-bottom: 20px">
-    <div style="padding: 10px; border: 1px solid #ccc"><strong>Total Assigned:</strong> {{ total }}</div>
-    <div style="padding: 10px; border: 1px solid #ccc"><strong>Responded:</strong> {{ responded_count }}</div>
-    <div style="padding: 10px; border: 1px solid #ccc"><strong>Not Responded:</strong> {{ not_responded_count }}</div>
-</div>
+{% block title %}{{ form.title }} - Fill Form - MITS FLEX{% endblock %}
 
-<!-- Downloads -->
-<div style="margin-bottom: 20px">
-    <a href="{% url 'download_csv' form.id 'responses' %}">📥 Download Responses CSV</a> |
-    <a href="{% url 'download_csv' form.id 'filled' %}">📥 Filled Students CSV</a> |
-    <a href="{% url 'download_csv' form.id 'not_filled' %}">📥 Not Filled Students CSV</a>
-</div>
+{% block content %}
+<div class="section">
+    <div class="form-header">
+        <div class="header-content">
+            <h2>{{ form.title }}</h2>
+            {% if form.description %}
+            <div class="form-description">
+                <i class="bi bi-info-circle"></i>
+                {{ form.description }}
+            </div>
+            {% endif %}
+        </div>
+        <div class="form-meta">
+            <div class="meta-item">
+                <i class="bi bi-person"></i>
+                <span>Created by {{ form.created_by.get_full_name|default:form.created_by.username }}</span>
+            </div>
+            <div class="meta-item">
+                <i class="bi bi-list-ul"></i>
+                <span>{{ fields.count }} field{{ fields.count|pluralize }}</span>
+            </div>
+        </div>
+    </div>
+    <hr />
 
-<!-- Response Table -->
-<h3>Submitted Responses</h3>
-<table border="1" cellpadding="5" cellspacing="0">
-    <tr>
-        <th>Student</th>
-        {% for field in form.fields.all %}
-        <th>{{ field.field_name }}</th>
-        {% endfor %}
-        <th>Submitted At</th>
-    </tr>
-
-    {% for r in responses %}
-    <tr>
-        <td style="padding: 8px">{{ r.student.first_name }}</td>
-
-        {% for field in form.fields.all %}
-        <td style="padding: 8px">
-            {% with field_name=field.field_name %}
-    {% with response_value=r.responses|get_item:field_name %}
-        {% if field.field_type == "file_awk" %}
-            {% with model_instance_map|get_item:r.id|stringformat:"s"|add:":"|add:field_name as instance %}
-                {% if instance %}
-                    {% if instance.image_field %}
-                        <img src="{{ instance.image_field.url }}" alt="Certificate" style="width: 100px;" />
-                    {% else %}
-                        {{ instance }}
-                    {% endif %}
-                {% else %}
-                    No instance found
+    <form method="POST" id="fillOutForm" class="form-container">
+        {% csrf_token %}
+        
+        <div class="fields-container">
+            {% for field in fields %}
+            <div class="form-field" data-field-type="{{ field.field_type }}">
+                <label for="field_{{ field.id }}" class="field-label">
+                    {{ field.field_name }}
+                    <span class="required">*</span>
+                </label>
+                
+                {% if field.field_type == "text" %}
+                    <input type="text" 
+                           id="field_{{ field.id }}" 
+                           name="{{ field.id }}" 
+                           class="form-input"
+                           placeholder="Enter {{ field.field_name|lower }}"
+                           required>
+                
+                {% elif field.field_type == "number" %}
+                    <input type="number" 
+                           id="field_{{ field.id }}" 
+                           name="{{ field.id }}" 
+                           class="form-input"
+                           placeholder="Enter {{ field.field_name|lower }}"
+                           required>
+                
+                {% elif field.field_type == "date" %}
+                    <input type="date" 
+                           id="field_{{ field.id }}" 
+                           name="{{ field.id }}" 
+                           class="form-input"
+                           required>
+                
+                {% elif field.field_type == "choice" %}
+                    <select id="field_{{ field.id }}" 
+                            name="{{ field.id }}" 
+                            class="form-select"
+                            required>
+                        <option value="">-- Select {{ field.field_name }} --</option>
+                        {% for option in field.options %}
+                        <option value="{{ option }}">{{ option }}</option>
+                        {% endfor %}
+                    </select>
+                
+                {% elif field.field_type == "file_awk" %}
+                    <div class="file-field">
+                        {% if field.related_model == "certificate" %}
+                            <select id="field_{{ field.id }}" 
+                                    name="{{ field.id }}" 
+                                    class="form-select file-select"
+                                    required>
+                                <option value="">-- Select Certificate --</option>
+                                {% for cert in model_instances.certificate %}
+                                <option value="{{ cert.id }}" data-preview="{{ cert.certificate.url }}">
+                                    {{ cert.title }} ({{ cert.issued_by }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="file-preview" id="preview_{{ field.id }}" style="display: none;">
+                                <img src="" alt="Certificate Preview" class="preview-image">
+                                <div class="preview-actions">
+                                    <button type="button" class="btn-preview" onclick="openPreview(this)">
+                                        <i class="bi bi-eye"></i>
+                                        View Full Size
+                                    </button>
+                                </div>
+                            </div>
+                        
+                        {% elif field.related_model == "project" %}
+                            <select id="field_{{ field.id }}" 
+                                    name="{{ field.id }}" 
+                                    class="form-select"
+                                    required>
+                                <option value="">-- Select Project --</option>
+                                {% for project in model_instances.project %}
+                                <option value="{{ project.id }}">
+                                    {{ project.title }} - {{ project.description|truncatechars:50 }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                        
+                        <div class="field-help">
+                            <i class="bi bi-info-circle"></i>
+                            Select from your existing {{ field.related_model }}s
+                        </div>
+                    </div>
                 {% endif %}
-            {% endwith %}
-        {% endif %}
-    {% endwith %}
-{% endwith %}
+                
+                {% if field.field_type != "file_awk" %}
+                <div class="field-help">
+                    Please provide accurate information for {{ field.field_name|lower }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
 
-        </td>
-        {% endfor %}
+        <div class="form-actions">
+            <button type="button" class="btn-secondary" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i>
+                Go Back
+            </button>
+            <button type="submit" class="btn-primary" id="submitBtn">
+                <i class="bi bi-check-circle"></i>
+                Submit Form
+            </button>
+        </div>
+    </form>
+</div>
 
-        <td style="padding: 8px">{{ r.submitted_at }}</td>
-    </tr>
-    {% endfor %}
-</table>
+<!-- Preview Modal -->
+<div id="previewModal" class="preview-modal" style="display: none;">
+    <div class="modal-backdrop" onclick="closePreview()"></div>
+    <div class="preview-content">
+        <button class="preview-close" onclick="closePreview()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <img id="previewImage" src="" alt="Full Size Preview">
+    </div>
+</div>
+{% endblock %}
 
-<!-- Not Responded -->
-<h3 style="margin-top: 40px">Students Who Didn't Respond</h3>
-<ul>
-    {% for s in non_responded_students %}
-    <li>{{ s.roll_no }} - {{ s.first_name }}</li>
-    {% endfor %}
-</ul>
+{% block extra_head %}
+<style>
+    .form-header {
+        margin-bottom: 2rem;
+    }
+
+    .header-content h2 {
+        color: #f1c40f;
+        margin: 0 0 1rem 0;
+        font-size: 2rem;
+    }
+
+    .light-theme .header-content h2 {
+        color: #f39c12;
+    }
+
+    .form-description {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        background-color: rgba(241, 196, 15, 0.1);
+        border: 1px solid rgba(241, 196, 15, 0.3);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        color: #f5f5f5;
+        line-height: 1.6;
+    }
+
+    .form-description i {
+        color: #f1c40f;
+        font-size: 1.1rem;
+        margin-top: 0.1rem;
+        flex-shrink: 0;
+    }
+
+    .light-theme .form-description {
+        background-color: rgba(243, 156, 18, 0.1);
+        border-color: rgba(243, 156, 18, 0.3);
+        color: #444;
+    }
+
+    .light-theme .form-description i {
+        color: #f39c12;
+    }
+
+    .form-meta {
+        display: flex;
+        gap: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #f5f5f5;
+        opacity: 0.8;
+        font-size: 0.95rem;
+    }
+
+    .meta-item i {
+        color: #f1c40f;
+    }
+
+    .light-theme .meta-item {
+        color: #666;
+    }
+
+    .light-theme .meta-item i {
+        color: #f39c12;
+    }
+
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .fields-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .form-field {
+        background-color: rgba(241, 196, 15, 0.05);
+        border: 1px solid rgba(241, 196, 15, 0.2);
+        border-radius: 10px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-field:hover {
+        border-color: rgba(241, 196, 15, 0.4);
+        background-color: rgba(241, 196, 15, 0.08);
+    }
+
+    .light-theme .form-field {
+        background-color: rgba(243, 156, 18, 0.05);
+        border-color: rgba(243, 156, 18, 0.2);
+    }
+
+    .light-theme .form-field:hover {
+        border-color: rgba(243, 156, 18, 0.4);
+        background-color: rgba(243, 156, 18, 0.08);
+    }
+
+    .field-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: #f1c40f;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .light-theme .field-label {
+        color: #f39c12;
+    }
+
+    .required {
+        color: #e74c3c;
+        font-size: 1.2rem;
+    }
+
+    .form-input,
+    .form-select {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid rgba(241, 196, 15, 0.3);
+        border-radius: 8px;
+        background-color: transparent;
+        color: #f5f5f5;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: #f1c40f;
+        background-color: rgba(241, 196, 15, 0.1);
+        transform: scale(1.02);
+    }
+
+    .light-theme .form-input,
+    .light-theme .form-select {
+        border-color: rgba(243, 156, 18, 0.3);
+        color: #333;
+    }
+
+    .light-theme .form-input:focus,
+    .light-theme .form-select:focus {
+        border-color: #f39c12;
+        background-color: rgba(243, 156, 18, 0.1);
+    }
+
+    .form-input::placeholder {
+        color: rgba(245, 245, 245, 0.5);
+    }
+
+    .light-theme .form-input::placeholder {
+        color: rgba(51, 51, 51, 0.5);
+    }
+
+    .file-field {
+        position: relative;
+    }
+
+    .file-select {
+        margin-bottom: 1rem;
+    }
+
+    .file-preview {
+        background-color: rgba(241, 196, 15, 0.05);
+        border: 1px solid rgba(241, 196, 15, 0.2);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .light-theme .file-preview {
+        background-color: rgba(243, 156, 18, 0.05);
+        border-color: rgba(243, 156, 18, 0.2);
+    }
+
+    .preview-image {
+        max-width: 200px;
+        max-height: 150px;
+        border-radius: 6px;
+        border: 2px solid rgba(241, 196, 15, 0.3);
+        margin-bottom: 1rem;
+    }
+
+    .btn-preview {
+        background-color: transparent;
+        color: #f1c40f;
+        border: 2px solid #f1c40f;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-preview:hover {
+        background-color: #f1c40f;
+        color: #000;
+    }
+
+    .light-theme .btn-preview {
+        color: #f39c12;
+        border-color: #f39c12;
+    }
+
+    .light-theme .btn-preview:hover {
+        background-color: #f39c12;
+        color: #fff;
+    }
+
+    .field-help {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        font-size: 0.9rem;
+        color: #f5f5f5;
+        opacity: 0.7;
+        font-style: italic;
+    }
+
+    .field-help i {
+        color: #f1c40f;
+        font-size: 0.8rem;
+    }
+
+    .light-theme .field-help {
+        color: #666;
+    }
+
+    .light-theme .field-help i {
+        color: #f39c12;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 2px solid rgba(241, 196, 15, 0.2);
+    }
+
+    .light-theme .form-actions {
+        border-top-color: rgba(243, 156, 18, 0.2);
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background-color: #f1c40f;
+        color: #000;
+    }
+
+    .btn-primary:hover {
+        background-color: #f39c12;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(241, 196, 15, 0.3);
+    }
+
+    .btn-primary:disabled {
+        background-color: #666;
+        color: #999;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .light-theme .btn-primary {
+        background-color: #f39c12;
+        color: #fff;
+    }
+
+    .light-theme .btn-primary:hover {
+        background-color: #d3a500;
+    }
+
+    .btn-secondary {
+        background-color: transparent;
+        color: #f5f5f5;
+        border: 2px solid rgba(245, 245, 245, 0.3);
+    }
+
+    .btn-secondary:hover {
+        background-color: rgba(245, 245, 245, 0.1);
+        border-color: #f5f5f5;
+        transform: translateY(-2px);
+    }
+
+    .light-theme .btn-secondary {
+        color: #666;
+        border-color: rgba(102, 102, 102, 0.3);
+    }
+
+    .light-theme .btn-secondary:hover {
+        background-color: rgba(102, 102, 102, 0.1);
+        border-color: #666;
+    }
+
+    /* Preview Modal */
+    .preview-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+    }
+
+    .preview-content {
+        position: relative;
+        max-width: 90%;
+        max-height: 90%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #previewImage {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .preview-close {
+        position: absolute;
+        top: -15px;
+        right: -15px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #f1c40f;
+        color: #000;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: all 0.3s ease;
+    }
+
+    .preview-close:hover {
+        background-color: #f39c12;
+        transform: scale(1.1);
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .form-meta {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .btn-primary,
+        .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Form validation styling */
+    .form-input:invalid,
+    .form-select:invalid {
+        border-color: #e74c3c;
+    }
+
+    .form-input:valid,
+    .form-select:valid {
+        border-color: #27ae60;
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Handle file preview for certificates
+    document.querySelectorAll('.file-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const fieldId = this.id.replace('field_', '');
+            const preview = document.getElementById('preview_' + fieldId);
+            const selectedOption = this.options[this.selectedIndex];
+            
+            if (selectedOption.value && selectedOption.dataset.preview) {
+                const previewImg = preview.querySelector('.preview-image');
+                previewImg.src = selectedOption.dataset.preview;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+    });
+
+    // Form submission handling
+    document.getElementById('fillOutForm').addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submitBtn');
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting...';
+        
+        // Re-enable button after a delay if form doesn't submit (for error cases)
+        setTimeout(() => {
+            if (submitBtn.disabled) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }, 5000);
+    });
+
+    // Preview modal functions
+    function openPreview(button) {
+        const img = button.closest('.file-preview').querySelector('.preview-image');
+        const modal = document.getElementById('previewModal');
+        const previewImg = document.getElementById('previewImage');
+        
+        previewImg.src = img.src;
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePreview() {
+        const modal = document.getElementById('previewModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closePreview();
+        }
+    });
+
+    // Form field animations
+    document.querySelectorAll('.form-input, .form-select').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.closest('.form-field').style.transform = 'scale(1.02)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.closest('.form-field').style.transform = 'scale(1)';
+        });
+    });
+</script>
+{% endblock %}

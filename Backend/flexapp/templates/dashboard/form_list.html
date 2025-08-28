@@ -1,14 +1,481 @@
-<!-- templates/dashboard/form_list.html -->
-<h2>Created Forms</h2>
-<ul style="list-style: none; padding: 0;">
-  {% for form in forms %}
-    <li style="margin: 10px 0; padding: 10px; border: 1px solid #ccc;">
-      <a href="{% url 'form_detail' form.id %}" style="text-decoration: none; color: #333;">
-        <strong>{{ form.title }}</strong><br>
-        <small>{{ form.description }}</small>
-      </a>
-    </li>
-  {% empty %}
-    <p>No forms created yet.</p>
-  {% endfor %}
-</ul>
+{% extends "base.html" %}
+
+{% block title %}My Forms - MITS FLEX{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="page-header">
+        <h2>My Created Forms</h2>
+        <a href="{% url 'create_form' %}" class="btn-primary">
+            <i class="bi bi-plus-circle"></i>
+            Create New Form
+        </a>
+    </div>
+    <hr />
+    
+    {% if forms %}
+        <div class="forms-grid">
+            {% for form in forms %}
+            <div class="form-card">
+                <div class="form-card-header">
+                    <h3>{{ form.title }}</h3>
+                    <div class="form-status">
+                        <span class="status-badge status-active">
+                            <i class="bi bi-check-circle"></i>
+                            Active
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="form-card-body">
+                    <p class="form-description">{{ form.description|default:"No description provided." }}</p>
+                    
+                    <div class="form-meta">
+                        <div class="meta-item">
+                            <i class="bi bi-calendar-plus"></i>
+                            <span>Created: {{ form.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="bi bi-person"></i>
+                            <span>By: {{ form.created_by.get_full_name|default:form.created_by.username }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-stats">
+                        <div class="stat-box">
+                            <div class="stat-number">{{ form.fields.count }}</div>
+                            <div class="stat-label">Field{{ form.fields.count|pluralize }}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number">{{ form.assigned_students.count }}</div>
+                            <div class="stat-label">Student{{ form.assigned_students.count|pluralize }}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number">{{ form.responses.count|default:0 }}</div>
+                            <div class="stat-label">Response{{ form.responses.count|pluralize }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-card-actions">
+                    <a href="{% url 'form_detail' form.id %}" class="btn-view">
+                        <i class="bi bi-eye"></i>
+                        View Details
+                    </a>
+                    <div class="action-menu">
+                        <button class="btn-menu" onclick="toggleActionMenu({{ form.id }})">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+                        <div id="menu-{{ form.id }}" class="action-dropdown" style="display: none;">
+                            <a href="{% url 'form_detail' form.id %}" class="dropdown-item">
+                                <i class="bi bi-bar-chart"></i>
+                                View Responses
+                            </a>
+                            <a href="{% url 'download_csv' form.id 'responses' %}" class="dropdown-item">
+                                <i class="bi bi-download"></i>
+                                Download CSV
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-clipboard-plus"></i>
+            </div>
+            <h3>No Forms Created Yet</h3>
+            <p>You haven't created any forms yet. Start by creating your first form to collect responses from students.</p>
+            <a href="{% url 'create_form' %}" class="btn-primary">
+                <i class="bi bi-plus-circle"></i>
+                Create Your First Form
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .page-header h2 {
+        margin: 0;
+        color: #f1c40f;
+    }
+
+    .light-theme .page-header h2 {
+        color: #f39c12;
+    }
+
+    .forms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .form-card {
+        background-color: rgba(241, 196, 15, 0.1);
+        border: 1px solid rgba(241, 196, 15, 0.3);
+        border-radius: 12px;
+        padding: 2rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .form-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #f1c40f, #f39c12);
+    }
+
+    .form-card:hover {
+        transform: translateY(-5px);
+        border-color: #f1c40f;
+        box-shadow: 0 10px 30px rgba(241, 196, 15, 0.2);
+    }
+
+    .light-theme .form-card {
+        background-color: rgba(243, 156, 18, 0.1);
+        border-color: rgba(243, 156, 18, 0.3);
+    }
+
+    .light-theme .form-card:hover {
+        border-color: #f39c12;
+        box-shadow: 0 10px 30px rgba(243, 156, 18, 0.2);
+    }
+
+    .form-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-card-header h3 {
+        color: #f1c40f;
+        margin: 0;
+        font-size: 1.4rem;
+        line-height: 1.3;
+    }
+
+    .light-theme .form-card-header h3 {
+        color: #f39c12;
+    }
+
+    .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background-color: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+
+    .form-description {
+        color: #f5f5f5;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        min-height: 50px;
+    }
+
+    .light-theme .form-description {
+        color: #444;
+    }
+
+    .form-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(241, 196, 15, 0.2);
+    }
+
+    .light-theme .form-meta {
+        border-bottom-color: rgba(243, 156, 18, 0.2);
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #f5f5f5;
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+
+    .light-theme .meta-item {
+        color: #666;
+    }
+
+    .form-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+    }
+
+    .stat-box {
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #f1c40f;
+        line-height: 1;
+    }
+
+    .light-theme .stat-number {
+        color: #f39c12;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: #f5f5f5;
+        opacity: 0.8;
+        margin-top: 0.25rem;
+    }
+
+    .light-theme .stat-label {
+        color: #666;
+    }
+
+    .form-card-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: #f1c40f;
+        color: #000;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        background-color: #f39c12;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);
+    }
+
+    .light-theme .btn-primary {
+        background-color: #f39c12;
+        color: #fff;
+    }
+
+    .light-theme .btn-primary:hover {
+        background-color: #d3a500;
+    }
+
+    .btn-view {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: transparent;
+        color: #f1c40f;
+        border: 2px solid #f1c40f;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-view:hover {
+        background-color: #f1c40f;
+        color: #000;
+    }
+
+    .light-theme .btn-view {
+        color: #f39c12;
+        border-color: #f39c12;
+    }
+
+    .light-theme .btn-view:hover {
+        background-color: #f39c12;
+        color: #fff;
+    }
+
+    .action-menu {
+        position: relative;
+    }
+
+    .btn-menu {
+        background: none;
+        border: none;
+        color: #f1c40f;
+        font-size: 1.2rem;
+        padding: 0.5rem;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-menu:hover {
+        background-color: rgba(241, 196, 15, 0.1);
+    }
+
+    .light-theme .btn-menu {
+        color: #f39c12;
+    }
+
+    .light-theme .btn-menu:hover {
+        background-color: rgba(243, 156, 18, 0.1);
+    }
+
+    .action-dropdown {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background-color: #1a1a1a;
+        border: 1px solid rgba(241, 196, 15, 0.3);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 10;
+        min-width: 180px;
+    }
+
+    .light-theme .action-dropdown {
+        background-color: #fff;
+        border-color: rgba(243, 156, 18, 0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        color: #f5f5f5;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .dropdown-item:hover {
+        background-color: rgba(241, 196, 15, 0.1);
+    }
+
+    .light-theme .dropdown-item {
+        color: #333;
+    }
+
+    .light-theme .dropdown-item:hover {
+        background-color: rgba(243, 156, 18, 0.1);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: #f1c40f;
+        margin-bottom: 1.5rem;
+    }
+
+    .light-theme .empty-icon {
+        color: #f39c12;
+    }
+
+    .empty-state h3 {
+        color: #f1c40f;
+        margin-bottom: 1rem;
+    }
+
+    .light-theme .empty-state h3 {
+        color: #f39c12;
+    }
+
+    .empty-state p {
+        color: #f5f5f5;
+        opacity: 0.8;
+        margin-bottom: 2rem;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .light-theme .empty-state p {
+        color: #666;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+        
+        .forms-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-stats {
+            justify-content: space-around;
+        }
+        
+        .form-card-actions {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function toggleActionMenu(formId) {
+        const menu = document.getElementById(`menu-${formId}`);
+        const allMenus = document.querySelectorAll('.action-dropdown');
+        
+        // Close all other menus
+        allMenus.forEach(m => {
+            if (m !== menu) m.style.display = 'none';
+        });
+        
+        // Toggle current menu
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Close menus when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.action-menu')) {
+            document.querySelectorAll('.action-dropdown').forEach(menu => {
+                menu.style.display = 'none';
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -9,7 +9,7 @@
     <p>Welcome, {{ user.username }}!</p>
 </div>
 
-<div class="grid">
+<div class="column-grid">
     <div class="section">
         <h2>Students Management</h2>
         <hr />
@@ -58,132 +58,257 @@
             Create New Student
         </button>
     </div>
-</div>
 
-<div id="create-student-form" style="display: none;">
     <div class="section">
-        <h2>Create New Student</h2>
+        <h2>Faculty Management</h2>
         <hr />
-        <form method="post" action="{% url 'admin_create_student' %}">
-            {% csrf_token %}
-            <label for="username">Username:</label>
-            <input type="text" name="username" id="username" required>
-            
-            <label for="email">Email:</label>
-            <input type="email" name="email" id="email" required>
-            
-            <label for="password">Password:</label>
-            <input type="password" name="password" id="password" required>
-            
-            <label for="roll_no">Roll No:</label>
-            <input type="text" name="roll_no" id="roll_no" required>
-            
-            <label for="year">Year:</label>
-            <select name="year" id="year" required>
-                <option value="1">I</option>
-                <option value="2">II</option>
-                <option value="3">III</option>
-                <option value="4">IV</option>
-            </select>
-            
-            <label for="section">Section:</label>
-            <select name="section" id="section" required>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-                <option value="E">E</option>
-                <option value="F">F</option>
-                <option value="G">G</option>
-                <option value="H">H</option>
-                <option value="I">I</option>
-                <option value="J">J</option>
-            </select>
-            
-            <label for="dept">Department:</label>
-            <select name="dept" id="dept" required>
-                <option value="CSE">CSE</option>
-                <option value="ECE">ECE</option>
-                <option value="CST">CST</option>
-                <option value="CAI">CAI</option>
-                <option value="CSD">CSD</option>
-                <option value="CSC">CSC</option>
-                <option value="CSM">CSM</option>
-                <option value="CSN">CSN</option>
-                <option value="EEE">EEE</option>
-                <option value="CE">CE</option>
-                <option value="ME">ME</option>
-            </select>
-            
-            <input type="submit" value="Create Student">
-            <button type="button" onclick="toggleCreateForm()" style="background-color: #dc3545; color: white;">
-                Cancel
-            </button>
-        </form>
+        <div class="multiple">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Year</th>
+                        <th>Section</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in faculty %}
+                    <tr>
+                        <td>{{ f.username }}</td>
+                        <td>{{ f.email }}</td>
+                        <td>{{ f.dept }}</td>
+                        <td>{{ f.default_year }}</td>
+                        <td>{{ f.default_section }}</td>
+                        <td>
+                            <div class="buttons">
+                                <form method="get" action="{% url 'admin_update_faculty' f.id %}" style="display:inline;">
+                                    <button type="submit" class="edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'admin_delete_faculty' f.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="delete" onclick="return confirm('Are you sure?');">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <button onclick="toggleCreateFacultyForm()">
+            <i class="bi bi-plus"></i>
+            Create New Faculty
+        </button>
+    </div>
+    
+    <div class="section">
+        <h2>User Management</h2>
+        <hr />
+        <p>Create administrative users and manage system access.</p>
+        <button onclick="toggleCreateUserForm()">
+            <i class="bi bi-plus"></i>
+            Create New User
+        </button>
     </div>
 </div>
 
-<div class="section">
-    <h3>Faculty</h3>
-    <table border="1">
-        <tr>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Department</th>
-            <th>Year</th>
-            <th>Section</th>
-            <th>Actions</th>
-        </tr>
-        {% for f in faculty %}
-        <tr>
-            <td>{{ f.username }}</td>
-            <td>{{ f.email }}</td>
-            <td>{{ f.dept }}</td>
-            <td>{{ f.default_year }}</td>
-            <td>{{ f.default_section }}</td>
-            <td>
-                <form method="get" action="{% url 'admin_update_faculty' f.id %}" style="display:inline;">
-                    <input type="submit" value="Edit">
-                </form>
-                <form method="post" action="{% url 'admin_delete_faculty' f.id %}" style="display:inline;">
-                    {% csrf_token %}
-                    <input type="submit" value="Delete" onclick="return confirm('Are you sure?');">
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+<!-- Modal for Create Student -->
+<div id="create-student-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Create New Student</h2>
+            <button class="close-btn" onclick="closeModal('create-student-modal')">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="{% url 'admin_create_student' %}">
+                {% csrf_token %}
+                <label for="username">Username:</label>
+                <input type="text" name="username" id="username" required>
+                
+                <label for="email">Email:</label>
+                <input type="email" name="email" id="email" required>
+                
+                <label for="password">Password:</label>
+                <input type="password" name="password" id="password" required>
+                
+                <label for="roll_no">Roll No:</label>
+                <input type="text" name="roll_no" id="roll_no" required>
+                
+                <label for="year">Year:</label>
+                <select name="year" id="year" required>
+                    <option value="1">I</option>
+                    <option value="2">II</option>
+                    <option value="3">III</option>
+                    <option value="4">IV</option>
+                </select>
+                
+                <label for="section">Section:</label>
+                <select name="section" id="section" required>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                    <option value="F">F</option>
+                    <option value="G">G</option>
+                    <option value="H">H</option>
+                    <option value="I">I</option>
+                    <option value="J">J</option>
+                </select>
+                
+                <label for="dept">Department:</label>
+                <select name="dept" id="dept" required>
+                    <option value="CSE">CSE</option>
+                    <option value="ECE">ECE</option>
+                    <option value="CST">CST</option>
+                    <option value="CAI">CAI</option>
+                    <option value="CSD">CSD</option>
+                    <option value="CSC">CSC</option>
+                    <option value="CSM">CSM</option>
+                    <option value="CSN">CSN</option>
+                    <option value="EEE">EEE</option>
+                    <option value="CE">CE</option>
+                    <option value="ME">ME</option>
+                </select>
+                
+                <div class="form-buttons">
+                    <input type="submit" value="Create Student">
+                    <button type="button" class="cancel-btn" onclick="closeModal('create-student-modal')">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
-<div class="section">
-    <h3>Create New Faculty</h3>
-    <form method="post" action="{% url 'admin_create_faculty' %}">
-        {% csrf_token %}
-        <label>Username: <input type="text" name="username" required></label><br>
-        <label>Email: <input type="email" name="email" required></label><br>
-        <label>Password: <input type="password" name="password" required></label><br>
-        <label>Dept: <input type="text" name="dept" required></label><br>
-        <label>Year: <input type="number" name="default_year" min="1" max="4"></label><br>
-        <label>Section: <input type="text" name="default_section"></label><br>
-        <input type="submit" value="Create Faculty">
-    </form>
+<!-- Modal for Create Faculty -->
+<div id="create-faculty-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Create New Faculty</h2>
+            <button class="close-btn" onclick="closeModal('create-faculty-modal')">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="{% url 'admin_create_faculty' %}">
+                {% csrf_token %}
+                <label for="faculty_username">Username:</label>
+                <input type="text" name="username" id="faculty_username" required>
+                
+                <label for="faculty_email">Email:</label>
+                <input type="email" name="email" id="faculty_email" required>
+                
+                <label for="faculty_password">Password:</label>
+                <input type="password" name="password" id="faculty_password" required>
+                
+                <label for="faculty_dept">Department:</label>
+                <select name="dept" id="faculty_dept" required>
+                    <option value="CSE">CSE</option>
+                    <option value="ECE">ECE</option>
+                    <option value="CST">CST</option>
+                    <option value="CAI">CAI</option>
+                    <option value="CSD">CSD</option>
+                    <option value="CSC">CSC</option>
+                    <option value="CSM">CSM</option>
+                    <option value="CSN">CSN</option>
+                    <option value="EEE">EEE</option>
+                    <option value="CE">CE</option>
+                    <option value="ME">ME</option>
+                </select>
+                
+                <label for="faculty_year">Default Year:</label>
+                <select name="default_year" id="faculty_year">
+                    <option value="">Select Year (Optional)</option>
+                    <option value="1">I</option>
+                    <option value="2">II</option>
+                    <option value="3">III</option>
+                    <option value="4">IV</option>
+                </select>
+                
+                <label for="faculty_section">Default Section:</label>
+                <select name="default_section" id="faculty_section">
+                    <option value="">Select Section (Optional)</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                    <option value="F">F</option>
+                    <option value="G">G</option>
+                    <option value="H">H</option>
+                    <option value="I">I</option>
+                    <option value="J">J</option>
+                </select>
+                
+                <div class="form-buttons">
+                    <input type="submit" value="Create Faculty">
+                    <button type="button" class="cancel-btn" onclick="closeModal('create-faculty-modal')">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
-<div class="section">
-    <h3>Create New User</h3>
-    <form method="post" action="{% url 'admin_create_user' %}">
-        {% csrf_token %}
-        <label>Username: <input type="text" name="username" required></label><br>
-        <label>Email: <input type="email" name="email" required></label><br>
-        <label>Password: <input type="password" name="password" required></label><br>
-        <label>Is Superuser: <input type="checkbox" name="is_superuser"></label><br>
-        <input type="submit" value="Create User">
-    </form>
+<!-- Modal for Create User -->
+<div id="create-user-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Create New User</h2>
+            <button class="close-btn" onclick="closeModal('create-user-modal')">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="{% url 'admin_create_user' %}">
+                {% csrf_token %}
+                <label for="user_username">Username:</label>
+                <input type="text" name="username" id="user_username" required>
+                
+                <label for="user_email">Email:</label>
+                <input type="email" name="email" id="user_email" required>
+                
+                <label for="user_password">Password:</label>
+                <input type="password" name="password" id="user_password" required>
+                
+                <div class="checkbox-container">
+                    <input type="checkbox" name="is_superuser" id="user_superuser">
+                    <label for="user_superuser" class="checkbox-label">Is Superuser</label>
+                </div>
+                
+                <div class="form-buttons">
+                    <input type="submit" value="Create User">
+                    <button type="button" class="cancel-btn" onclick="closeModal('create-user-modal')">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_head %}
 <style>
+    /* Column layout for sections */
+    .column-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
     .admin-table {
         width: 100%;
         border-collapse: collapse;
@@ -256,17 +381,323 @@
         color: white;
         font-size: 0.9rem;
     }
+
+    /* Create buttons styling */
+    .section > button {
+        background-color: #f1c40f;
+        color: #000;
+        border: none;
+        border-radius: 5px;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .section > button:hover {
+        background-color: #f39c12;
+        transform: translateY(-2px);
+    }
+
+    .section > button i {
+        font-size: 1.2rem;
+    }
+
+    .light-theme .section > button {
+        background-color: #f39c12;
+        color: #fff;
+    }
+
+    .light-theme .section > button:hover {
+        background-color: #e67e22;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        background-color: #1a1a1a;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0px 4px 20px rgba(241, 196, 15, 0.3);
+        animation: modalSlideIn 0.3s ease-out;
+    }
+
+    .light-theme .modal-content {
+        background-color: #ffffff;
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 2px solid #f1c40f;
+    }
+
+    .light-theme .modal-header {
+        border-bottom: 2px solid #f39c12;
+    }
+
+    .modal-header h2 {
+        color: #f1c40f;
+        margin: 0;
+    }
+
+    .light-theme .modal-header h2 {
+        color: #f39c12;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        color: #f1c40f;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+    .close-btn:hover {
+        background-color: rgba(241, 196, 15, 0.1);
+        transform: scale(1.1);
+    }
+
+    .light-theme .close-btn {
+        color: #f39c12;
+    }
+
+    .light-theme .close-btn:hover {
+        background-color: rgba(243, 156, 18, 0.1);
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-body form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .modal-body label {
+        color: #f1c40f;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+
+    .light-theme .modal-body label {
+        color: #f39c12;
+    }
+
+    .modal-body input[type="text"],
+    .modal-body input[type="email"],
+    .modal-body input[type="password"],
+    .modal-body select {
+        padding: 0.75rem;
+        border: 1px solid #f1c40f;
+        border-radius: 5px;
+        background-color: transparent;
+        color: #f5f5f5;
+        font-size: 1rem;
+        transition: border-color 0.3s, background-color 0.3s;
+    }
+
+    .light-theme .modal-body input[type="text"],
+    .light-theme .modal-body input[type="email"],
+    .light-theme .modal-body input[type="password"],
+    .light-theme .modal-body select {
+        border-color: #f39c12;
+        color: #333333;
+    }
+
+    .modal-body input:focus,
+    .modal-body select:focus {
+        outline: none;
+        border-color: #f39c12;
+        background-color: rgba(241, 196, 15, 0.1);
+    }
+
+    .light-theme .modal-body input:focus,
+    .light-theme .modal-body select:focus {
+        border-color: #e67e22;
+        background-color: rgba(243, 156, 18, 0.1);
+    }
+
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 10px 0;
+    }
+
+    .checkbox-label {
+        margin: 0 !important;
+        color: #f5f5f5 !important;
+    }
+
+    .light-theme .checkbox-label {
+        color: #333333 !important;
+    }
+
+    .form-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .form-buttons input[type="submit"] {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        flex: 1;
+        transition: background-color 0.3s;
+    }
+
+    .form-buttons input[type="submit"]:hover {
+        background-color: #218838;
+    }
+
+    .cancel-btn {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        flex: 1;
+        transition: background-color 0.3s;
+    }
+
+    .cancel-btn:hover {
+        background-color: #c82333;
+    }
+
+    /* Responsive design for mobile */
+    @media (max-width: 768px) {
+        .modal-content {
+            width: 95%;
+            margin: 10% auto;
+        }
+        
+        .form-buttons {
+            flex-direction: column;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
+    // Add event listeners when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Admin dashboard loaded');
+        
+        // Test if modal elements exist
+        console.log('Student modal:', document.getElementById('create-student-modal'));
+        console.log('Faculty modal:', document.getElementById('create-faculty-modal'));
+        console.log('User modal:', document.getElementById('create-user-modal'));
+        
+        // Close modal when clicking outside of modal content
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+        
+        // Close modal with escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (modal.style.display === 'block') {
+                        modal.style.display = 'none';
+                    }
+                });
+            }
+        });
+    });
+
     function toggleCreateForm() {
-        const form = document.getElementById('create-student-form');
-        if (form.style.display === 'none') {
-            form.style.display = 'block';
+        console.log('toggleCreateForm called');
+        openModal('create-student-modal');
+    }
+
+    function toggleCreateFacultyForm() {
+        console.log('toggleCreateFacultyForm called');
+        openModal('create-faculty-modal');
+    }
+
+    function toggleCreateUserForm() {
+        console.log('toggleCreateUserForm called');
+        openModal('create-user-modal');
+    }
+
+    function openModal(modalId) {
+        console.log('Opening modal:', modalId);
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'block';
+            // Focus on the first input field
+            const firstInput = modal.querySelector('input[type="text"], input[type="email"]');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 100);
+            }
         } else {
-            form.style.display = 'none';
+            console.error('Modal not found:', modalId);
+        }
+    }
+
+    function closeModal(modalId) {
+        console.log('Closing modal:', modalId);
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+            // Clear form data
+            const form = modal.querySelector('form');
+            if (form) {
+                form.reset();
+            }
+        } else {
+            console.error('Modal not found:', modalId);
         }
     }
 </script>

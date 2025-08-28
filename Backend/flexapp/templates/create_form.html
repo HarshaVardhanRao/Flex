@@ -4,295 +4,1152 @@
 
 {% block content %}
 <div class="section">
-	<h2>Create a New Form</h2>
-	<hr />
-	<form method="POST">
-		{% csrf_token %}
+    <div class="page-header">
+        <h2>Create a New Form</h2>
+        <div class="header-actions">
+            <a href="{% url 'form_list' %}" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+                Back to Forms
+            </a>
+        </div>
+    </div>
+    <hr />
+    
+    <form method="POST" class="create-form">
+        {% csrf_token %}
 
-		<div class="form-section">
-			<label>Form Title:</label>
-			<input type="text" name="title" required />
+        <!-- Basic Form Information -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3>
+                    <i class="bi bi-info-circle"></i>
+                    Basic Information
+                </h3>
+                <p class="section-description">Provide the essential details for your form.</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="form-title" class="form-label">
+                    Form Title <span class="required">*</span>
+                </label>
+                <input type="text" 
+                       id="form-title"
+                       name="title" 
+                       class="form-input"
+                       placeholder="Enter a descriptive title for your form"
+                       required />
+            </div>
 
-			<label>Description:</label>
-			<textarea name="description" rows="3"></textarea>
+            <div class="form-group">
+                <label for="form-description" class="form-label">Description</label>
+                <textarea id="form-description"
+                          name="description" 
+                          class="form-textarea"
+                          rows="4"
+                          placeholder="Provide instructions or context for students filling out this form..."></textarea>
+            </div>
+        </div>
 
-			<h3>Assign to Students</h3>
+        <!-- Student Assignment Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3>
+                    <i class="bi bi-people"></i>
+                    Assign to Students
+                </h3>
+                <p class="section-description">Select which students should receive this form.</p>
+            </div>
 
-			<!-- Filters -->
-			<div class="filter-section">
-				<div class="filter-row">
-					<div class="filter-item">
-						<label>Department:</label>
-						<select id="filter-department" onchange="filterStudents()">
-							<option value="">-- All --</option>
-							{% for dept in student.DEPT_CHOICES %}
-							<option value="{{ dept.0 }}">{{ dept.0 }}</option>
-							{% endfor %}
-						</select>
-					</div>
+            <!-- Filters -->
+            <div class="filter-section">
+                <div class="filter-header">
+                    <h4>
+                        <i class="bi bi-funnel"></i>
+                        Filter Students
+                    </h4>
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="filter-item">
+                        <label for="filter-department" class="filter-label">Department:</label>
+                        <select id="filter-department" class="filter-select" onchange="filterStudents()">
+                            <option value="">-- All Departments --</option>
+                            {% for dept in student.DEPT_CHOICES %}
+                            <option value="{{ dept.0 }}">{{ dept.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-					<div class="filter-item">
-						<label>Year:</label>
-						<select id="filter-year" onchange="filterStudents()">
-							<option value="">-- All --</option>
-							{% for y in years %}
-							<option value="{{ y }}">{{ y }}</option>
-							{% endfor %}
-						</select>
-					</div>
+                    <div class="filter-item">
+                        <label for="filter-year" class="filter-label">Year:</label>
+                        <select id="filter-year" class="filter-select" onchange="filterStudents()">
+                            <option value="">-- All Years --</option>
+                            {% for y in years %}
+                            <option value="{{ y }}">Year {{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-					<div class="filter-item">
-						<label>Section:</label>
-						<select id="filter-section" onchange="filterStudents()">
-							<option value="">-- All --</option>
-							{% for s in sections %}
-							<option value="{{ s }}">{{ s }}</option>
-							{% endfor %}
-						</select>
-					</div>
+                    <div class="filter-item">
+                        <label for="filter-section" class="filter-label">Section:</label>
+                        <select id="filter-section" class="filter-select" onchange="filterStudents()">
+                            <option value="">-- All Sections --</option>
+                            {% for s in sections %}
+                            <option value="{{ s }}">Section {{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-					<div class="filter-item">
-						<label>Mentees Only:</label>
-						<input
-							type="checkbox"
-							id="filter-mentees"
-							onchange="filterStudents()"
-						/>
-					</div>
-				</div>
-			</div>
+                    <div class="filter-item filter-checkbox">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="filter-mentees" onchange="filterStudents()" />
+                            <label for="filter-mentees" class="checkbox-label">
+                                <i class="bi bi-person-check"></i>
+                                My Mentees Only
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-actions">
+                    <button type="button" class="btn-filter-clear" onclick="clearFilters()">
+                        <i class="bi bi-x-circle"></i>
+                        Clear Filters
+                    </button>
+                    <div class="student-count">
+                        <span id="student-count">0 students selected</span>
+                    </div>
+                </div>
+            </div>
 
-			<!-- Student Checkbox List -->
-			<div id="student-list" class="student-list">
-				<p>Select students:</p>
-				<div id="students-container" class="multiple"></div>
-			</div>
-		</div>
+            <!-- Student Selection List -->
+            <div class="student-selection">
+                <div class="selection-header">
+                    <h4>Select Students</h4>
+                    <div class="selection-controls">
+                        <button type="button" class="btn-select-all" onclick="selectAllStudents()">
+                            <i class="bi bi-check-all"></i>
+                            Select All
+                        </button>
+                        <button type="button" class="btn-select-none" onclick="selectNoStudents()">
+                            <i class="bi bi-x-lg"></i>
+                            Clear All
+                        </button>
+                    </div>
+                </div>
+                <div id="students-container" class="students-grid"></div>
+            </div>
+        </div>
 
-		<div class="section">
-			<h3>Form Fields</h3>
-			<hr />
-			<div id="fields-container"></div>
-			<button type="button" onclick="addField()">
-				<i class="bi bi-plus"></i>
-				Add Field
-			</button>
-		</div>
+        <!-- Form Fields Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3>
+                    <i class="bi bi-list-ul"></i>
+                    Form Fields
+                </h3>
+                <p class="section-description">Define the fields that students will need to fill out.</p>
+            </div>
+            
+            <div id="fields-container" class="fields-container"></div>
+            
+            <div class="field-actions">
+                <button type="button" class="btn-add-field" onclick="addField()">
+                    <i class="bi bi-plus-circle"></i>
+                    Add New Field
+                </button>
+            </div>
+        </div>
 
-		<div style="text-align: center; margin-top: 2rem;">
-			<input type="submit" value="Create Form" />
-		</div>
-	</form>
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <button type="button" class="btn-cancel" onclick="history.back()">
+                <i class="bi bi-x-circle"></i>
+                Cancel
+            </button>
+            <button type="submit" class="btn-create" id="createBtn">
+                <i class="bi bi-check-circle"></i>
+                Create Form
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}
 
 {% block extra_head %}
 <style>
-	.form-section {
-		margin-bottom: 2rem;
-	}
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
 
-	.filter-section {
-		background-color: rgba(241, 196, 15, 0.1);
-		padding: 1rem;
-		border-radius: 8px;
-		margin: 1rem 0;
-	}
+    .page-header h2 {
+        color: #f1c40f;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-	.filter-row {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-		gap: 1rem;
-		align-items: end;
-	}
+    .light-theme .page-header h2 {
+        color: #f39c12;
+    }
 
-	.filter-item {
-		display: flex;
-		flex-direction: column;
-	}
+    .btn-back {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: transparent;
+        color: #f1c40f;
+        border: 2px solid #f1c40f;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
 
-	.filter-item label {
-		margin-bottom: 0.5rem;
-		color: #f1c40f;
-		font-weight: 500;
-	}
+    .btn-back:hover {
+        background-color: #f1c40f;
+        color: #000;
+        transform: translateY(-2px);
+    }
 
-	.light-theme .filter-section {
-		background-color: rgba(243, 156, 18, 0.1);
-	}
+    .light-theme .btn-back {
+        color: #f39c12;
+        border-color: #f39c12;
+    }
 
-	.light-theme .filter-item label {
-		color: #f39c12;
-	}
+    .light-theme .btn-back:hover {
+        background-color: #f39c12;
+        color: #fff;
+    }
 
-	.student-list {
-		margin-top: 1rem;
-	}
+    .create-form {
+        max-width: 900px;
+        margin: 0 auto;
+    }
 
-	.student-list p {
-		font-weight: bold;
-		color: #f1c40f;
-		margin-bottom: 0.5rem;
-	}
+    .form-section {
+        background-color: rgba(241, 196, 15, 0.05);
+        border: 1px solid rgba(241, 196, 15, 0.2);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        transition: all 0.3s ease;
+    }
 
-	.light-theme .student-list p {
-		color: #f39c12;
-	}
+    .form-section:hover {
+        border-color: rgba(241, 196, 15, 0.4);
+        background-color: rgba(241, 196, 15, 0.08);
+    }
 
-	.field-block {
-		background-color: rgba(241, 196, 15, 0.1);
-		padding: 1.5rem;
-		margin-bottom: 1rem;
-		border-radius: 8px;
-		border: 1px solid rgba(241, 196, 15, 0.3);
-	}
+    .light-theme .form-section {
+        background-color: rgba(243, 156, 18, 0.05);
+        border-color: rgba(243, 156, 18, 0.2);
+    }
 
-	.light-theme .field-block {
-		background-color: rgba(243, 156, 18, 0.1);
-		border-color: rgba(243, 156, 18, 0.3);
-	}
+    .light-theme .form-section:hover {
+        border-color: rgba(243, 156, 18, 0.4);
+        background-color: rgba(243, 156, 18, 0.08);
+    }
 
-	.field-block label {
-		display: block;
-		margin-bottom: 0.5rem;
-		margin-top: 1rem;
-		color: #f1c40f;
-		font-weight: 500;
-	}
+    .section-header {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
 
-	.light-theme .field-block label {
-		color: #f39c12;
-	}
+    .section-header h3 {
+        color: #f1c40f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        margin: 0 0 0.5rem 0;
+        font-size: 1.4rem;
+    }
 
-	.field-block:first-of-type label:first-of-type {
-		margin-top: 0;
-	}
+    .light-theme .section-header h3 {
+        color: #f39c12;
+    }
 
-	#students-container label {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem;
-		margin: 0.25rem 0;
-		background-color: rgba(241, 196, 15, 0.05);
-		border-radius: 5px;
-		cursor: pointer;
-		transition: background-color 0.2s ease;
-	}
+    .section-description {
+        color: #f5f5f5;
+        opacity: 0.8;
+        margin: 0;
+        font-style: italic;
+    }
 
-	#students-container label:hover {
-		background-color: rgba(241, 196, 15, 0.15);
-	}
+    .light-theme .section-description {
+        color: #666;
+    }
 
-	.light-theme #students-container label {
-		background-color: rgba(243, 156, 18, 0.05);
-	}
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
 
-	.light-theme #students-container label:hover {
-		background-color: rgba(243, 156, 18, 0.15);
-	}
+    .form-label {
+        display: block;
+        margin-bottom: 0.75rem;
+        color: #f1c40f;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
 
-	#students-container input[type="checkbox"] {
-		margin: 0;
-		width: auto;
-	}
+    .light-theme .form-label {
+        color: #f39c12;
+    }
+
+    .required {
+        color: #e74c3c;
+        margin-left: 0.25rem;
+    }
+
+    .form-input,
+    .form-textarea,
+    .filter-select {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid rgba(241, 196, 15, 0.3);
+        border-radius: 8px;
+        background-color: transparent;
+        color: #f5f5f5;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus,
+    .filter-select:focus {
+        outline: none;
+        border-color: #f1c40f;
+        background-color: rgba(241, 196, 15, 0.1);
+        transform: scale(1.02);
+    }
+
+    .light-theme .form-input,
+    .light-theme .form-textarea,
+    .light-theme .filter-select {
+        border-color: rgba(243, 156, 18, 0.3);
+        color: #333;
+    }
+
+    .light-theme .form-input:focus,
+    .light-theme .form-textarea:focus,
+    .light-theme .filter-select:focus {
+        border-color: #f39c12;
+        background-color: rgba(243, 156, 18, 0.1);
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+        color: rgba(245, 245, 245, 0.5);
+    }
+
+    .light-theme .form-input::placeholder,
+    .light-theme .form-textarea::placeholder {
+        color: rgba(51, 51, 51, 0.5);
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    /* Filter Section */
+    .filter-section {
+        background-color: rgba(241, 196, 15, 0.08);
+        border: 1px solid rgba(241, 196, 15, 0.2);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .light-theme .filter-section {
+        background-color: rgba(243, 156, 18, 0.08);
+        border-color: rgba(243, 156, 18, 0.2);
+    }
+
+    .filter-header {
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .filter-header h4 {
+        color: #f1c40f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin: 0;
+    }
+
+    .light-theme .filter-header h4 {
+        color: #f39c12;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-checkbox {
+        justify-content: center;
+    }
+
+    .filter-label {
+        margin-bottom: 0.5rem;
+        color: #f1c40f;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    .light-theme .filter-label {
+        color: #f39c12;
+    }
+
+    .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        justify-content: center;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #f5f5f5;
+        cursor: pointer;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .light-theme .checkbox-label {
+        color: #333;
+    }
+
+    input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #f1c40f;
+    }
+
+    .filter-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(241, 196, 15, 0.2);
+    }
+
+    .light-theme .filter-actions {
+        border-top-color: rgba(243, 156, 18, 0.2);
+    }
+
+    .btn-filter-clear {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: transparent;
+        color: #e74c3c;
+        border: 2px solid #e74c3c;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-filter-clear:hover {
+        background-color: #e74c3c;
+        color: #fff;
+    }
+
+    .student-count {
+        color: #f1c40f;
+        font-weight: 600;
+    }
+
+    .light-theme .student-count {
+        color: #f39c12;
+    }
+
+    /* Student Selection */
+    .student-selection {
+        margin-top: 1.5rem;
+    }
+
+    .selection-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .selection-header h4 {
+        color: #f1c40f;
+        margin: 0;
+    }
+
+    .light-theme .selection-header h4 {
+        color: #f39c12;
+    }
+
+    .selection-controls {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .btn-select-all,
+    .btn-select-none {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: transparent;
+        border: 2px solid;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-select-all {
+        color: #28a745;
+        border-color: #28a745;
+    }
+
+    .btn-select-all:hover {
+        background-color: #28a745;
+        color: #fff;
+    }
+
+    .btn-select-none {
+        color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .btn-select-none:hover {
+        background-color: #dc3545;
+        color: #fff;
+    }
+
+    .students-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 0.75rem;
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 1rem;
+        background-color: rgba(241, 196, 15, 0.03);
+        border-radius: 8px;
+        border: 1px solid rgba(241, 196, 15, 0.1);
+    }
+
+    .light-theme .students-grid {
+        background-color: rgba(243, 156, 18, 0.03);
+        border-color: rgba(243, 156, 18, 0.1);
+    }
+
+    .student-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background-color: rgba(241, 196, 15, 0.05);
+        border: 1px solid rgba(241, 196, 15, 0.1);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .student-item:hover {
+        background-color: rgba(241, 196, 15, 0.12);
+        border-color: rgba(241, 196, 15, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .light-theme .student-item {
+        background-color: rgba(243, 156, 18, 0.05);
+        border-color: rgba(243, 156, 18, 0.1);
+    }
+
+    .light-theme .student-item:hover {
+        background-color: rgba(243, 156, 18, 0.12);
+        border-color: rgba(243, 156, 18, 0.3);
+    }
+
+    .student-info {
+        flex: 1;
+    }
+
+    .student-name {
+        font-weight: 600;
+        color: #f1c40f;
+        margin-bottom: 0.25rem;
+    }
+
+    .light-theme .student-name {
+        color: #f39c12;
+    }
+
+    .student-meta {
+        font-size: 0.85rem;
+        color: #f5f5f5;
+        opacity: 0.8;
+    }
+
+    .light-theme .student-meta {
+        color: #666;
+    }
+
+    /* Form Fields Section */
+    .fields-container {
+        margin-bottom: 2rem;
+    }
+
+    .field-block {
+        background-color: rgba(241, 196, 15, 0.08);
+        border: 1px solid rgba(241, 196, 15, 0.2);
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .field-block:hover {
+        border-color: rgba(241, 196, 15, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(241, 196, 15, 0.1);
+    }
+
+    .light-theme .field-block {
+        background-color: rgba(243, 156, 18, 0.08);
+        border-color: rgba(243, 156, 18, 0.2);
+    }
+
+    .light-theme .field-block:hover {
+        border-color: rgba(243, 156, 18, 0.4);
+        box-shadow: 0 8px 25px rgba(243, 156, 18, 0.1);
+    }
+
+    .field-block .form-label {
+        margin-top: 1.5rem;
+    }
+
+    .field-block .form-label:first-child {
+        margin-top: 0;
+    }
+
+    .field-options,
+    .related-model-options {
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: rgba(241, 196, 15, 0.05);
+        border-radius: 6px;
+        border: 1px solid rgba(241, 196, 15, 0.1);
+    }
+
+    .light-theme .field-options,
+    .light-theme .related-model-options {
+        background-color: rgba(243, 156, 18, 0.05);
+        border-color: rgba(243, 156, 18, 0.1);
+    }
+
+    .field-remove {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background-color: #e74c3c;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .field-remove:hover {
+        background-color: #c0392b;
+        transform: scale(1.1);
+    }
+
+    .field-actions {
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    .btn-add-field {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        background-color: #f1c40f;
+        color: #000;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-add-field:hover {
+        background-color: #f39c12;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(241, 196, 15, 0.3);
+    }
+
+    .light-theme .btn-add-field {
+        background-color: #f39c12;
+        color: #fff;
+    }
+
+    .light-theme .btn-add-field:hover {
+        background-color: #d3a500;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2rem;
+        border-top: 2px solid rgba(241, 196, 15, 0.2);
+        margin-top: 2rem;
+    }
+
+    .light-theme .form-actions {
+        border-top-color: rgba(243, 156, 18, 0.2);
+    }
+
+    .btn-cancel,
+    .btn-create {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 2.5rem;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .btn-cancel {
+        background-color: transparent;
+        color: #e74c3c;
+        border: 2px solid #e74c3c;
+    }
+
+    .btn-cancel:hover {
+        background-color: #e74c3c;
+        color: #fff;
+        transform: translateY(-2px);
+    }
+
+    .btn-create {
+        background-color: #f1c40f;
+        color: #000;
+    }
+
+    .btn-create:hover {
+        background-color: #f39c12;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(241, 196, 15, 0.3);
+    }
+
+    .btn-create:disabled {
+        background-color: #666;
+        color: #999;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .light-theme .btn-create {
+        background-color: #f39c12;
+        color: #fff;
+    }
+
+    .light-theme .btn-create:hover {
+        background-color: #d3a500;
+    }
+
+    /* Empty states */
+    .empty-message {
+        text-align: center;
+        color: #f5f5f5;
+        opacity: 0.6;
+        font-style: italic;
+        padding: 2rem;
+    }
+
+    .light-theme .empty-message {
+        color: #666;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+        
+        .filter-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .students-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .selection-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .btn-cancel,
+        .btn-create {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .filter-actions {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+    }
+
+    /* Animation for new fields */
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .field-block {
+        animation: slideInUp 0.3s ease-out;
+    }
 </style>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-	let fieldCount = 0;
+    let fieldCount = 0;
+    let selectedStudents = new Set();
 
-	function addField() {
-		const container = document.getElementById("fields-container");
+    // Student data from Django
+    const allStudents = [
+        {% for s in students %}
+        {
+            id: {{ s.id }},
+            name: "{{ s.first_name }} {{ s.last_name }}",
+            dept: "{{ s.dept }}",
+            year: "{{ s.year }}",
+            section: "{{ s.section }}",
+            isMentee: {% if s.mentor == request.user %}true{% else %}false{% endif %}
+        },
+        {% endfor %}
+    ];
 
-		const fieldHtml = `
-	<div class="field-block">
-	  <label>Field Name:</label>
-	  <input type="text" name="fields[${fieldCount}][field_name]" required>
+    function addField() {
+        const container = document.getElementById("fields-container");
+        
+        const fieldHtml = `
+            <div class="field-block" data-field-index="${fieldCount}">
+                <button type="button" class="field-remove" onclick="removeField(${fieldCount})" title="Remove Field">
+                    <i class="bi bi-x"></i>
+                </button>
+                
+                <div class="form-group">
+                    <label class="form-label">Field Name: <span class="required">*</span></label>
+                    <input type="text" 
+                           name="fields[${fieldCount}][field_name]" 
+                           class="form-input"
+                           placeholder="Enter field name (e.g., 'Full Name', 'Email Address')"
+                           required>
+                </div>
 
-	  <label>Field Type:</label>
-	  <select name="fields[${fieldCount}][field_type]" onchange="onFieldTypeChange(this, ${fieldCount})" required>
-		<option value="">-- Select Type --</option>
-		<option value="text">Text</option>
-		<option value="number">Number</option>
-		<option value="date">Date</option>
-		<option value="choice">Multiple Choice</option>
-		<option value="file_awk">Pick Certificate or Upload File</option>
-	  </select>
+                <div class="form-group">
+                    <label class="form-label">Field Type: <span class="required">*</span></label>
+                    <select name="fields[${fieldCount}][field_type]" 
+                            class="filter-select"
+                            onchange="onFieldTypeChange(this, ${fieldCount})" 
+                            required>
+                        <option value="">-- Select Field Type --</option>
+                        <option value="text">Text Input</option>
+                        <option value="number">Number Input</option>
+                        <option value="date">Date Picker</option>
+                        <option value="choice">Multiple Choice (Dropdown)</option>
+                        <option value="file_awk">File Selection (Certificate/Project)</option>
+                    </select>
+                </div>
 
-	  <div id="options-${fieldCount}" style="display: none;">
-		<label>Options (comma separated):</label>
-		<input type="text" name="fields[${fieldCount}][options]">
-	  </div>
+                <div id="options-${fieldCount}" class="field-options" style="display: none;">
+                    <label class="form-label">Choice Options:</label>
+                    <input type="text" 
+                           name="fields[${fieldCount}][options]"
+                           class="form-input"
+                           placeholder="Enter options separated by commas (e.g., 'Option 1, Option 2, Option 3')">
+                    <small style="color: #f5f5f5; opacity: 0.7; display: block; margin-top: 0.5rem;">
+                        <i class="bi bi-info-circle"></i>
+                        Separate each option with a comma
+                    </small>
+                </div>
 
-	  <div id="related-model-${fieldCount}" style="display: none;">
-		<label>Related Model:</label>
-		<select name="fields[${fieldCount}][related_model]">
-		  <option value="">-- Select Model --</option>
-		  <option value="certificate">Certificate</option>
-		  <option value="project">Project</option>
-		</select>
-	  </div>
-	</div>
-  `;
+                <div id="related-model-${fieldCount}" class="related-model-options" style="display: none;">
+                    <label class="form-label">Related Model:</label>
+                    <select name="fields[${fieldCount}][related_model]" class="filter-select">
+                        <option value="">-- Select Model Type --</option>
+                        <option value="certificate">Certificate (Student's uploaded certificates)</option>
+                        <option value="project">Project (Student's project entries)</option>
+                    </select>
+                    <small style="color: #f5f5f5; opacity: 0.7; display: block; margin-top: 0.5rem;">
+                        <i class="bi bi-info-circle"></i>
+                        Students will select from their existing entries
+                    </small>
+                </div>
+            </div>
+        `;
 
-		container.insertAdjacentHTML("beforeend", fieldHtml);
-		fieldCount++;
-	}
+        container.insertAdjacentHTML("beforeend", fieldHtml);
+        fieldCount++;
+        
+        // Scroll to the new field
+        setTimeout(() => {
+            const newField = container.lastElementChild;
+            newField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    }
 
-	function onFieldTypeChange(selectElem, index) {
-		const selectedType = selectElem.value;
-		document.getElementById(`options-${index}`).style.display =
-			selectedType === "choice" ? "block" : "none";
-		document.getElementById(
-			`related-model-${index}`
-		).style.display =
-			selectedType === "file_awk" ? "block" : "none";
-	}
+    function removeField(index) {
+        const fieldBlock = document.querySelector(`[data-field-index="${index}"]`);
+        if (fieldBlock) {
+            fieldBlock.style.animation = 'slideOutUp 0.3s ease-in';
+            setTimeout(() => {
+                fieldBlock.remove();
+            }, 300);
+        }
+    }
 
-	const currentFacultyId = {{ request.user.id }};
-	const allStudents = [
-	  {% for s in students %}
-		{
-		  id: {{ s.id }},
-		  name: "{{ s.first_name }} {{ s.last_name }}",
-		  dept: "{{ s.dept }}",
-		  year: "{{ s.year }}",
-		  section: "{{ s.section }}",
-		},
-	  {% endfor %}
-	];
+    function onFieldTypeChange(selectElem, index) {
+        const selectedType = selectElem.value;
+        const optionsDiv = document.getElementById(`options-${index}`);
+        const relatedModelDiv = document.getElementById(`related-model-${index}`);
+        
+        // Hide all optional sections first
+        optionsDiv.style.display = "none";
+        relatedModelDiv.style.display = "none";
+        
+        // Show relevant sections based on selection
+        if (selectedType === "choice") {
+            optionsDiv.style.display = "block";
+        } else if (selectedType === "file_awk") {
+            relatedModelDiv.style.display = "block";
+        }
+    }
 
-	function filterStudents() {
-	  const dept = document.getElementById("filter-department").value;
-	  const year = document.getElementById("filter-year").value;
-	  const section = document.getElementById("filter-section").value;
+    function filterStudents() {
+        const dept = document.getElementById("filter-department").value;
+        const year = document.getElementById("filter-year").value;
+        const section = document.getElementById("filter-section").value;
+        const menteesOnly = document.getElementById("filter-mentees").checked;
+        
+        const container = document.getElementById("students-container");
+        container.innerHTML = "";
 
-	  const container = document.getElementById("students-container");
-	  container.innerHTML = "";
+        let filtered = allStudents.filter(s => {
+            return (!dept || s.dept === dept) &&
+                   (!year || s.year.toString() === year) &&
+                   (!section || s.section === section) &&
+                   (!menteesOnly || s.isMentee);
+        });
 
-	  const filtered = allStudents.filter(s => {
-		return (!dept || s.dept === dept) &&
-			   (!year || s.year.toString() === year) &&
-			   (!section || s.section === section);
-	  });
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="empty-message">
+                    <i class="bi bi-search" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                    No students match your current filters.
+                    <br>Try adjusting the filter criteria.
+                </div>
+            `;
+        } else {
+            filtered.forEach(s => {
+                const isSelected = selectedStudents.has(s.id);
+                const studentHtml = `
+                    <label class="student-item ${isSelected ? 'selected' : ''}" for="student-${s.id}">
+                        <input type="checkbox" 
+                               id="student-${s.id}"
+                               name="assigned_students" 
+                               value="${s.id}"
+                               ${isSelected ? 'checked' : ''}
+                               onchange="toggleStudent(${s.id})">
+                        <div class="student-info">
+                            <div class="student-name">${s.name}</div>
+                            <div class="student-meta">
+                                ${s.dept} • Year ${s.year} • Section ${s.section}
+                                ${s.isMentee ? ' • <i class="bi bi-star-fill" title="Your Mentee"></i>' : ''}
+                            </div>
+                        </div>
+                    </label>
+                `;
+                container.insertAdjacentHTML("beforeend", studentHtml);
+            });
+        }
+        
+        updateStudentCount();
+    }
 
-	  if (filtered.length === 0) {
-		container.innerHTML = "<em>No students match your filters.</em>";
-	  } else {
-		filtered.forEach(s => {
-		  container.innerHTML += `
-			<label>
-			  <input type="checkbox" name="assigned_students" value="${s.id}">
-			  ${s.name} (${s.dept}, Year ${s.year}, Section ${s.section})
-			</label>
-		  `;
-		});
-	  }
-	}
+    function toggleStudent(studentId) {
+        if (selectedStudents.has(studentId)) {
+            selectedStudents.delete(studentId);
+        } else {
+            selectedStudents.add(studentId);
+        }
+        updateStudentCount();
+    }
 
-	// Load all students initially
-	window.onload = filterStudents;
+    function selectAllStudents() {
+        const visibleCheckboxes = document.querySelectorAll('#students-container input[type="checkbox"]');
+        visibleCheckboxes.forEach(checkbox => {
+            checkbox.checked = true;
+            selectedStudents.add(parseInt(checkbox.value));
+            checkbox.closest('.student-item').classList.add('selected');
+        });
+        updateStudentCount();
+    }
+
+    function selectNoStudents() {
+        const visibleCheckboxes = document.querySelectorAll('#students-container input[type="checkbox"]');
+        visibleCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+            selectedStudents.delete(parseInt(checkbox.value));
+            checkbox.closest('.student-item').classList.remove('selected');
+        });
+        updateStudentCount();
+    }
+
+    function clearFilters() {
+        document.getElementById("filter-department").value = "";
+        document.getElementById("filter-year").value = "";
+        document.getElementById("filter-section").value = "";
+        document.getElementById("filter-mentees").checked = false;
+        filterStudents();
+    }
+
+    function updateStudentCount() {
+        const count = selectedStudents.size;
+        const countElement = document.getElementById('student-count');
+        countElement.textContent = `${count} student${count !== 1 ? 's' : ''} selected`;
+        
+        // Update visual state
+        const studentItems = document.querySelectorAll('.student-item');
+        studentItems.forEach(item => {
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            if (checkbox && checkbox.checked) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    // Form submission handling
+    document.querySelector('.create-form').addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('createBtn');
+        const originalText = submitBtn.innerHTML;
+        
+        // Validate that at least one student is selected
+        if (selectedStudents.size === 0) {
+            e.preventDefault();
+            alert('Please select at least one student to assign this form to.');
+            return;
+        }
+        
+        // Validate that at least one field is added
+        if (fieldCount === 0) {
+            e.preventDefault();
+            alert('Please add at least one field to your form.');
+            return;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating Form...';
+        
+        // Re-enable button after delay if form doesn't submit
+        setTimeout(() => {
+            if (submitBtn.disabled) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }, 10000);
+    });
+
+    // Initialize the page
+    window.addEventListener('load', function() {
+        filterStudents();
+        
+        // Add first field by default
+        addField();
+        
+        // Focus on form title
+        document.getElementById('form-title').focus();
+    });
+
+    // Add some helper styles dynamically
+    const additionalStyles = `
+        <style>
+            .student-item.selected {
+                background-color: rgba(241, 196, 15, 0.2) !important;
+                border-color: #f1c40f !important;
+                box-shadow: 0 0 0 2px rgba(241, 196, 15, 0.3);
+            }
+            
+            .light-theme .student-item.selected {
+                background-color: rgba(243, 156, 18, 0.2) !important;
+                border-color: #f39c12 !important;
+                box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.3);
+            }
+            
+            @keyframes slideOutUp {
+                to {
+                    opacity: 0;
+                    transform: translateY(-20px);
+                }
+            }
+        </style>
+    `;
+    
+    document.head.insertAdjacentHTML('beforeend', additionalStyles);
 </script>
 {% endblock %}

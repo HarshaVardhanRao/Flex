@@ -1,20 +1,252 @@
-<!-- templates/fill_form_list.html -->
 {% extends "base.html" %}
 
-{% block content %}
-<h2>Assigned Forms</h2>
+{% block title %}Assigned Forms - MITS FLEX{% endblock %}
 
-{% if assigned_forms %}
-    <ul>
-    {% for form in assigned_forms %}
-        <li>
-            <strong>{{ form.title }}</strong><br>
-            <small>{{ form.description }}</small><br>
-            <a href="{% url 'fill_form_detail' form.id %}">Fill This Form</a>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>No forms assigned to you.</p>
-{% endif %}
+{% block content %}
+<div class="section">
+    <h2>Assigned Forms</h2>
+    <hr />
+    
+    {% if assigned_forms %}
+        <div class="forms-grid">
+            {% for form in assigned_forms %}
+            <div class="form-card">
+                <div class="form-card-header">
+                    <h3>{{ form.title }}</h3>
+                    <div class="form-meta">
+                        <span class="form-date">
+                            <i class="bi bi-calendar3"></i>
+                            Created: {{ form.created_at|date:"M d, Y" }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="form-card-body">
+                    <p class="form-description">{{ form.description|default:"No description provided." }}</p>
+                    
+                    <div class="form-stats">
+                        <div class="stat-item">
+                            <i class="bi bi-list-ul"></i>
+                            <span>{{ form.fields.count }} field{{ form.fields.count|pluralize }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="bi bi-people"></i>
+                            <span>{{ form.assigned_students.count }} student{{ form.assigned_students.count|pluralize }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-card-actions">
+                    <a href="{% url 'fill_form_detail' form.id %}" class="btn-primary">
+                        <i class="bi bi-pencil-square"></i>
+                        Fill This Form
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-clipboard-x"></i>
+            </div>
+            <h3>No Forms Assigned</h3>
+            <p>You don't have any forms assigned to you at the moment.</p>
+            <p>Check back later or contact your faculty if you think this is an error.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .forms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+
+    .form-card {
+        background-color: rgba(241, 196, 15, 0.1);
+        border: 1px solid rgba(241, 196, 15, 0.3);
+        border-radius: 10px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        animation: slideInUp 0.6s ease-out;
+    }
+
+    .form-card:hover {
+        transform: translateY(-5px);
+        border-color: #f1c40f;
+        box-shadow: 0 8px 25px rgba(241, 196, 15, 0.2);
+    }
+
+    .light-theme .form-card {
+        background-color: rgba(243, 156, 18, 0.1);
+        border-color: rgba(243, 156, 18, 0.3);
+    }
+
+    .light-theme .form-card:hover {
+        border-color: #f39c12;
+        box-shadow: 0 8px 25px rgba(243, 156, 18, 0.2);
+    }
+
+    .form-card-header h3 {
+        color: #f1c40f;
+        margin: 0 0 1rem 0;
+        font-size: 1.3rem;
+    }
+
+    .light-theme .form-card-header h3 {
+        color: #f39c12;
+    }
+
+    .form-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-date {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #f5f5f5;
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+
+    .light-theme .form-date {
+        color: #666;
+    }
+
+    .form-description {
+        color: #f5f5f5;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        min-height: 50px;
+    }
+
+    .light-theme .form-description {
+        color: #333;
+    }
+
+    .form-stats {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(241, 196, 15, 0.2);
+    }
+
+    .light-theme .form-stats {
+        border-top-color: rgba(243, 156, 18, 0.2);
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #f1c40f;
+        font-size: 0.9rem;
+    }
+
+    .light-theme .stat-item {
+        color: #f39c12;
+    }
+
+    .form-card-actions {
+        text-align: center;
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: #f1c40f;
+        color: #000;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        background-color: #f39c12;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);
+    }
+
+    .light-theme .btn-primary {
+        background-color: #f39c12;
+        color: #fff;
+    }
+
+    .light-theme .btn-primary:hover {
+        background-color: #d3a500;
+        box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: #f1c40f;
+        margin-bottom: 1.5rem;
+    }
+
+    .light-theme .empty-icon {
+        color: #f39c12;
+    }
+
+    .empty-state h3 {
+        color: #f1c40f;
+        margin-bottom: 1rem;
+    }
+
+    .light-theme .empty-state h3 {
+        color: #f39c12;
+    }
+
+    .empty-state p {
+        color: #f5f5f5;
+        opacity: 0.8;
+        margin-bottom: 0.5rem;
+    }
+
+    .light-theme .empty-state p {
+        color: #666;
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .forms-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-stats {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+</style>
 {% endblock %}
