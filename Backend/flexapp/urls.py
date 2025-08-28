@@ -61,7 +61,7 @@ urlpatterns = [
     path('api/certificates/', views.certificate_list, name='api-certificates'),
     path('api/certificates/create/', views.create_certificate_api, name='api-create-certificate'),
 
-    # API Auth Endpoints
+    # API Auth Endpointsf
     path('api/login/', views.api_login, name='api-login'),
     path('api/logout/', views.api_logout, name='api-logout'),
     path('api/current-user/', views.api_current_user, name='api-current-user'),

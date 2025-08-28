@@ -1537,7 +1537,6 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 import requests
 
-@login_required
 def flexon_dashboard(request):
     if request.method == 'POST':
         query = request.POST.get('query', '').strip()
@@ -1554,7 +1553,7 @@ def flexon_dashboard(request):
         )
         prompt_text = f"{system_preamble}\nUser: {query}\nAssistant:"
 
-        GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent"
+        GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
         GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyBx6_D4L8RiUdqQbIPGnluSZKJBCOJrz4k")  # set in .env or server
         headers = {"Content-Type": "application/json"}
         payload = {

@@ -15,6 +15,87 @@
 			href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
 		/>
 		<link rel="stylesheet" href="{% static 'css/login.min.css' %}" />
+		<style>
+			main{
+				flex-direction: column;
+			}
+			/* Public Access Section Styles */
+			.public-access {
+				margin-top: 2rem;
+				text-align: center;
+			}
+
+			.public-access h3 {
+				color: #f1c40f;
+				margin-bottom: 1rem;
+				font-size: 1.2rem;
+				font-weight: 600;
+			}
+
+			.light-theme .public-access h3 {
+				color: #f39c12;
+			}
+
+			.public-links {
+				display: flex;
+				gap: 1rem;
+				justify-content: center;
+				flex-wrap: wrap;
+			}
+
+			.public-link {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				background-color: rgba(241, 196, 15, 0.1);
+				color: #f1c40f;
+				padding: 0.8rem 1.5rem;
+				border-radius: 8px;
+				text-decoration: none;
+				border: 2px solid transparent;
+				transition: all 0.3s ease;
+				min-width: 180px;
+				justify-content: center;
+			}
+
+			.public-link:hover {
+				background-color: #f1c40f;
+				color: #000;
+				border-color: #f1c40f;
+				transform: translateY(-2px);
+			}
+
+			.light-theme .public-link {
+				background-color: rgba(243, 156, 18, 0.1);
+				color: #f39c12;
+			}
+
+			.light-theme .public-link:hover {
+				background-color: #f39c12;
+				color: #fff;
+				border-color: #f39c12;
+			}
+
+			.public-link i {
+				font-size: 1.1rem;
+			}
+
+			.public-link span {
+				font-weight: 500;
+			}
+
+			/* Responsive design */
+			@media (max-width: 480px) {
+				.public-links {
+					flex-direction: column;
+					align-items: center;
+				}
+
+				.public-link {
+					min-width: 250px;
+				}
+			}
+		</style>
 		<title>Login</title>
 	</head>
 
@@ -44,6 +125,21 @@
 				</p>
 				{% endcomment %}
 			</form>
+			
+			<!-- Public Access Section -->
+			<div class="public-access">
+				<h3>Public Access</h3>
+				<div class="public-links">
+					<a href="{% url 'placement_dashboard' %}" class="public-link">
+						<i class="bi bi-graph-up-arrow"></i>
+						<span>Placement Dashboard</span>
+					</a>
+					<a href="{% url 'flexon_dashboard' %}" class="public-link">
+						<i class="bi bi-cpu"></i>
+						<span>FlexOn Analytics</span>
+					</a>
+				</div>
+			</div>
 		</main>
 		<div class="form-check-label">
 			<button id="themeToggle"><i class="bi bi-moon-fill"></i></button>
