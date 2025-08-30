@@ -698,7 +698,32 @@ from django.db.models import Count, Avg
 @login_required
 def faculty(request):
     try:
-        from .models import student  # or whatever your model is called
+        from .models import student, Certificate, Technology, Projects, Faculty  # or whatever your model is called
+
+        # Get unique values for filter options
+        certificate_providers = list(Certificate.objects.exclude(source='').values_list('source', flat=True).distinct().order_by('source'))
+        course_providers = list(Certificate.objects.exclude(course_provider='').values_list('course_provider', flat=True).distinct().order_by('course_provider'))
+        
+        # Combine both source and course_provider into one list for the filter
+        all_providers = sorted(list(set(certificate_providers + course_providers)))
+        
+        # Get all technologies
+        technologies = list(Technology.objects.all().values_list('name', flat=True).distinct().order_by('name'))
+        
+        # Get unique domains from certificates
+        domains = list(Certificate.objects.exclude(domain='').values_list('domain', flat=True).distinct().order_by('domain'))
+        
+        # Get certificate categories
+        certificate_categories = [choice[0] for choice in Certificate.CATEGORY_CHOICES]
+        
+        # Get project statuses
+        project_statuses = [choice[0] for choice in Projects.status_choices]
+        
+        # Get faculty list for mentor filter
+        mentors = list(Faculty.objects.all().values_list('first_name', flat=True).distinct().order_by('first_name'))
+        
+        # Get department choices
+        departments = [choice[0] for choice in student.DEPT_CHOICES]
 
         studentData = list(
             student.objects.filter(is_superuser=False)
@@ -709,10 +734,64 @@ def faculty(request):
             .values(
                 'roll_no', 'first_name', 'dept', 'year', 'section',
                 'studentrollno__TotalProblems',  # double-check this name
-                'project_count', 'certificate_count'
+                'project_count', 'certificate_count', 'mentor__first_name'
             )
         )
-        return render(request, 'faculty_dashboard.html', {'studentData': studentData})
+        
+        # Add additional information to each student
+        for student_data in studentData:
+            student_obj = student.objects.get(roll_no=student_data['roll_no'])
+            
+            # Certificate provider information
+            student_certificates = Certificate.objects.filter(rollno=student_obj)
+            student_providers = []
+            student_domains = []
+            student_cert_categories = []
+            
+            for cert in student_certificates:
+                if cert.source:
+                    student_providers.append(cert.source)
+                if cert.course_provider:
+                    student_providers.append(cert.course_provider)
+                if cert.domain:
+                    student_domains.append(cert.domain)
+                student_cert_categories.append(cert.category)
+            
+            student_data['certificate_providers'] = list(set(student_providers))
+            student_data['domains'] = list(set(student_domains))
+            student_data['certificate_categories'] = list(set(student_cert_categories))
+            
+            # Technology information from projects and certificates
+            student_technologies = []
+            
+            # Get technologies from projects
+            student_projects = Projects.objects.filter(contributors=student_obj)
+            for project in student_projects:
+                project_techs = project.technologies.all().values_list('name', flat=True)
+                student_technologies.extend(project_techs)
+            
+            # Get technologies from certificates
+            for cert in student_certificates:
+                cert_techs = cert.technologies.all().values_list('name', flat=True)
+                student_technologies.extend(cert_techs)
+            
+            student_data['technologies'] = list(set(student_technologies))
+            
+            # Project status information
+            student_project_statuses = list(student_projects.values_list('status', flat=True))
+            student_data['project_statuses'] = list(set(student_project_statuses))
+            
+        
+        return render(request, 'faculty_dashboard.html', {
+            'studentData': studentData,
+            'certificate_providers': all_providers,
+            'technologies': technologies,
+            'domains': domains,
+            'certificate_categories': certificate_categories,
+            'project_statuses': project_statuses,
+            'mentors': mentors,
+            'departments': departments
+        })
 
     except Exception as e:
         logging.error(f"Error in faculty: {e}")
@@ -1528,55 +1607,266 @@ import os
 def is_coordinator(user):
     return hasattr(user, 'coordinatorrole') and user.coordinatorrole is not None
 
-import os
-import requests
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-import requests
+# FlexOn Dashboard Implementation
+from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Count, Q
+import traceback
 
+def generate_orm_from_query(query):
+    """
+    Simple query-to-ORM mapping for common FlexOn queries.
+    Returns a basic ORM string based on keywords in the query.
+    """
+    query_lower = query.lower()
+    
+    # Basic query patterns
+    if 'top' in query_lower and 'leetcode' in query_lower:
+        return "LeetCode.objects.order_by('-TotalProblems')[:10]"
+    
+    elif 'students' in query_lower and 'python' in query_lower and 'projects' in query_lower:
+        return "student.objects.annotate(python_projects=Count('projects', filter=Q(projects__technologies__name__icontains='python'))).filter(python_projects__gt=0)"
+    
+    elif 'placement' in query_lower and 'offers' in query_lower:
+        return "student.objects.annotate(offer_count=Count('placementoffer')).filter(offer_count__gt=0)"
+    
+    elif 'cloud' in query_lower and ('cert' in query_lower or 'certificate' in query_lower):
+        return "Certificate.objects.filter(Q(source__icontains='cloud') | Q(title__icontains='cloud'))"
+    
+    elif 'placement' in query_lower and 'stats' in query_lower:
+        return "student.objects.values('dept').annotate(total=Count('id'), placed=Count('placementoffer')).order_by('dept')"
+    
+    elif 'students' in query_lower and 'projects' in query_lower:
+        return "student.objects.annotate(project_count=Count('projects')).filter(project_count__gt=0)"
+    
+    elif 'certificates' in query_lower:
+        return "Certificate.objects.values('rollno__dept', 'category').annotate(count=Count('id')).order_by('rollno__dept')"
+    
+    elif 'leetcode' in query_lower:
+        return "LeetCode.objects.select_related('rollno').order_by('-TotalProblems')"
+    
+    elif 'projects' in query_lower:
+        return "Projects.objects.select_related('rollno').order_by('-id')"
+    
+    elif 'students' in query_lower:
+        return "student.objects.all().order_by('roll_no')"
+    
+    else:
+        # Default fallback
+        return "student.objects.all()[:20]"
+
+
+def _normalize_orm_line(orm_line: str, model_aliases: dict) -> str:
+    """
+    Rewrite '<Alias>.objects' -> '<actual>.objects' using ONLY the provided model_aliases.
+    Adds singular/plural + case variants at runtime without mutating model_aliases.
+    """
+    if not orm_line:
+        return orm_line
+
+    import re
+    
+    # Build an expanded lookup without changing the original dict
+    expanded = {}
+    for alias, actual in model_aliases.items():
+        variants = {alias, alias.lower(), alias.capitalize()}
+
+        # add singular/plural variants
+        if alias.endswith('s'):
+            singular = alias[:-1]
+            variants.update({singular, singular.lower(), singular.capitalize()})
+        else:
+            plural = alias + 's'
+            variants.update({plural, plural.lower(), plural.capitalize()})
+
+        for v in variants:
+            expanded[v] = actual  # all map to the same "actual"
+
+    # Replace ONLY tokens that are used as '<name>.objects'
+    pattern = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*\.objects")
+
+    def repl(m):
+        name = m.group(1)
+        actual = expanded.get(name) or expanded.get(name.lower())
+        return f"{actual}.objects" if actual else m.group(0)
+
+    return pattern.sub(repl, orm_line)
+
+
+@csrf_exempt
 def flexon_dashboard(request):
     if request.method == 'POST':
         query = request.POST.get('query', '').strip()
-        if not query:
-            return JsonResponse({'error': 'Query is required'}, status=400)
+        clarification = ''
+        results = []
+        columns = []
 
-        # Build prompt context for Gemini
-        system_preamble = (
-            "You are an assistant for a Django dashboard called FlexOn. "
-            "Faculty and placement coordinators will ask queries about students, projects, placements, certificates, LeetCode, etc. "
-            "Your job is to parse the query and return a Django ORM filter or aggregation, plus a short explanation. "
-            "If the query is ambiguous, ask for clarification. "
-            "Example: Query: 'Students with more than 2 Python projects'. ORM: student.objects.annotate(project_count=models.Count('projects', filter=models.Q(projects__technologies__name__icontains='python'))).filter(project_count__gt=2)."
-        )
-        prompt_text = f"{system_preamble}\nUser: {query}\nAssistant:"
+        # Step 1: Generate ORM from query (returns a string)
+        orm_line = generate_orm_from_query(query)
 
-        GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-        GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyBx6_D4L8RiUdqQbIPGnluSZKJBCOJrz4k")  # set in .env or server
-        headers = {"Content-Type": "application/json"}
-        payload = {
-            "contents": [
-                {"parts": [{"text": prompt_text}]}
-            ]
+        # Step 2: Normalize model references using the GIVEN model_aliases (unchanged)
+        model_aliases = {
+            'Student': 'student',
+            'Faculty': 'Faculty',
+            'Projects': 'Projects',
+            'Certificate': 'Certificate',
+            'LeetCode': 'LeetCode',
+            'Placement': 'Placement',
+            'Technology': 'Technology',
         }
-        url = f"{GEMINI_API_URL}?key={GEMINI_API_KEY}"
+        orm_line = _normalize_orm_line(orm_line, model_aliases) if orm_line else None
 
-        try:
-            response = requests.post(url, headers=headers, json=payload, timeout=15)
-            response.raise_for_status()
-            ai_output = response.json()
-            # Extract Gemini response text
-            parsed = ai_output.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', str(ai_output))
-        except Exception as e:
-            parsed = f"Gemini parsing error: {e}"
+        # Step 3: Safety check (read-only)
+        unsafe_keywords = [
+            'create', 'update', 'delete', 'save',
+            'bulk_create', 'bulk_update', 'remove', 'clear', 'set'
+        ]
+        if not orm_line:
+            clarification = "Couldn't generate a valid ORM query."
+        elif any(kw in orm_line.lower() for kw in unsafe_keywords):
+            clarification = "Unsafe ORM operation detected. Only read-only queries are allowed."
+        else:
+            try:
+                # Step 4: Evaluate safely
+                from .models import Faculty, Technology, Placement
+                from django.db import models as django_models
+                
+                safe_globals = {
+                    '__builtins__': {},  # lock down builtins
+                    # models/modules
+                    'models': django_models,
+                    'Count': Count,
+                    'Q': Q,
+                    # model classes available to the ORM line
+                    'student': student,
+                    'Faculty': Faculty,
+                    'Projects': Projects,
+                    'Certificate': Certificate,
+                    'LeetCode': LeetCode,
+                    'Placement': Placement,
+                    'Technology': Technology,
+                    'PlacementOffer': PlacementOffer,
+                }
+                print(f"Executing ORM: {orm_line}")
+
+                queryset = eval(orm_line, safe_globals, {})
+
+                # Step 5: Normalize results to list-of-dicts and build columns
+                from django.db.models import QuerySet
+                
+                def as_dicts_from_instances(qs):
+                    model = qs.model
+                    field_names = [f.name for f in model._meta.concrete_fields]
+                    return list(qs.values(*field_names))
+
+                if isinstance(queryset, dict):
+                    # Aggregate: {'count': X, ...}
+                    results = [queryset]
+                    columns = list(queryset.keys())
+                elif isinstance(queryset, (list, tuple)):
+                    if queryset and isinstance(queryset[0], tuple):
+                        # values_list / tuples -> map to col_1, col_2...
+                        col_names = [f"col_{i+1}" for i in range(len(queryset[0]))]
+                        results = [dict(zip(col_names, row)) for row in queryset[:50]]
+                        columns = col_names
+                    elif queryset and hasattr(queryset[0], '__class__'):
+                        # list of model instances
+                        model = queryset[0].__class__
+                        field_names = [f.name for f in model._meta.concrete_fields]
+                        results = [ {fn: getattr(obj, fn) for fn in field_names} for obj in queryset[:50] ]
+                        columns = field_names
+                    else:
+                        results = []
+                        columns = []
+                elif isinstance(queryset, QuerySet):
+                    # If caller already used .values(), don't double-process
+                    try:
+                        sample = queryset[:1]
+                        # If it's a ValuesQuerySet, converting to list gives dicts
+                        if sample and isinstance(list(sample)[0], dict):
+                            results = list(queryset)[:50]
+                        else:
+                            results = as_dicts_from_instances(queryset)[:50]
+                    except Exception:
+                        # fallback to values() anyway
+                        results = list(queryset.values())[:50]
+
+                    columns = list(results[0].keys()) if results else []
+                else:
+                    # Any other scalar/object -> wrap it
+                    results = [{"result": queryset}]
+                    columns = ["result"]
+
+            except Exception as e:
+                clarification = f"Error executing ORM: {e}"
+                traceback.print_exc()
 
         return JsonResponse({
-            'clarification': None,
-            'results': [[parsed]],
-            'columns': ['AI Output'],
-            'chart': None,
+            'clarification': clarification,
+            'results': results,
+            'columns': columns,
+            'chart': None
         })
 
     return render(request, 'flexon_dashboard.html')
+# flexapp/views.py
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.db.models import Count, Avg, Sum, Max, Min, Q
+from .models import student, Faculty, Projects, Certificate, LeetCode, Placement, Technology, publications, certifications
+
+MODEL_MAP = {
+    "Student": student,
+    "Faculty": Faculty,
+    "Projects": Projects,
+    "Certificate": Certificate,
+    "LeetCode": LeetCode,
+    "Placement": Placement,
+    "Technology": Technology,
+    "publications": publications,
+    "certifications": certifications,
+}
+from django.apps import apps
+from django.http import JsonResponse
+from django.shortcuts import render
+
+def query_builder(request):
+    if request.method == "POST":
+        import json
+        config = json.loads(request.body.decode("utf-8"))
+
+        model_name = config.get("model")
+        filters = config.get("filters", [])
+
+        if not model_name or model_name not in MODEL_MAP:
+            return JsonResponse({"error": "Invalid model selected"}, status=400)
+
+        Model = MODEL_MAP[model_name]
+        qs = Model.objects.all()
+
+        # Apply filters
+        from django.db.models import Q
+        q_obj = Q()
+        for f in filters:
+            field = f.get("field")
+            operator = f.get("operator")
+            value = f.get("value")
+            if field and operator and value != "":
+                lookup = f"{field}__{operator}"
+                q_obj &= Q(**{lookup: value})
+        qs = qs.filter(q_obj)
+
+        results = list(qs.values()[:50])
+        return JsonResponse({"results": results})
+
+    # GET: load UI
+    return render(request, "query_builder.html", {"models": list(MODEL_MAP.keys())})
+
+
+def get_model_fields(request, model_name):
+    """Return list of fields for a given model."""
+    if model_name not in MODEL_MAP:
+        return JsonResponse({"error": "Invalid model"}, status=400)
+
+    Model = MODEL_MAP[model_name]
+    fields = [f.name for f in Model._meta.get_fields()]
+    return JsonResponse({"fields": fields})

@@ -10,13 +10,46 @@
     </div>
   </form>
   <div id="clarification" class="alert alert-warning d-none"></div>
-  <div id="results"></div>
+
+  <!-- Results Table -->
+  <div id="results">
+    {% if results %}
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead class="table-dark">
+            <tr>
+              {% for key, value in results.0.items %}
+                {% if key not in 'password,is_superuser,is_staff,is_active' %}
+                  <th>{{ key|title }}</th>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in results %}
+              <tr>
+                {% for key, value in record.items %}
+                  {% if key not in 'password,is_superuser,is_staff,is_active' %}
+                    <td>{{ value }}</td>
+                  {% endif %}
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="alert alert-info">No results found.</div>
+    {% endif %}
+  </div>
+
   <div id="chart-container" class="mt-4"></div>
-  <div id="export-buttons" class="mt-3 d-none">
+  <div id="export-buttons" class="mt-3 {% if not results %}d-none{% endif %}">
     <button class="btn btn-outline-secondary" id="export-csv">Export CSV</button>
     <button class="btn btn-outline-secondary" id="export-xlsx">Export Excel</button>
     <button class="btn btn-outline-secondary" id="export-pdf">Export PDF</button>
   </div>
+
   <div class="mt-4">
     <h5>Quick Actions</h5>
     <button class="btn btn-info quick-query" data-query="Top 10 students by LeetCode problems solved">Top 10 LeetCode</button>
@@ -25,9 +58,9 @@
     <button class="btn btn-info quick-query" data-query="Placed vs Not Placed (by Department)">Placement Stats</button>
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// AJAX form submit
 const form = document.getElementById('flexon-form');
 form.onsubmit = function(e) {
   e.preventDefault();
@@ -44,13 +77,14 @@ form.onsubmit = function(e) {
     renderResults(data);
   });
 };
-// Quick actions
+
 for (const btn of document.querySelectorAll('.quick-query')) {
   btn.onclick = () => {
     form.query.value = btn.dataset.query;
     form.onsubmit(new Event('submit'));
   };
 }
+
 function renderResults(data) {
   const resultsDiv = document.getElementById('results');
   if (!data.results || !data.results.length) {
@@ -59,17 +93,32 @@ function renderResults(data) {
     document.getElementById('chart-container').innerHTML = '';
     return;
   }
-  // Table
-  let html = '<table class="table table-bordered"><thead><tr>';
-  for (const col of data.columns) html += `<th>${col}</th>`;
+
+  const excludeKeys = ['password', 'is_superuser', 'is_staff', 'is_active'];
+
+  // Build dynamic table
+  let html = '<div class="table-responsive"><table class="table table-bordered table-striped"><thead class="table-dark"><tr>';
+  Object.keys(data.results[0]).forEach(key => {
+    if (!excludeKeys.includes(key)) {
+      html += `<th>${key}</th>`;
+    }
+  });
   html += '</tr></thead><tbody>';
-  for (const row of data.results) {
-    html += '<tr>' + row.map(cell => `<td>${cell}</td>`).join('') + '</tr>';
-  }
-  html += '</tbody></table>';
+
+  data.results.forEach(record => {
+    html += '<tr>';
+    Object.entries(record).forEach(([key, value]) => {
+      if (!excludeKeys.includes(key)) {
+        html += `<td>${value}</td>`;
+      }
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
   resultsDiv.innerHTML = html;
   document.getElementById('export-buttons').classList.remove('d-none');
-  // Chart
+
   if (data.chart) {
     document.getElementById('chart-container').innerHTML = '<canvas id="flexon-chart"></canvas>';
     new Chart(document.getElementById('flexon-chart'), data.chart);
@@ -77,6 +126,5 @@ function renderResults(data) {
     document.getElementById('chart-container').innerHTML = '';
   }
 }
-// TODO: Export buttons JS
 </script>
 {% endblock %}

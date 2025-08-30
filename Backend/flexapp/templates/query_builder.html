@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Query Builder</h2>
+
+<form id="query-form">
+  <label for="model">Select Model:</label>
+  <select id="model" name="model" onchange="fetchFields()">
+    <option value="">-- Select --</option>
+    {% for model in models %}
+      <option value="{{ model }}">{{ model }}</option>
+    {% endfor %}
+  </select>
+
+  <h3>Filters</h3>
+  <div id="filters"></div>
+
+  <button type="button" onclick="addFilter()">+ Add Filter</button>
+  <button type="submit">Run Query</button>
+</form>
+
+<h3>Results</h3>
+<pre id="results"></pre>
+
+<script>
+let availableFields = [];
+
+async function fetchFields() {
+  const model = document.getElementById("model").value;
+  if (!model) return;
+
+  let response = await fetch(`/query-builder/fields/${model}/`);
+  let data = await response.json();
+  availableFields = data.fields || [];
+  
+  // Reset filters when model changes
+  document.getElementById("filters").innerHTML = "";
+}
+
+function addFilter() {
+  if (availableFields.length === 0) {
+    alert("Please select a model first");
+    return;
+  }
+
+  let div = document.createElement("div");
+  div.classList.add("filter");
+
+  let fieldSelect = document.createElement("select");
+  availableFields.forEach(f => {
+    let opt = document.createElement("option");
+    opt.value = f;
+    opt.textContent = f;
+    fieldSelect.appendChild(opt);
+  });
+
+  let operatorSelect = document.createElement("select");
+  operatorSelect.innerHTML = `
+    <option value="exact">=</option>
+    <option value="gt">&gt;</option>
+    <option value="lt">&lt;</option>
+    <option value="icontains">contains</option>
+  `;
+
+  let valueInput = document.createElement("input");
+  valueInput.type = "text";
+  valueInput.placeholder = "Value";
+
+  div.appendChild(fieldSelect);
+  div.appendChild(operatorSelect);
+  div.appendChild(valueInput);
+
+  document.getElementById("filters").appendChild(div);
+}
+
+document.getElementById("query-form").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  let model = document.getElementById("model").value;
+
+  let filters = [];
+  document.querySelectorAll("#filters .filter").forEach(div => {
+    let field = div.querySelector("select").value;
+    let operator = div.querySelectorAll("select")[1].value;
+    let value = div.querySelector("input").value;
+    if (field && value) {
+      filters.push({field, operator, value});
+    }
+  });
+
+  let payload = {model, filters};
+
+  let response = await fetch("", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  });
+  let data = await response.json();
+  document.getElementById("results").textContent = JSON.stringify(data, null, 2);
+});
+</script>
+{% endblock %}

@@ -10,6 +10,158 @@
 		/>
 		<link rel="stylesheet" href="{% static 'css/faculty.min.css' %}" />
 		<title>Dashboard</title>
+		<style>
+			select, option, .option	{
+				    padding: .5rem .7rem;
+    margin: 10px 0;
+    font-size: 16px;
+    outline: none;
+    border-radius: 10px;
+    border: 1px solid #f1c40f;
+    background-color: rgba(0, 0, 0, 0);
+    color: #f5f5f5;
+			}
+			option:hover{
+				    padding: .5rem .7rem;
+    margin: 10px 0;
+    font-size: 16px;
+    outline: none;
+    border-radius: 10px;
+    border: 1px solid #f1c40f;
+    background-color: rgba(0, 0, 0, 0);
+    color: #f5f5f5;
+			}
+			
+			/* Advanced Filters Block Styling */
+			.advanced-filters-container {
+				width: 100%;
+				margin: 20px 0;
+				padding: 0 20px;
+			}
+			
+			#advanced-filters {
+				background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+				border: 2px solid #f1c40f;
+				border-radius: 15px;
+				padding: 25px;
+				margin: 0 auto;
+				max-width: 1200px;
+				box-shadow: 0 8px 25px rgba(241, 196, 15, 0.2);
+				transition: all 0.3s ease-in-out;
+				opacity: 0;
+				max-height: 0;
+				overflow: hidden;
+				transform: translateY(-10px);
+			}
+			
+			#advanced-filters.show {
+				opacity: 1;
+				max-height: 800px;
+				transform: translateY(0);
+			}
+			
+			#advanced-filters h3 {
+				color: #f1c40f;
+				margin-bottom: 20px;
+				font-size: 1.4em;
+				text-align: center;
+				border-bottom: 2px solid #f1c40f;
+				padding-bottom: 15px;
+			}
+			
+			.advanced-filter-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+				gap: 20px;
+				margin-top: 20px;
+			}
+			
+			.filter-group {
+				display: flex;
+				flex-direction: column;
+			}
+			
+			.filter-group label {
+				color: #f1c40f;
+				font-weight: 600;
+				margin-bottom: 8px;
+				font-size: 0.95em;
+			}
+			
+			#advancedToggle {
+				background: linear-gradient(135deg, #f1c40f, #e67e22);
+				border: none;
+				color: #1a1a1a;
+				padding: 12px 20px;
+				border-radius: 10px;
+				font-weight: bold;
+				cursor: pointer;
+				transition: all 0.3s ease;
+				margin-bottom: 15px;
+				width: 100%;
+				position: relative;
+				overflow: hidden;
+			}
+			
+			#advancedToggle:hover {
+				background: linear-gradient(135deg, #e67e22, #f1c40f);
+				transform: translateY(-2px);
+				box-shadow: 0 5px 15px rgba(241, 196, 15, 0.4);
+			}
+			
+			#advancedToggle.active {
+				background: linear-gradient(135deg, #e74c3c, #c0392b);
+				color: white;
+			}
+			
+			#advancedToggle i {
+				margin-right: 8px;
+				transition: transform 0.3s ease;
+			}
+			
+			#advancedToggle.active i {
+				transform: rotate(180deg);
+			}
+			
+			#clearAdvancedFilters {
+				background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+				color: white !important;
+				border: none !important;
+				padding: 12px 24px !important;
+				border-radius: 8px !important;
+				cursor: pointer !important;
+				transition: all 0.3s ease !important;
+				font-weight: 600 !important;
+				margin-top: 15px !important;
+				font-size: 1rem !important;
+			}
+			
+			#clearAdvancedFilters:hover {
+				background: linear-gradient(135deg, #c0392b, #a93226) !important;
+				transform: translateY(-1px) !important;
+				box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3) !important;
+			}
+			main{
+				flex-direction: row;
+			}
+			.advanced-filters-container{
+				margin: 0;
+				padding: 0;
+			}
+			#advanced-filters{
+				margin: 0;
+				padding: 0;
+			}
+			.open-container{
+				    width: 100%;
+    margin: 20px 0 !important;
+    padding: 0 20px;
+			}
+			.open{
+				    padding: 25px !important;
+    margin: 0 auto;
+			}
+		</style>
 	</head>
 
 	<body>
@@ -25,88 +177,189 @@
 				<aside class="filters">
 					<h2>Search and Filter</h2>
 					<hr />
-					<input
-						type="search"
-						name="student-search"
-						id="student-search"
-						placeholder="Search here"
-					/>
-					<label for="student-year">Year:</label>
-					<div class="radio-group">
-						<div class="radio">
-							<input type="radio" name="year" id="year-1" />
-							<label for="year-1">1</label>
+					
+					<!-- Basic Filters Section -->
+					<div class="basic-filters">
+						<input
+							type="search"
+							name="student-search"
+							id="student-search"
+							placeholder="Search by Roll Number or Name"
+						/>
+						
+						<label for="student-year">Year:</label>
+						<div class="radio-group">
+							<div class="radio">
+								<input type="radio" name="year" id="year-1" />
+								<label for="year-1">1</label>
+							</div>
+							<div class="radio">
+								<input type="radio" name="year" id="year-2" />
+								<label for="year-2">2</label>
+							</div>
+							<div class="radio">
+								<input type="radio" name="year" id="year-3" />
+								<label for="year-3">3</label>
+							</div>
+							<div class="radio">
+								<input type="radio" name="year" id="year-4" />
+								<label for="year-4">4</label>
+							</div>
 						</div>
-						<div class="radio">
-							<input type="radio" name="year" id="year-2" />
-							<label for="year-2">2</label>
+						
+						<label for="student-section">Section:</label>
+						<div class="radio-group">
+							<div class="radio">
+								<input type="radio" name="section" id="section-a" />
+								<label for="section-a">A</label>
+							</div>
+							<div class="radio">
+								<input type="radio" name="section" id="section-b" />
+								<label for="section-b">B</label>
+							</div>
+							<div class="radio">
+								<input type="radio" name="section" id="section-c" />
+								<label for="section-c">C</label>
+							</div>
+							<div class="radio">
+								<input type="radio" name="section" id="section-d" />
+								<label for="section-d">D</label>
+							</div>
 						</div>
-						<div class="radio">
-							<input type="radio" name="year" id="year-3" />
-							<label for="year-3">3</label>
-						</div>
-						<div class="radio">
-							<input type="radio" name="year" id="year-4" />
-							<label for="year-4">4</label>
+						
+						<div class="button-group">
+							<button><i class="bi bi-search"></i> Search</button>
+							<button class="reset">
+								<i class="bi bi-arrow-clockwise"></i> Reset
+							</button>
 						</div>
 					</div>
-					<label for="student-section">Section:</label>
-					<div class="radio-group">
-						<div class="radio">
-							<input type="radio" name="section" id="section-a" />
-							<label for="section-a">A</label>
-						</div>
-						<div class="radio">
-							<input type="radio" name="section" id="section-b" />
-							<label for="section-b">B</label>
-						</div>
-						<div class="radio">
-							<input type="radio" name="section" id="section-c" />
-							<label for="section-c">C</label>
-						</div>
-						<div class="radio">
-							<input type="radio" name="section" id="section-d" />
-							<label for="section-d">D</label>
-						</div>
-					</div>
-					<div class="button-group">
-						<button><i class="bi bi-search"></i> Search</button>
-						<button class="reset">
-							<i class="bi bi-arrow-clockwise"></i> Reset
-						</button>
-					</div>
+					
+					<!-- Advanced Filters Toggle Button -->
 					<button id="advancedToggle">
-						<i class="bi bi-sliders"></i> Advanced
+						<i class="bi bi-sliders"></i> Advanced Filters
 					</button>
-					<div id="advanced-filters" style="display: none">
-						<label for="leetcode-problems"
-							>LeetCode Problems:</label
-						>
-						<input
-							type="number"
-							id="leetcode-problems"
-							name="leetcode-problems"
-							placeholder="Enter minimum problems solved"
-						/>
-						<label for="projects">Projects:</label>
-						<input
-							type="number"
-							id="projects"
-							name="projects"
-							placeholder="Enter minimum projects done"
-						/>
-						<label for="certifications">Certifications:</label>
-						<input
-							type="number"
-							id="certifications"
-							name="certifications"
-							placeholder="Enter minimum certifications"
-						/>
-					</div>
 				</aside>
 				<br />
 				<button onclick="return downloadData()">Download</button>
 			</div>
+			<div class="right-bar">
+			<!-- Advanced Filters Section Above Table -->
+			<div class="advanced-filters-container">
+				<!-- Advanced Filters Block -->
+				<div id="advanced-filters">
+					<h3><i class="bi bi-funnel"></i> Advanced Filters</h3>
+					
+					<div class="advanced-filter-grid">
+						<div class="filter-group">
+							<label for="leetcode-problems">LeetCode Problems:</label>
+							<input
+								type="number"
+								id="leetcode-problems"
+								name="leetcode-problems"
+								placeholder="Min problems solved"
+							/>
+						</div>
+						
+						<div class="filter-group">
+							<label for="projects">Projects:</label>
+							<input
+								type="number"
+								id="projects"
+								name="projects"
+								placeholder="Min projects done"
+							/>
+						</div>
+						
+						<div class="filter-group">
+							<label for="certifications">Certifications:</label>
+							<input
+								type="number"
+								id="certifications"
+								name="certifications"
+								placeholder="Min certifications"
+							/>
+						</div>
+						
+						<div class="filter-group">
+							<label for="certificate-provider">Certificate Provider:</label>
+							<select id="certificate-provider" name="certificate-provider">
+								<option value="">All Providers</option>
+								{% for provider in certificate_providers %}
+									<option value="{{ provider }}">{{ provider }}</option>
+								{% endfor %}
+							</select>
+						</div>
+						
+						<div class="filter-group">
+							<label for="technology">Technology:</label>
+							<select id="technology" name="technology">
+								<option value="">All Technologies</option>
+								{% for tech in technologies %}
+									<option value="{{ tech }}">{{ tech }}</option>
+								{% endfor %}
+							</select>
+						</div>
+						
+						<div class="filter-group">
+							<label for="domain">Domain:</label>
+							<select id="domain" name="domain">
+								<option value="">All Domains</option>
+								{% for domain in domains %}
+									<option value="{{ domain }}">{{ domain }}</option>
+								{% endfor %}
+							</select>
+						</div>
+						
+						<div class="filter-group">
+							<label for="certificate-category">Certificate Category:</label>
+							<select id="certificate-category" name="certificate-category">
+								<option value="">All Categories</option>
+								{% for category in certificate_categories %}
+									<option value="{{ category }}">{{ category|title }}</option>
+								{% endfor %}
+							</select>
+						</div>
+						
+						<div class="filter-group">
+							<label for="project-status">Project Status:</label>
+							<select id="project-status" name="project-status">
+								<option value="">All Statuses</option>
+								{% for status in project_statuses %}
+									<option value="{{ status }}">{{ status|title }}</option>
+								{% endfor %}
+							</select>
+						</div>
+						
+						<div class="filter-group">
+							<label for="mentor">Mentor:</label>
+							<select id="mentor" name="mentor">
+								<option value="">All Mentors</option>
+								{% for mentor in mentors %}
+									<option value="{{ mentor }}">{{ mentor }}</option>
+								{% endfor %}
+							</select>
+						</div>
+						
+						<div class="filter-group">
+							<label for="department">Department:</label>
+							<select id="department" name="department">
+								<option value="">All Departments</option>
+								{% for dept in departments %}
+									<option value="{{ dept }}">{{ dept }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					
+					<div style="margin-top: 15px; text-align: center;">
+						<button id="clearAdvancedFilters" style="background: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">
+							<i class="bi bi-x-circle"></i> Clear Advanced Filters
+						</button>
+					</div>
+				</div>
+			</div>
+			
 			<div class="table">
 				<table>
 					<thead>
@@ -123,13 +376,16 @@
 							<th>Name</th>
 							<th style="text-align: center">Year</th>
 							<th style="text-align: center">Section</th>
+							<th style="text-align: center">Dept</th>
 							<th style="text-align: center">Leetcode Count</th>
 							<th style="text-align: center">Projects</th>
 							<th style="text-align: center">Certifications</th>
+							<th style="text-align: center">Mentor</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
 				</table>
+			</div>
 			</div>
 		</main>
 		<div class="form-check-label">
@@ -141,12 +397,26 @@
 		<script>
 			var None = 0;
 			var studentData = {{ studentData | safe }}
+			
+			// Enhanced Advanced Filters Toggle
 			document.getElementById('advancedToggle').addEventListener('click', () => {
 				const advancedFilters = document.getElementById('advanced-filters');
-				if (advancedFilters.style.display === 'none') {
-					advancedFilters.style.display = 'flex';
+				const toggleButton = document.getElementById('advancedToggle');
+				
+				if (advancedFilters.classList.contains('show')) {
+					// Hide advanced filters
+					advancedFilters.classList.remove('show');
+					toggleButton.classList.remove('active');
+					advancedFilters.classList.remove('open')
+					document.getElementById('advanced-filters-container').classList.remove('open-container');
+					toggleButton.innerHTML = '<i class="bi bi-sliders"></i> Advanced Filters';
 				} else {
-					advancedFilters.style.display = 'none';
+					// Show advanced filters
+					advancedFilters.classList.add('show');
+					toggleButton.classList.add('active');
+					advancedFilters.classList.add('open');
+					document.getElementById('advanced-filters-container').classList.add('open-container');
+					toggleButton.innerHTML = '<i class="bi bi-funnel-fill"></i> Hide Advanced Filters';
 				}
 			});
 
@@ -162,6 +432,13 @@
 					const leetCodeProblems = parseInt(document.getElementById('leetcode-problems').value) || 0;
 					const projects = parseInt(document.getElementById('projects').value) || 0;
 					const certifications = parseInt(document.getElementById('certifications').value) || 0;
+					const certificateProvider = document.getElementById('certificate-provider').value.trim();
+					const technology = document.getElementById('technology').value.trim();
+					const domain = document.getElementById('domain').value.trim();
+					const certificateCategory = document.getElementById('certificate-category').value.trim();
+					const projectStatus = document.getElementById('project-status').value.trim();
+					const mentor = document.getElementById('mentor').value.trim();
+					const department = document.getElementById('department').value.trim();
 
 					let filteredData = studentData;
 					console.log(filteredData)
@@ -183,12 +460,53 @@
 					}
 
 					if (projects > 0) {
-						filteredData = filteredData.filter(student => student.Projects >= projects);
+						filteredData = filteredData.filter(student => student.project_count >= projects);
 					}
 
 					if (certifications > 0) {
-						filteredData = filteredData.filter(student => student.ForeignLanguages >= certifications);
+						filteredData = filteredData.filter(student => student.certificate_count >= certifications);
 					}
+
+					if (certificateProvider !== "") {
+						filteredData = filteredData.filter(student => 
+							student.certificate_providers && student.certificate_providers.includes(certificateProvider)
+						);
+					}
+					
+					if (technology !== "") {
+						filteredData = filteredData.filter(student => 
+							student.technologies && student.technologies.includes(technology)
+						);
+					}
+					
+					if (domain !== "") {
+						filteredData = filteredData.filter(student => 
+							student.domains && student.domains.includes(domain)
+						);
+					}
+					
+					if (certificateCategory !== "") {
+						filteredData = filteredData.filter(student => 
+							student.certificate_categories && student.certificate_categories.includes(certificateCategory)
+						);
+					}
+					
+					if (projectStatus !== "") {
+						filteredData = filteredData.filter(student => 
+							student.project_statuses && student.project_statuses.includes(projectStatus)
+						);
+					}
+					
+					if (mentor !== "") {
+						filteredData = filteredData.filter(student => 
+							student.mentor__first_name === mentor
+						);
+					}
+					
+					if (department !== "") {
+						filteredData = filteredData.filter(student => student.dept === department);
+					}
+					
 
 					displayData(filteredData);
 				}
@@ -198,7 +516,7 @@
 					tableBody.innerHTML = "";
 
 					if (data.length === 0) {
-						tableBody.innerHTML = `<tr><td colspan="5">No data available</td></tr>`;
+						tableBody.innerHTML = `<tr><td colspan="11">No data available</td></tr>`;
 						return;
 					}
 
@@ -211,9 +529,11 @@
 							<td>${student.first_name}</td>
 							<td style='text-align: center;'>${student.year}</td>
 							<td style='text-align: center;'>${student.section}</td>
-							<td style='text-align: center;'>${student.studentrollno__TotalProblems}</td>
-							<td style='text-align: center;'>${student.Projects}</td>
-							<td style='text-align: center;'>${student.ForeignLanguages}</td>
+							<td style='text-align: center;'>${student.dept}</td>
+							<td style='text-align: center;'>${student.studentrollno__TotalProblems || 0}</td>
+							<td style='text-align: center;'>${student.project_count}</td>
+							<td style='text-align: center;'>${student.certificate_count}</td>
+							<td style='text-align: center;'>${student.mentor__first_name || 'N/A'}</td>
 						`;
 						tableBody.appendChild(row);
 					});
@@ -225,12 +545,29 @@
 				}
 
 				function reset() {
+					// Reset all form fields
 					document.getElementById('student-search').value = "";
 					document.querySelectorAll('input[name="year"]').forEach((radio) => (radio.checked = false));
 					document.querySelectorAll('input[name="section"]').forEach((radio) => (radio.checked = false));
 					document.getElementById('leetcode-problems').value = "";
 					document.getElementById('projects').value = "";
 					document.getElementById('certifications').value = "";
+					document.getElementById('certificate-provider').value = "";
+					document.getElementById('technology').value = "";
+					document.getElementById('domain').value = "";
+					document.getElementById('certificate-category').value = "";
+					document.getElementById('project-status').value = "";
+					document.getElementById('mentor').value = "";
+					document.getElementById('department').value = "";
+					
+					// Close advanced filters panel
+					const advancedFilters = document.getElementById('advanced-filters');
+					const toggleButton = document.getElementById('advancedToggle');
+					advancedFilters.classList.remove('show');
+					toggleButton.classList.remove('active');
+					toggleButton.innerHTML = '<i class="bi bi-sliders"></i> Advanced Filters';
+					
+					// Reset display
 					displayData(studentData);
 				}
 
@@ -241,9 +578,34 @@
 				document.getElementById('leetcode-problems').addEventListener('input', filterAndDisplayData);
 				document.getElementById('projects').addEventListener('input', filterAndDisplayData);
 				document.getElementById('certifications').addEventListener('input', filterAndDisplayData);
+				document.getElementById('certificate-provider').addEventListener('change', filterAndDisplayData);
+				document.getElementById('technology').addEventListener('change', filterAndDisplayData);
+				document.getElementById('domain').addEventListener('change', filterAndDisplayData);
+				document.getElementById('certificate-category').addEventListener('change', filterAndDisplayData);
+				document.getElementById('project-status').addEventListener('change', filterAndDisplayData);
+				document.getElementById('mentor').addEventListener('change', filterAndDisplayData);
+				document.getElementById('department').addEventListener('change', filterAndDisplayData);
 
 				const resetButton = document.querySelector('.reset');
 				resetButton.addEventListener('click', reset);
+				
+				// Clear Advanced Filters button functionality
+				document.getElementById('clearAdvancedFilters').addEventListener('click', function() {
+					// Clear only advanced filter fields
+					document.getElementById('leetcode-problems').value = "";
+					document.getElementById('projects').value = "";
+					document.getElementById('certifications').value = "";
+					document.getElementById('certificate-provider').value = "";
+					document.getElementById('technology').value = "";
+					document.getElementById('domain').value = "";
+					document.getElementById('certificate-category').value = "";
+					document.getElementById('project-status').value = "";
+					document.getElementById('mentor').value = "";
+					document.getElementById('department').value = "";
+					
+					// Re-apply filters
+					filterAndDisplayData();
+				});
 
 				displayData(studentData);
 			});
