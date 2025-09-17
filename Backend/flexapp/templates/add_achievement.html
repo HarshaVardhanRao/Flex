@@ -1,0 +1,682 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Add New Achievement - MITS FLEX{% endblock %}
+{% block page_title %}Add New Achievement{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'achievement_list' %}">Achievements</a></li>
+<li class="breadcrumb-item active">Add Achievement</li>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .section-title {
+        color: var(--primary-color);
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .section-title i {
+        margin-right: 0.5rem;
+    }
+    
+    .form-floating > label {
+        color: #6c757d;
+    }
+    
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        color: var(--primary-color);
+    }
+    
+    .preview-section {
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .preview-section.dragover {
+        border-color: var(--primary-color);
+        background: rgba(46, 134, 171, 0.1);
+    }
+    
+    .file-upload-area {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        width: 100%;
+    }
+    
+    .file-upload-area input[type=file] {
+        position: absolute;
+        left: -9999px;
+    }
+    
+    .achievement-preview {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .achievement-preview h5 {
+        margin-bottom: 0.5rem;
+    }
+    
+    .achievement-preview .badge {
+        background: rgba(255,255,255,0.2);
+        color: white;
+    }
+    
+    .char-counter {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .char-counter.warning {
+        color: #ffc107;
+    }
+    
+    .char-counter.danger {
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-1"><i class="fas fa-plus-circle me-2"></i>Add New Achievement</h2>
+                        <p class="mb-0">Document your accomplishments and build your professional portfolio</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group">
+                            <a href="{% url 'achievement_list' %}" class="btn btn-light">
+                                <i class="fas fa-list me-1"></i>View All
+                            </a>
+                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#guidelinesModal">
+                                <i class="fas fa-info-circle me-1"></i>Guidelines
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Achievement Form -->
+<form method="post" enctype="multipart/form-data" id="achievementForm">
+    {% csrf_token %}
+    
+    <div class="row">
+        <!-- Main Form -->
+        <div class="col-lg-8">
+            <!-- Basic Information Section -->
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-info-circle"></i>Basic Information
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   placeholder="Achievement Title" required maxlength="200">
+                            <label for="title">Achievement Title *</label>
+                        </div>
+                        <div class="char-counter" data-target="title" data-max="200"></div>
+                        <small class="form-text text-muted">
+                            Examples: "First Prize in National Hackathon", "Best Paper Award", "Topper in Mathematics"
+                        </small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-floating">
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Select Category</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}" data-points="{{ category.default_points }}">
+                                        {{ category.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <label for="category">Category *</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-floating">
+                        <textarea class="form-control" id="description" name="description" 
+                                  placeholder="Description" required maxlength="1000" style="min-height: 100px;"></textarea>
+                        <label for="description">Detailed Description *</label>
+                    </div>
+                    <div class="char-counter" data-target="description" data-max="1000"></div>
+                    <small class="form-text text-muted">
+                        Describe your achievement in detail including what you accomplished, how you did it, and its impact.
+                    </small>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-floating">
+                            <input type="date" class="form-control" id="achievement_date" name="achievement_date" required>
+                            <label for="achievement_date">Achievement Date *</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="issuing_organization" name="issuing_organization" 
+                                   placeholder="Organization" required maxlength="200">
+                            <label for="issuing_organization">Issuing Organization *</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Examples: IEEE, ACM, University, Government Department, Company Name
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Achievement Details Section -->
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-medal"></i>Achievement Details
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="form-floating">
+                            <select class="form-select" id="level" name="level" required>
+                                <option value="">Select Level</option>
+                                <option value="institutional">Institutional</option>
+                                <option value="state">State</option>
+                                <option value="national">National</option>
+                                <option value="international">International</option>
+                            </select>
+                            <label for="level">Achievement Level *</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="position" name="position" 
+                                   placeholder="Position/Rank" maxlength="50">
+                            <label for="position">Position/Rank</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Examples: 1st Place, Winner, Runner-up, Participant, Merit Certificate
+                        </small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-floating">
+                            <input type="number" class="form-control" id="team_size" name="team_size" 
+                                   placeholder="Team Size" min="1" max="50">
+                            <label for="team_size">Team Size</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Enter 1 for individual achievements
+                        </small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-floating">
+                            <input type="url" class="form-control" id="external_link" name="external_link" 
+                                   placeholder="External Link" maxlength="500">
+                            <label for="external_link">External Link (Optional)</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Website, news article, official announcement, or social media post
+                        </small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="tags" name="tags" 
+                                   placeholder="Tags" maxlength="300">
+                            <label for="tags">Skills & Tags</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Comma-separated: programming, machine learning, leadership, teamwork
+                        </small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-floating">
+                        <textarea class="form-control" id="skills_gained" name="skills_gained" 
+                                  placeholder="Skills Gained" maxlength="500" style="min-height: 80px;"></textarea>
+                        <label for="skills_gained">Skills Gained (Optional)</label>
+                    </div>
+                    <div class="char-counter" data-target="skills_gained" data-max="500"></div>
+                    <small class="form-text text-muted">
+                        What new skills did you learn or improve through this achievement?
+                    </small>
+                </div>
+            </div>
+
+            <!-- Document Upload Section -->
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-upload"></i>Supporting Documents
+                </h5>
+                
+                <div class="file-upload-area">
+                    <div class="preview-section" id="uploadArea">
+                        <div id="uploadContent">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <h5>Upload Certificate or Proof</h5>
+                            <p class="text-muted">
+                                Drag and drop your file here or 
+                                <button type="button" class="btn btn-primary" onclick="document.getElementById('verification_document').click()">
+                                    Browse Files
+                                </button>
+                            </p>
+                            <small class="text-muted">
+                                Supported formats: PDF, JPG, PNG, JPEG (Max: 5MB)
+                            </small>
+                        </div>
+                        <div id="filePreview" style="display: none;">
+                            <i class="fas fa-file-alt fa-3x text-success mb-3"></i>
+                            <h6 id="fileName"></h6>
+                            <p class="text-muted" id="fileSize"></p>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeFile()">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                    <input type="file" id="verification_document" name="verification_document" 
+                           accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-section">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <button type="button" class="btn btn-secondary" onclick="saveDraft()">
+                            <i class="fas fa-save me-1"></i>Save as Draft
+                        </button>
+                    </div>
+                    <div>
+                        <a href="{% url 'achievement_list' %}" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-paper-plane me-1"></i>Submit Achievement
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Sidebar -->
+        <div class="col-lg-4">
+            <div class="sticky-top">
+                <!-- Live Preview -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-eye"></i>Live Preview
+                    </h5>
+                    
+                    <div class="achievement-preview" id="achievementPreview">
+                        <h5 id="previewTitle">Achievement Title</h5>
+                        <p id="previewDescription">Your achievement description will appear here...</p>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge" id="previewCategory">Category</span>
+                            <span class="badge" id="previewLevel">Level</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small id="previewOrganization">Organization</small>
+                            <small id="previewDate">Date</small>
+                        </div>
+                        <div class="mt-2" id="previewPosition" style="display: none;">
+                            <strong>Position: <span></span></strong>
+                        </div>
+                        <div class="mt-2" id="previewTags" style="display: none;">
+                            <div class="tags-container"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Achievement Tips -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-lightbulb"></i>Pro Tips
+                    </h5>
+                    
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item border-0 px-0">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <small>Use specific, measurable achievements</small>
+                        </div>
+                        <div class="list-group-item border-0 px-0">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <small>Upload high-quality supporting documents</small>
+                        </div>
+                        <div class="list-group-item border-0 px-0">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <small>Include relevant skills and technologies</small>
+                        </div>
+                        <div class="list-group-item border-0 px-0">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <small>Provide context and impact of your work</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Points -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-star"></i>Points System
+                    </h5>
+                    
+                    <div id="pointsInfo">
+                        <p class="text-muted">Select a category to see point values</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Guidelines Modal -->
+<div class="modal fade" id="guidelinesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Achievement Submission Guidelines</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-trophy me-2"></i>What Qualifies as an Achievement?</h6>
+                        <ul class="small">
+                            <li>Academic honors and awards</li>
+                            <li>Competition wins and rankings</li>
+                            <li>Publications and research work</li>
+                            <li>Leadership positions</li>
+                            <li>Certifications and courses</li>
+                            <li>Community service and volunteering</li>
+                            <li>Sports and cultural achievements</li>
+                            <li>Innovation and patents</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-file-alt me-2"></i>Required Documentation</h6>
+                        <ul class="small">
+                            <li>Official certificates or letters</li>
+                            <li>Screenshots of online achievements</li>
+                            <li>News articles or announcements</li>
+                            <li>Event programs or brochures</li>
+                            <li>Email confirmations</li>
+                            <li>Grade sheets or transcripts</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <h6><i class="fas fa-clock me-2"></i>Review Process</h6>
+                    <div class="timeline">
+                        <div class="small">
+                            <strong>Step 1:</strong> Submit your achievement with supporting documents<br>
+                            <strong>Step 2:</strong> Faculty review (typically 2-5 business days)<br>
+                            <strong>Step 3:</strong> Approval/rejection with feedback<br>
+                            <strong>Step 4:</strong> Points awarded and added to your profile
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Character counters
+    function updateCharCounter(input, counterElement, max) {
+        const current = input.value.length;
+        const remaining = max - current;
+        
+        counterElement.textContent = `${current}/${max} characters`;
+        
+        if (remaining < 50) {
+            counterElement.className = 'char-counter danger';
+        } else if (remaining < 100) {
+            counterElement.className = 'char-counter warning';
+        } else {
+            counterElement.className = 'char-counter';
+        }
+    }
+
+    // Initialize character counters
+    document.querySelectorAll('.char-counter').forEach(counter => {
+        const targetId = counter.dataset.target;
+        const max = parseInt(counter.dataset.max);
+        const input = document.getElementById(targetId);
+        
+        if (input) {
+            updateCharCounter(input, counter, max);
+            input.addEventListener('input', () => updateCharCounter(input, counter, max));
+        }
+    });
+
+    // Live preview updates
+    const titleInput = document.getElementById('title');
+    const descriptionInput = document.getElementById('description');
+    const categorySelect = document.getElementById('category');
+    const levelSelect = document.getElementById('level');
+    const organizationInput = document.getElementById('issuing_organization');
+    const dateInput = document.getElementById('achievement_date');
+    const positionInput = document.getElementById('position');
+    const tagsInput = document.getElementById('tags');
+
+    function updatePreview() {
+        document.getElementById('previewTitle').textContent = 
+            titleInput.value || 'Achievement Title';
+        
+        document.getElementById('previewDescription').textContent = 
+            descriptionInput.value || 'Your achievement description will appear here...';
+        
+        document.getElementById('previewCategory').textContent = 
+            categorySelect.options[categorySelect.selectedIndex].text || 'Category';
+        
+        document.getElementById('previewLevel').textContent = 
+            levelSelect.options[levelSelect.selectedIndex].text || 'Level';
+        
+        document.getElementById('previewOrganization').textContent = 
+            organizationInput.value || 'Organization';
+        
+        document.getElementById('previewDate').textContent = 
+            dateInput.value || 'Date';
+
+        // Position
+        const positionElement = document.getElementById('previewPosition');
+        if (positionInput.value) {
+            positionElement.style.display = 'block';
+            positionElement.querySelector('span').textContent = positionInput.value;
+        } else {
+            positionElement.style.display = 'none';
+        }
+
+        // Tags
+        const tagsElement = document.getElementById('previewTags');
+        const tagsContainer = tagsElement.querySelector('.tags-container');
+        
+        if (tagsInput.value) {
+            tagsElement.style.display = 'block';
+            const tags = tagsInput.value.split(',');
+            tagsContainer.innerHTML = tags.map(tag => 
+                `<span class="badge me-1 mb-1" style="background: rgba(255,255,255,0.3);">${tag.trim()}</span>`
+            ).join('');
+        } else {
+            tagsElement.style.display = 'none';
+        }
+    }
+
+    // Attach preview update events
+    [titleInput, descriptionInput, categorySelect, levelSelect, 
+     organizationInput, dateInput, positionInput, tagsInput].forEach(element => {
+        if (element) {
+            element.addEventListener('input', updatePreview);
+            element.addEventListener('change', updatePreview);
+        }
+    });
+
+    // Category points info
+    categorySelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const points = selectedOption.dataset.points;
+        const pointsInfo = document.getElementById('pointsInfo');
+        
+        if (points) {
+            pointsInfo.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-star me-1"></i>
+                    <strong>${selectedOption.text}:</strong> ${points} points
+                </div>
+                <small class="text-muted">Points may be adjusted by faculty during review</small>
+            `;
+        } else {
+            pointsInfo.innerHTML = '<p class="text-muted">Select a category to see point values</p>';
+        }
+    });
+
+    // File upload handling
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('verification_document');
+    const uploadContent = document.getElementById('uploadContent');
+    const filePreview = document.getElementById('filePreview');
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            handleFileSelection(this.files[0]);
+        }
+    });
+
+    function handleFileSelection(file) {
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size must be less than 5MB');
+            return;
+        }
+
+        // Validate file type
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('Only PDF, JPG, PNG files are allowed');
+            return;
+        }
+
+        // Show preview
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+        
+        uploadContent.style.display = 'none';
+        filePreview.style.display = 'block';
+
+        // Set file to input
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+    }
+
+    window.removeFile = function() {
+        fileInput.value = '';
+        uploadContent.style.display = 'block';
+        filePreview.style.display = 'none';
+    };
+
+    // Set max date to today
+    dateInput.max = new Date().toISOString().split('T')[0];
+
+    // Form validation
+    document.getElementById('achievementForm').addEventListener('submit', function(e) {
+        const requiredFields = ['title', 'category', 'description', 'achievement_date', 'issuing_organization', 'level'];
+        let isValid = true;
+
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill in all required fields');
+        }
+    });
+
+    // Save draft functionality
+    window.saveDraft = function() {
+        const formData = new FormData(document.getElementById('achievementForm'));
+        
+        // Add draft flag
+        formData.append('is_draft', 'true');
+        
+        // Here you would typically send to a draft endpoint
+        alert('Draft saved! (Note: Draft functionality needs backend implementation)');
+    };
+
+    // Auto-save every 30 seconds
+    setInterval(function() {
+        if (titleInput.value || descriptionInput.value) {
+            // Auto-save logic here
+            console.log('Auto-saving...');
+        }
+    }, 30000);
+});
+</script>
+{% endblock %}

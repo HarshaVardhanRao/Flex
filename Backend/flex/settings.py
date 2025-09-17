@@ -56,9 +56,12 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'flexapp.middleware.SecurityMiddleware',
+    'flexapp.middleware.AuditLogMiddleware',
+    # 'flexapp.middleware.RoleBasedAccessMiddleware',  # Temporarily disabled to fix redirect loop
+    'flexapp.middleware.SessionTimeoutMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.common.CommonMiddleware'
 ]
 
 ROOT_URLCONF = 'flex.urls'
@@ -216,4 +219,67 @@ CSRF_TRUSTED_ORIGINS = [
 
 # If you want to allow all origins (not recommended for production)
 # CORS_ALLOW_ALL_ORIGINS = True
+
+# Google Gemini AI Configuration
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')  # Set this in your environment variables
+
+# FlexOn AI Settings
+FLEXON_AI_ENABLED = True
+FLEXON_AI_MODEL = 'gemini-pro'
+FLEXON_AI_MAX_TOKENS = 4096
+FLEXON_AI_TEMPERATURE = 0.3  # Lower temperature for more consistent ORM generation
+
+# Security Settings
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# Session Settings
+SESSION_COOKIE_SECURE = not DEBUG  # Use secure cookies in production
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_TIMEOUT = 3600  # 1 hour session timeout
+
+# API Settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour'
+    }
+}
+
+# Email Settings for Notifications
+DEFAULT_FROM_EMAIL = 'noreply@flexapp.com'
+
+# SMS and Push Notification Settings (configure as needed)
+SMS_API_KEY = os.getenv('SMS_API_KEY')
+SMS_API_URL = os.getenv('SMS_API_URL')
+FCM_SERVER_KEY = os.getenv('FCM_SERVER_KEY')
+
+# Audit Log Settings
+AUDIT_LOG_ENABLED = True
+AUDIT_LOG_EXCLUDE_PATHS = ['/static/', '/media/', '/admin/jsi18n/']
+AUDIT_LOG_EXCLUDE_METHODS = ['OPTIONS']
+
+# Security Log Settings
+SECURITY_LOG_ENABLED = True
+SECURITY_LOG_FAILED_LOGIN_THRESHOLD = 5
+SECURITY_LOG_SUSPICIOUS_ACTIVITY_THRESHOLD = 10
+
+# API Key Settings
+API_KEY_EXPIRY_DAYS = 365
+API_KEY_RATE_LIMIT_DEFAULT = 1000  # Per hour
 

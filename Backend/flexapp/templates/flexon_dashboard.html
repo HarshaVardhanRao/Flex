@@ -1,83 +1,267 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-5">
-  <h2 class="mb-4">FlexOn Natural Language Query Dashboard</h2>
-  <form id="flexon-form" method="post">
-    {% csrf_token %}
-    <div class="input-group mb-3">
-      <input type="text" class="form-control" name="query" placeholder="Type your query (e.g. 'students with more than 2 Python projects')" required>
-      <button class="btn btn-primary" type="submit">Ask</button>
-    </div>
-  </form>
-  <div id="clarification" class="alert alert-warning d-none"></div>
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-gradient-primary text-white">
+          <h2 class="mb-0 text-center">
+            <i class="fas fa-robot me-2"></i>
+            FlexOn AI-Powered Query Dashboard
+          </h2>
+          <p class="mb-0 text-center opacity-75">Powered by Google Gemini AI for natural language database queries</p>
+        </div>
+        
+        <div class="card-body p-4">
+          <!-- AI Query Form -->
+          <form id="flexon-form" method="post" class="mb-4">
+            {% csrf_token %}
+            <div class="input-group input-group-lg">
+              <span class="input-group-text bg-primary text-white">
+                <i class="fas fa-comments"></i>
+              </span>
+              <input type="text" class="form-control" name="query" 
+                     placeholder="Ask anything about your data... e.g., 'Show me top 5 students with the most Python projects'" 
+                     required>
+              <button class="btn btn-primary px-4" type="submit">
+                <i class="fas fa-search me-1"></i> Ask AI
+              </button>
+            </div>
+            <small class="form-text text-muted mt-2">
+              <i class="fas fa-lightbulb me-1"></i>
+              Try queries like: "Students with cloud certifications", "Top LeetCode performers", "Department-wise placement stats"
+            </small>
+          </form>
 
-  <!-- Results Table -->
-  <div id="results">
-    {% if results %}
-      <div class="table-responsive">
-        <table class="table table-bordered table-striped">
-          <thead class="table-dark">
-            <tr>
-              {% for key, value in results.0.items %}
-                {% if key not in 'password,is_superuser,is_staff,is_active' %}
-                  <th>{{ key|title }}</th>
-                {% endif %}
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for record in results %}
-              <tr>
-                {% for key, value in record.items %}
-                  {% if key not in 'password,is_superuser,is_staff,is_active' %}
-                    <td>{{ value }}</td>
-                  {% endif %}
-                {% endfor %}
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+          <!-- AI Status Indicator -->
+          <div id="ai-status" class="alert alert-info d-none">
+            <i class="fas fa-brain me-2"></i>
+            <span id="status-text">AI is processing your query...</span>
+          </div>
+
+          <!-- Clarification/Error Messages -->
+          <div id="clarification" class="alert alert-warning d-none"></div>
+
+          <!-- Quick Action Buttons -->
+          <div class="mb-4">
+            <h5 class="text-primary mb-3">
+              <i class="fas fa-bolt me-2"></i>Quick AI Queries
+            </h5>
+            <div class="row g-2">
+              <div class="col-md-6 col-lg-3">
+                <button class="btn btn-outline-primary w-100 quick-query" 
+                        data-query="Show top 10 students with highest LeetCode problems solved">
+                  <i class="fas fa-trophy me-1"></i>Top LeetCode
+                </button>
+              </div>
+              <div class="col-md-6 col-lg-3">
+                <button class="btn btn-outline-success w-100 quick-query" 
+                        data-query="Find students with multiple placement offers">
+                  <i class="fas fa-briefcase me-1"></i>Multiple Offers
+                </button>
+              </div>
+              <div class="col-md-6 col-lg-3">
+                <button class="btn btn-outline-info w-100 quick-query" 
+                        data-query="List students with cloud computing certifications">
+                  <i class="fas fa-cloud me-1"></i>Cloud Experts
+                </button>
+              </div>
+              <div class="col-md-6 col-lg-3">
+                <button class="btn btn-outline-warning w-100 quick-query" 
+                        data-query="Show placement statistics by department">
+                  <i class="fas fa-chart-bar me-1"></i>Placement Stats
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading Spinner -->
+          <div id="loading-spinner" class="text-center d-none">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">AI is analyzing your query...</p>
+          </div>
+
+          <!-- Results Section -->
+          <div id="results-section" class="{% if not results %}d-none{% endif %}">
+            <h5 class="text-primary mb-3">
+              <i class="fas fa-table me-2"></i>Query Results
+            </h5>
+            <div id="results">
+              {% if results %}
+                <div class="table-responsive">
+                  <table class="table table-hover table-bordered">
+                    <thead class="table-dark">
+                      <tr>
+                        {% for key, value in results.0.items %}
+                          {% if key not in 'password,is_superuser,is_staff,is_active' %}
+                            <th class="text-nowrap">{{ key|title }}</th>
+                          {% endif %}
+                        {% endfor %}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for record in results %}
+                        <tr>
+                          {% for key, value in record.items %}
+                            {% if key not in 'password,is_superuser,is_staff,is_active' %}
+                              <td>{{ value }}</td>
+                            {% endif %}
+                          {% endfor %}
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="text-muted mt-2">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Showing {{ results|length }} result{{ results|length|pluralize }}
+                </div>
+              {% else %}
+                <div class="alert alert-info">
+                  <i class="fas fa-info-circle me-2"></i>No results found for your query.
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Chart Container -->
+          <div id="chart-container" class="mt-4"></div>
+          
+          <!-- Export Options -->
+          <div id="export-buttons" class="mt-4 {% if not results %}d-none{% endif %}">
+            <h6 class="text-primary mb-2">
+              <i class="fas fa-download me-2"></i>Export Options
+            </h6>
+            <div class="btn-group" role="group">
+              <button class="btn btn-outline-secondary" id="export-csv">
+                <i class="fas fa-file-csv me-1"></i>CSV
+              </button>
+              <button class="btn btn-outline-secondary" id="export-xlsx">
+                <i class="fas fa-file-excel me-1"></i>Excel
+              </button>
+              <button class="btn btn-outline-secondary" id="export-pdf">
+                <i class="fas fa-file-pdf me-1"></i>PDF
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Footer with AI Info -->
+        <div class="card-footer bg-light text-center">
+          <small class="text-muted">
+            <i class="fas fa-magic me-1"></i>
+            Powered by Google Gemini AI | Natural Language to SQL Query Processing
+          </small>
+        </div>
       </div>
-    {% else %}
-      <div class="alert alert-info">No results found.</div>
-    {% endif %}
-  </div>
-
-  <div id="chart-container" class="mt-4"></div>
-  <div id="export-buttons" class="mt-3 {% if not results %}d-none{% endif %}">
-    <button class="btn btn-outline-secondary" id="export-csv">Export CSV</button>
-    <button class="btn btn-outline-secondary" id="export-xlsx">Export Excel</button>
-    <button class="btn btn-outline-secondary" id="export-pdf">Export PDF</button>
-  </div>
-
-  <div class="mt-4">
-    <h5>Quick Actions</h5>
-    <button class="btn btn-info quick-query" data-query="Top 10 students by LeetCode problems solved">Top 10 LeetCode</button>
-    <button class="btn btn-info quick-query" data-query="Students with more than 1 placement offer">Multiple Offers</button>
-    <button class="btn btn-info quick-query" data-query="Students with Cloud-related certifications">Cloud Certs</button>
-    <button class="btn btn-info quick-query" data-query="Placed vs Not Placed (by Department)">Placement Stats</button>
+    </div>
   </div>
 </div>
+
+<!-- Custom CSS -->
+<style>
+.bg-gradient-primary {
+  background: linear-gradient(45deg, #007bff, #0056b3);
+}
+
+.card {
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.quick-query {
+  transition: all 0.3s ease;
+  border-radius: 10px;
+}
+
+.quick-query:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#loading-spinner {
+  padding: 2rem 0;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+.input-group-lg .input-group-text {
+  font-size: 1.1rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#results-section {
+  animation: fadeIn 0.5s ease-out;
+}
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const form = document.getElementById('flexon-form');
+const loadingSpinner = document.getElementById('loading-spinner');
+const aiStatus = document.getElementById('ai-status');
+const statusText = document.getElementById('status-text');
+
 form.onsubmit = function(e) {
   e.preventDefault();
-  const query = form.query.value;
+  const query = form.query.value.trim();
+  
+  if (!query) return;
+  
+  // Show loading state
+  showLoading(true);
+  updateStatus('AI is analyzing your natural language query...');
+  
   fetch('', {
     method: 'POST',
-    headers: {'X-CSRFToken': form.csrfmiddlewaretoken.value},
+    headers: {
+      'X-CSRFToken': form.csrfmiddlewaretoken.value,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
     body: new URLSearchParams({query})
   })
   .then(r => r.json())
   .then(data => {
-    document.getElementById('clarification').classList.toggle('d-none', !data.clarification);
-    document.getElementById('clarification').textContent = data.clarification || '';
+    showLoading(false);
+    
+    // Handle clarification/error messages
+    const clarificationDiv = document.getElementById('clarification');
+    if (data.clarification) {
+      clarificationDiv.textContent = data.clarification;
+      clarificationDiv.classList.remove('d-none');
+      updateStatus('Query processed with some clarifications.');
+    } else {
+      clarificationDiv.classList.add('d-none');
+      updateStatus('Query successfully processed by AI!');
+    }
+    
     renderResults(data);
+    
+    // Hide status after 3 seconds if successful
+    if (!data.clarification) {
+      setTimeout(() => {
+        aiStatus.classList.add('d-none');
+      }, 3000);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showLoading(false);
+    updateStatus('Error processing query. Please try again.');
+    document.getElementById('clarification').textContent = 'Network error occurred. Please check your connection.';
+    document.getElementById('clarification').classList.remove('d-none');
   });
 };
 
+// Quick query buttons
 for (const btn of document.querySelectorAll('.quick-query')) {
   btn.onclick = () => {
     form.query.value = btn.dataset.query;
@@ -85,22 +269,35 @@ for (const btn of document.querySelectorAll('.quick-query')) {
   };
 }
 
+function showLoading(show) {
+  loadingSpinner.classList.toggle('d-none', !show);
+  form.querySelector('button[type="submit"]').disabled = show;
+}
+
+function updateStatus(message) {
+  statusText.textContent = message;
+  aiStatus.classList.remove('d-none');
+}
+
 function renderResults(data) {
+  const resultsSection = document.getElementById('results-section');
   const resultsDiv = document.getElementById('results');
+  
   if (!data.results || !data.results.length) {
-    resultsDiv.innerHTML = '<div class="alert alert-info">No results found.</div>';
+    resultsDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>No results found for your query.</div>';
     document.getElementById('export-buttons').classList.add('d-none');
     document.getElementById('chart-container').innerHTML = '';
+    resultsSection.classList.add('d-none');
     return;
   }
 
   const excludeKeys = ['password', 'is_superuser', 'is_staff', 'is_active'];
 
-  // Build dynamic table
-  let html = '<div class="table-responsive"><table class="table table-bordered table-striped"><thead class="table-dark"><tr>';
+  // Build dynamic table with enhanced styling
+  let html = '<div class="table-responsive"><table class="table table-hover table-bordered"><thead class="table-dark"><tr>';
   Object.keys(data.results[0]).forEach(key => {
     if (!excludeKeys.includes(key)) {
-      html += `<th>${key}</th>`;
+      html += `<th class="text-nowrap">${key.replace(/_/g, ' ').toUpperCase()}</th>`;
     }
   });
   html += '</tr></thead><tbody>';
@@ -109,16 +306,20 @@ function renderResults(data) {
     html += '<tr>';
     Object.entries(record).forEach(([key, value]) => {
       if (!excludeKeys.includes(key)) {
-        html += `<td>${value}</td>`;
+        html += `<td>${value !== null ? value : '-'}</td>`;
       }
     });
     html += '</tr>';
   });
 
   html += '</tbody></table></div>';
+  html += `<div class="text-muted mt-2"><i class="fas fa-info-circle me-1"></i>Showing ${data.results.length} result${data.results.length !== 1 ? 's' : ''}</div>`;
+  
   resultsDiv.innerHTML = html;
+  resultsSection.classList.remove('d-none');
   document.getElementById('export-buttons').classList.remove('d-none');
 
+  // Handle charts
   if (data.chart) {
     document.getElementById('chart-container').innerHTML = '<canvas id="flexon-chart"></canvas>';
     new Chart(document.getElementById('flexon-chart'), data.chart);
@@ -126,5 +327,16 @@ function renderResults(data) {
     document.getElementById('chart-container').innerHTML = '';
   }
 }
+
+// Export functionality (placeholder)
+document.getElementById('export-csv').onclick = () => {
+  alert('CSV export functionality will be implemented.');
+};
+document.getElementById('export-xlsx').onclick = () => {
+  alert('Excel export functionality will be implemented.');
+};
+document.getElementById('export-pdf').onclick = () => {
+  alert('PDF export functionality will be implemented.');
+};
 </script>
 {% endblock %}

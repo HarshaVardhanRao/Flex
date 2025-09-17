@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied - Flex Portal</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .error-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 3rem;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .error-icon {
+            font-size: 4rem;
+            color: #e74c3c;
+            margin-bottom: 1rem;
+        }
+        
+        .error-code {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .error-title {
+            font-size: 1.5rem;
+            color: #34495e;
+            margin-bottom: 1rem;
+        }
+        
+        .error-message {
+            color: #7f8c8d;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        
+        .back-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+            text-align: left;
+        }
+        
+        .info-box h4 {
+            margin: 0 0 0.5rem 0;
+            color: #2c3e50;
+        }
+        
+        .info-box ul {
+            margin: 0;
+            padding-left: 1.5rem;
+            color: #5a6c7d;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">🚫</div>
+        <div class="error-code">403</div>
+        <div class="error-title">Access Denied</div>
+        <div class="error-message">
+            You don't have permission to access the Placement Dashboard. 
+            This area is restricted to placement coordinators only.
+        </div>
+        
+        <div class="info-box">
+            <h4>📋 To access the Placement Dashboard, you need:</h4>
+            <ul>
+                <li>A faculty account with coordinator role</li>
+                <li>Placement coordinator permissions enabled</li>
+                <li>Authorization from the system administrator</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <a href="{% url 'login' %}" class="back-btn">← Back to Login</a>
+            <span style="margin: 0 1rem;">or</span>
+            <a href="{% url 'dashboard' %}" class="back-btn">Go to Dashboard</a>
+        </div>
+        
+        <div style="margin-top: 2rem; font-size: 0.9rem; color: #95a5a6;">
+            If you believe this is an error, please contact your system administrator.
+        </div>
+    </div>
+</body>
+</html>

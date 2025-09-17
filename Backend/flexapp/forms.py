@@ -26,8 +26,7 @@ class CertificateForm(forms.ModelForm):
     class Meta:
         model = Certificate
         fields = ['title', 'source', 'category', 'year_and_sem', 'certificate', 
-                 'course_link', 'rank', 'recognition', 'event_type', 
-                 'fest_name', 'course_provider', 'domain', 'duration', 'technologies']
+                 'course_link', 'domain', 'certificate_id', 'validity_period']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Certificate Title'}),
             'source': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Issuing Organization'}),
@@ -35,13 +34,9 @@ class CertificateForm(forms.ModelForm):
             'year_and_sem': forms.Select(attrs={'class': 'form-select'}),
             'certificate': forms.FileInput(attrs={'class': 'form-control'}),
             'course_link': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'Course/Certificate URL'}),
-            'rank': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'placeholder': 'Rank (if applicable)'}),
-            'recognition': forms.Select(attrs={'class': 'form-select'}),
-            'event_type': forms.Select(attrs={'class': 'form-select', 'id': 'event-type-select'}),
-            'fest_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Fest/Event Name (if applicable)'}),
-            'course_provider': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Course Provider (if applicable)'}),
             'domain': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Domain/Field of Study'}),
-            'duration': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Duration (e.g., 8 weeks)'}),
+            'certificate_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Certificate ID (if available)'}),
+            'validity_period': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Validity Period (e.g., 2 years)'}),
         }
     
     def __init__(self, *args, **kwargs):
@@ -50,31 +45,18 @@ class CertificateForm(forms.ModelForm):
         super(CertificateForm, self).__init__(*args, **kwargs)
         
         # Mark some fields as not required
-        self.fields['rank'].required = False
-        self.fields['recognition'].required = False
-        self.fields['fest_name'].required = False
-        self.fields['course_provider'].required = False
         self.fields['domain'].required = False
-        self.fields['duration'].required = False
+        self.fields['certificate_id'].required = False
+        self.fields['validity_period'].required = False
         
     def clean(self):
         cleaned_data = super().clean()
         category = cleaned_data.get('category')
         technologies = cleaned_data.get('technologies')
-        rank = cleaned_data.get('rank')
-        recognition = cleaned_data.get('recognition')
         
         # Validate technologies are only for technical category
         if category != 'technical' and technologies:
             self.add_error('technologies', 'Technologies can only be selected for Technical certificates')
-        
-        # Validate either rank or recognition is provided, but not both
-        if rank and recognition:
-            self.add_error('rank', 'Please provide either rank or recognition, not both')
-            self.add_error('recognition', 'Please provide either rank or recognition, not both')
-        elif not rank and not recognition:
-            self.add_error('rank', 'Please provide either rank or recognition')
-            self.add_error('recognition', 'Please provide either rank or recognition')
             
         return cleaned_data
         

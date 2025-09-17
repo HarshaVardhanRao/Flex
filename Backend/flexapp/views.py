@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from .forms import *
 import logging
 from django.contrib.auth.decorators import login_required
-from .models import Projects, Certificate, student, LeetCode, Faculty,FillOutForm, FillOutField, student, Technology
+from .models import Projects, Certificate, student, LeetCode, Faculty,FillOutForm, FillOutField, student, Technology, AuditLog, Achievement, AchievementCategory, ApprovalWorkflow, AcademicPerformance, EnhancedNotification, NotificationTemplate
 import requests
 from django.http import HttpResponse, JsonResponse
 import json
@@ -21,7 +21,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import StudentSerializer, ProjectSerializer, CertificateSerializer, TechnologySerializer
-from django.db.models import F
+from django.db.models import F, Sum, Count, Avg
 from .forms import PlacementOfferForm
 
 # Faculty: Add placement offer for any student
@@ -83,10 +83,17 @@ def index(request):
         print(request.user)
         if request.user.is_superuser:
             return redirect('admin_dashboard')
-        if request.user.type() == "student":
+        try:
+            if hasattr(request.user, 'type') and request.user.type() == "student":
+                return redirect('dashboard')
+            elif hasattr(request.user, 'type') and request.user.type() == "Faculty":
+                return redirect('faculty')
+            else:
+                # If user doesn't have type method, redirect to dashboard
+                return redirect('dashboard')
+        except:
+            # Fallback to dashboard for any errors
             return redirect('dashboard')
-        if request.user.type() == "Faculty":
-            return redirect('faculty')
     print("redirecting to Login")
     return redirect('login')
 
@@ -261,13 +268,83 @@ def create_certificate_api(request):
 
 def getStudentDetails(student):
     try:
+        # Calculate profile completion
+        profile_completion = student.calculate_profile_completion()
+        student.save()
+        
+        # Get academic performance
+        academic_records = AcademicPerformance.objects.filter(student=student).order_by('-year', '-semester')
+        latest_academic = academic_records.first() if academic_records.exists() else None
+        
+        # Get achievements with approval status
+        achievements = Achievement.objects.filter(student=student).order_by('-submission_date')
+        achievements_summary = {
+            'total': achievements.count(),
+            'approved': achievements.filter(status='approved').count(),
+            'pending': achievements.filter(status='pending').count(),
+            'rejected': achievements.filter(status='rejected').count(),
+        }
+        
         # Ensure we are querying the correct model field
-        projects = Projects.objects.filter(contributors=student)  # Updated line
-        # projects = student.projects.all()
-        print(projects)
-
-        Tech_certifications = Certificate.objects.filter(rollno=student, category="Technical")
-        For_lang = Certificate.objects.filter(rollno=student, category="Foreign Language")
+        projects = Projects.objects.filter(contributors=student)
+        
+        # Get certificates by category
+        technical_certificates = Certificate.objects.filter(rollno=student, category="technical")
+        foreign_language_certificates = Certificate.objects.filter(rollno=student, category="foreign_language")
+        co_curricular_certificates = Certificate.objects.filter(rollno=student, category="co_curricular")
+        extra_curricular_certificates = Certificate.objects.filter(rollno=student, category="extra_curricular")
+        
+        # Get projects summary
+        projects_summary = {
+            'total': projects.count(),
+            'completed': projects.filter(status='Completed').count(),
+            'in_progress': projects.filter(status='In_progress').count(),
+            'initialized': projects.filter(status='Initialized').count(),
+        }
+        
+        # Get LeetCode stats
+        try:
+            leetcode_data = LeetCode.objects.get(rollno=student)
+        except LeetCode.DoesNotExist:
+            leetcode_data = LeetCode.objects.create(rollno=student)
+        
+        # Get placement offers
+        placement_offers = PlacementOffer.objects.filter(student=student)
+        
+        # Calculate analytics for dashboard charts
+        try:
+            # Avoid Sum aggregation initially, calculate manually to prevent 'mul' error
+            approved_achievements = achievements.filter(status='approved')
+            total_points = 0
+            for achievement in approved_achievements:
+                if achievement.points_awarded:
+                    total_points += achievement.points_awarded
+                    
+            analytics = {
+                'achievement_points': total_points,
+                'monthly_activity': get_monthly_activity(student),
+                'skill_distribution': get_skill_distribution(student),
+                'comparative_ranking': get_comparative_ranking(student),
+            }
+        except Exception as e:
+            # Handle any aggregation errors
+            logging.error(f"Error calculating analytics: {e}")
+            analytics = {
+                'achievement_points': 0,
+                'monthly_activity': [],
+                'skill_distribution': {},
+                'comparative_ranking': 0,
+            }
+        
+        # Add academic trend data
+        analytics['academic_trend'] = []
+        for record in academic_records[:6]:  # Last 6 semesters
+            analytics['academic_trend'].append({
+                'semester': f"{record.year}-{record.semester}",
+                'cgpa': float(record.cgpa) if record.cgpa else 0,
+                'sgpa': float(record.sgpa) if record.sgpa else 0,
+                'credits': record.credits_earned,
+            })
 
         return {
             "name": student.first_name,
@@ -275,13 +352,142 @@ def getStudentDetails(student):
             "dept": student.dept,
             "section": student.section,
             "leetcode_user": student.leetcode_user,
+            'student': student,
+            'profile_completion': profile_completion,
+            'academic_records': academic_records,
+            'latest_academic': latest_academic,
+            'achievements': achievements,
+            'achievements_summary': achievements_summary,
             'projects': serializers.serialize('json', projects),
-            'Technical': serializers.serialize('json', Tech_certifications),
-            'Foreign_languages': serializers.serialize('json', For_lang)
+            'projects_summary': projects_summary,
+            'technical_certificates': serializers.serialize('json', technical_certificates),
+            'foreign_language_certificates': serializers.serialize('json', foreign_language_certificates),
+            'co_curricular_certificates': serializers.serialize('json', co_curricular_certificates),
+            'extra_curricular_certificates': serializers.serialize('json', extra_curricular_certificates),
+            'leetcode_data': leetcode_data,
+            'placement_offers': placement_offers,
+            'analytics': analytics,
+            'pending_approvals': ApprovalWorkflow.objects.filter(
+                student=student, 
+                current_status__in=['pending', 'under_review']
+            ).count(),
+            'recent_notifications': EnhancedNotification.objects.filter(
+                recipient_student=student,
+                is_read=False
+            )[:5],
+            # Keep old keys for backward compatibility
+            'Technical': serializers.serialize('json', technical_certificates),
+            'Foreign_languages': serializers.serialize('json', foreign_language_certificates)
         }
     except Exception as e:
         logging.error(f"Error in getStudentDetails: {e}")
         return {}
+
+
+def get_monthly_activity(student):
+    """Get monthly activity data for the last 12 months"""
+    from datetime import datetime, timedelta
+    
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365)
+    
+    # Get activity counts by month
+    activities = []
+    for i in range(12):
+        month_start = start_date + timedelta(days=30*i)
+        month_end = month_start + timedelta(days=30)
+        
+        # Count various activities for this month
+        certificates = Certificate.objects.filter(
+            rollno=student,
+            uploaded_at__range=[month_start, month_end]
+        ).count()
+        
+        achievements = Achievement.objects.filter(
+            student=student,
+            submission_date__range=[month_start, month_end]
+        ).count()
+        
+        activities.append({
+            'month': month_start.strftime('%b %Y'),
+            'certificates': certificates,
+            'achievements': achievements,
+            'total': certificates + achievements
+        })
+    
+    return activities
+
+
+def get_skill_distribution(student_obj):
+    """Get skill distribution from certificates and projects"""
+    skills = {}
+    
+    # Get skills from technical certificates
+    tech_certs = Certificate.objects.filter(rollno=student_obj, category='technical')
+    for cert in tech_certs:
+        if cert.domain:
+            skills[cert.domain] = skills.get(cert.domain, 0) + 1
+    
+    # Get technologies from projects
+    projects = Projects.objects.filter(contributors=student_obj)
+    for project in projects:
+        for tech in project.technologies.all():
+            skills[tech.name] = skills.get(tech.name, 0) + 1
+    
+    # Convert to list of dictionaries for frontend
+    return [{'skill': k, 'count': v} for k, v in sorted(skills.items(), key=lambda x: x[1], reverse=True)[:10]]
+
+
+def get_comparative_ranking(student_obj):
+    """Get student's ranking compared to peers"""
+    
+    # Get all students in same department and year
+    peers = student.objects.filter(dept=student_obj.dept, year=student_obj.year)
+    
+    # Calculate various metrics
+    cert_count = Certificate.objects.filter(rollno=student_obj).count()
+    project_count = Projects.objects.filter(contributors=student_obj).count()
+    achievement_count = Achievement.objects.filter(student=student_obj, status='approved').count()
+    
+    return {
+        'certificates': {
+            'student': cert_count,
+            'percentile': calculate_percentile(peers, cert_count, 'certificates')
+        },
+        'projects': {
+            'student': project_count,
+            'percentile': calculate_percentile(peers, project_count, 'projects')
+        },
+        'achievements': {
+            'student': achievement_count,
+            'percentile': calculate_percentile(peers, achievement_count, 'achievements')
+        }
+    }
+
+
+def calculate_percentile(peers, student_value, metric_type):
+    """Calculate percentile ranking for a student"""
+    if not peers.exists():
+        return 50
+    
+    # Simple percentile calculation
+    better_count = 0
+    total_count = peers.count()
+    
+    for peer in peers:
+        if metric_type == 'certificates':
+            peer_value = Certificate.objects.filter(rollno=peer).count()
+        elif metric_type == 'projects':
+            peer_value = Projects.objects.filter(contributors=peer).count()
+        elif metric_type == 'achievements':
+            peer_value = Achievement.objects.filter(student=peer, status='approved').count()
+        else:
+            peer_value = 0
+        
+        if student_value > peer_value:
+            better_count += 1
+    
+    return int((better_count / total_count) * 100) if total_count > 0 else 50
 
 
 @login_required
@@ -292,6 +498,780 @@ def dashboard(request):
     except Exception as e:
         logging.error(f"Error in dashboard: {e}")
         return HttpResponse("An error occurred.")
+
+
+# Achievement Management Views
+@login_required
+def add_achievement(request):
+    """Add new achievement for approval"""
+    if request.method == 'POST':
+        try:
+            # Create achievement
+            achievement = Achievement.objects.create(
+                student=request.user,
+                submitted_by=request.user,
+                category_id=request.POST.get('category'),
+                title=request.POST.get('title'),
+                description=request.POST.get('description'),
+                achievement_date=request.POST.get('achievement_date'),
+                verification_method=request.POST.get('verification_method', '')
+            )
+            
+            # Handle file upload
+            if 'supporting_documents' in request.FILES:
+                achievement.supporting_documents = request.FILES['supporting_documents']
+                achievement.save()
+            
+            # Create approval workflow
+            ApprovalWorkflow.objects.create(
+                content_type='achievement',
+                object_id=achievement.id,
+                student=request.user,
+                current_status='pending'
+            )
+            
+            # Log the action
+            AuditLog.objects.create(
+                user=request.user,
+                action='create',
+                model_name='Achievement',
+                object_id=achievement.id,
+                description=f"Created achievement: {achievement.title}"
+            )
+            
+            # Create notification for faculty
+            faculty_members = Faculty.objects.filter(
+                coordinator_roles__name__icontains='academic'
+            )
+            for faculty in faculty_members:
+                EnhancedNotification.objects.create(
+                    recipient_faculty=faculty,
+                    title='New Achievement Submission',
+                    message=f'Student {request.user.username} submitted achievement: {achievement.title}',
+                    notification_type='new_submission',
+                    related_object_type='achievement',
+                    related_object_id=achievement.id
+                )
+            
+            messages.success(request, 'Achievement submitted successfully for approval!')
+            return redirect('dashboard')
+            
+        except Exception as e:
+            logging.error(f"Error adding achievement: {e}")
+            messages.error(request, 'Error submitting achievement. Please try again.')
+            return redirect('dashboard')
+    
+    categories = AchievementCategory.objects.filter(is_active=True)
+    return render(request, 'add_achievement.html', {'categories': categories})
+
+
+@login_required
+def achievement_list(request):
+    """List all achievements for current student"""
+    achievements = Achievement.objects.filter(student=request.user).order_by('-submission_date')
+    return render(request, 'achievement_list.html', {'achievements': achievements})
+
+
+# Faculty Views for Approval System
+@login_required 
+def faculty_approval_dashboard(request):
+    """Faculty dashboard for managing approvals"""
+    if request.user.type() != "Faculty":
+        return HttpResponse("Unauthorized", status=403)
+    
+    # Get pending approvals
+    pending_workflows = ApprovalWorkflow.objects.filter(
+        current_status__in=['pending', 'under_review']
+    ).order_by('submitted_at')
+    
+    # Get recent activity
+    recent_activities = AuditLog.objects.filter(
+        action__in=['approve', 'reject']
+    ).order_by('-timestamp')[:10]
+    
+    # Get summary statistics
+    summary = {
+        'pending_count': pending_workflows.filter(current_status='pending').count(),
+        'under_review_count': pending_workflows.filter(current_status='under_review').count(),
+        'total_pending': pending_workflows.count(),
+    }
+    
+    return render(request, 'faculty_approval_dashboard.html', {
+        'pending_workflows': pending_workflows,
+        'recent_activities': recent_activities,
+        'summary': summary
+    })
+
+
+@login_required
+def approve_achievement(request, achievement_id):
+    """Approve an achievement"""
+    if request.user.type() != "Faculty":
+        return HttpResponse("Unauthorized", status=403)
+    
+    try:
+        achievement = get_object_or_404(Achievement, id=achievement_id)
+        workflow = ApprovalWorkflow.objects.get(
+            content_type='achievement',
+            object_id=achievement_id
+        )
+        
+        if request.method == 'POST':
+            action = request.POST.get('action')
+            comments = request.POST.get('comments', '')
+            
+            if action == 'approve':
+                achievement.status = 'approved'
+                achievement.approved_by = request.user
+                achievement.approval_date = timezone.now()
+                achievement.faculty_comments = comments
+                
+                # Award points
+                achievement.points_awarded = achievement.category.points
+                achievement.is_verified = True
+                
+                workflow.current_status = 'approved'
+                workflow.approver_comments = comments
+                
+                # Create notification for student
+                EnhancedNotification.objects.create(
+                    recipient_student=achievement.student,
+                    title='Achievement Approved!',
+                    message=f'Your achievement "{achievement.title}" has been approved and {achievement.points_awarded} points awarded.',
+                    notification_type='achievement_approved',
+                    priority='high'
+                )
+                
+                messages.success(request, 'Achievement approved successfully!')
+                
+            elif action == 'reject':
+                achievement.status = 'rejected'
+                achievement.reviewed_by = request.user
+                achievement.review_date = timezone.now()
+                achievement.rejection_reason = comments
+                
+                workflow.current_status = 'rejected'
+                workflow.reviewer_comments = comments
+                
+                # Create notification for student
+                EnhancedNotification.objects.create(
+                    recipient_student=achievement.student,
+                    title='Achievement Needs Revision',
+                    message=f'Your achievement "{achievement.title}" needs revision. Reason: {comments}',
+                    notification_type='achievement_rejected',
+                    priority='medium'
+                )
+                
+                messages.warning(request, 'Achievement rejected.')
+                
+            achievement.save()
+            workflow.save()
+            
+            # Log the action
+            AuditLog.objects.create(
+                faculty=request.user,
+                action=action,
+                model_name='Achievement',
+                object_id=achievement.id,
+                description=f"{action.title()} achievement: {achievement.title}"
+            )
+            
+            return redirect('faculty_approval_dashboard')
+    
+    except Exception as e:
+        logging.error(f"Error in approval: {e}")
+        messages.error(request, 'Error processing approval. Please try again.')
+    
+    return render(request, 'approve_achievement.html', {
+        'achievement': achievement,
+        'workflow': workflow
+    })
+
+
+# Bulk Operations and Data Export
+@login_required
+def export_student_data(request):
+    """Export student data in various formats"""
+    if request.user.type() not in ["Faculty", "Admin"] and not request.user.is_superuser:
+        return HttpResponse("Unauthorized", status=403)
+    
+    export_format = request.GET.get('format', 'csv')
+    data_type = request.GET.get('type', 'students')
+    
+    try:
+        if data_type == 'students':
+            data = export_students_data(export_format)
+        elif data_type == 'achievements':
+            data = export_achievements_data(export_format)
+        elif data_type == 'certificates':
+            data = export_certificates_data(export_format)
+        elif data_type == 'projects':
+            data = export_projects_data(export_format)
+        else:
+            return HttpResponse("Invalid data type", status=400)
+        
+        return data
+        
+    except Exception as e:
+        logging.error(f"Error exporting data: {e}")
+        return HttpResponse("Error exporting data", status=500)
+
+
+def export_students_data(format_type):
+    """Export students data"""
+    students = student.objects.all().values(
+        'username', 'first_name', 'last_name', 'email', 'dept', 'year', 'section',
+        'current_cgpa', 'total_credits', 'profile_completion_percentage'
+    )
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="students.csv"'
+        
+        df = pd.DataFrame(list(students))
+        df.to_csv(response, index=False)
+        return response
+    
+    elif format_type == 'excel':
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="students.xlsx"'
+        
+        df = pd.DataFrame(list(students))
+        df.to_excel(response, index=False)
+        return response
+    
+    elif format_type == 'json':
+        return JsonResponse(list(students), safe=False)
+
+
+def export_achievements_data(format_type):
+    """Export achievements data"""
+    achievements = Achievement.objects.select_related('student', 'category').values(
+        'student__username', 'student__first_name', 'category__name',
+        'title', 'description', 'status', 'points_awarded', 'submission_date'
+    )
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="achievements.csv"'
+        
+        df = pd.DataFrame(list(achievements))
+        df.to_csv(response, index=False)
+        return response
+    
+    return JsonResponse(list(achievements), safe=False)
+
+
+def export_certificates_data(format_type):
+    """Export certificates data"""
+    certificates = Certificate.objects.select_related('rollno').values(
+        'rollno__username', 'rollno__first_name', 'title', 'category', 
+        'source', 'domain', 'year_and_sem', 'uploaded_at'
+    )
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="certificates.csv"'
+        
+        df = pd.DataFrame(list(certificates))
+        df.to_csv(response, index=False)
+        return response
+    
+    return JsonResponse(list(certificates), safe=False)
+
+
+def export_projects_data(format_type):
+    """Export projects data"""
+    projects = Projects.objects.select_related().values(
+        'title', 'description', 'status', 'year_and_sem', 'github_link'
+    )
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="projects.csv"'
+        
+        df = pd.DataFrame(list(projects))
+        df.to_csv(response, index=False)
+        return response
+    
+    return JsonResponse(list(projects), safe=False)
+
+
+# Portfolio Generation System
+@login_required
+def generate_portfolio(request):
+    """Generate student portfolio in PDF/Web format"""
+    try:
+        student_data = getStudentDetails(request.user)
+        
+        # Calculate portfolio metrics
+        portfolio_data = {
+            'student': request.user,
+            'academic_summary': get_academic_summary(request.user),
+            'achievement_summary': get_achievement_summary(request.user),
+            'project_highlights': get_project_highlights(request.user),
+            'skill_matrix': get_skill_matrix(request.user),
+            'certifications': get_certification_summary(request.user),
+            'generated_date': timezone.now(),
+            'verification_code': generate_verification_code(request.user)
+        }
+        
+        format_type = request.GET.get('format', 'web')
+        
+        if format_type == 'pdf':
+            return generate_pdf_portfolio(portfolio_data)
+        else:
+            return render(request, 'portfolio.html', portfolio_data)
+            
+    except Exception as e:
+        logging.error(f"Error generating portfolio: {e}")
+        messages.error(request, 'Error generating portfolio. Please try again.')
+        return redirect('dashboard')
+
+
+def get_academic_summary(student_obj):
+    """Get academic performance summary"""
+    latest_record = AcademicPerformance.objects.filter(student=student_obj).order_by('-year', '-semester').first()
+    
+    return {
+        'current_cgpa': latest_record.cgpa if latest_record else student_obj.current_cgpa,
+        'total_credits': latest_record.total_credits if latest_record else student_obj.total_credits,
+        'current_year': student_obj.year,
+        'department': student_obj.dept,
+        'class_rank': latest_record.class_rank if latest_record else None,
+        'attendance': latest_record.attendance_percentage if latest_record else None
+    }
+
+
+def get_achievement_summary(student_obj):
+    """Get achievements summary"""
+    achievements = Achievement.objects.filter(student=student_obj, status='approved')
+    
+    # Calculate total points manually to avoid aggregation issues
+    total_points = 0
+    for achievement in achievements:
+        if achievement.points_awarded:
+            total_points += achievement.points_awarded
+    
+    summary = {
+        'total_achievements': achievements.count(),
+        'total_points': total_points,
+        'categories': {},
+        'recent_achievements': achievements.order_by('-achievement_date')[:5]
+    }
+    
+    # Group by category
+    for achievement in achievements:
+        category = achievement.category.name
+        if category not in summary['categories']:
+            summary['categories'][category] = 0
+        summary['categories'][category] += 1
+    
+    return summary
+
+
+def get_project_highlights(student_obj):
+    """Get project highlights"""
+    projects = Projects.objects.filter(contributors=student_obj)
+    
+    return {
+        'total_projects': projects.count(),
+        'completed_projects': projects.filter(status='Completed').count(),
+        'technologies_used': list(set([tech.name for project in projects for tech in project.technologies.all()])),
+        'featured_projects': projects.filter(status='Completed').order_by('-id')[:3]
+    }
+
+
+def get_skill_matrix(student_obj):
+    """Get comprehensive skill matrix"""
+    skills = {
+        'technical': [],
+        'programming': [],
+        'certifications': [],
+        'soft_skills': []
+    }
+    
+    # Technical skills from projects
+    projects = Projects.objects.filter(contributors=student_obj)
+    for project in projects:
+        for tech in project.technologies.all():
+            if tech.name not in skills['programming']:
+                skills['programming'].append(tech.name)
+    
+    # Skills from certificates
+    certs = Certificate.objects.filter(rollno=student_obj, category='technical')
+    for cert in certs:
+        if cert.domain and cert.domain not in skills['technical']:
+            skills['technical'].append(cert.domain)
+    
+    # Skills from student profile
+    if student_obj.technical_skills:
+        skills['technical'].extend([skill.strip() for skill in student_obj.technical_skills.split(',')])
+    
+    if student_obj.soft_skills:
+        skills['soft_skills'] = [skill.strip() for skill in student_obj.soft_skills.split(',')]
+    
+    return skills
+
+
+def get_certification_summary(student_obj):
+    """Get certification summary"""
+    certs = Certificate.objects.filter(rollno=student_obj)
+    
+    summary = {
+        'total_certificates': certs.count(),
+        'by_category': {},
+        'recent_certifications': certs.order_by('-uploaded_at')[:5],
+        'top_providers': {}
+    }
+    
+    # Group by category
+    for cert in certs:
+        if cert.category not in summary['by_category']:
+            summary['by_category'][cert.category] = 0
+        summary['by_category'][cert.category] += 1
+        
+        if cert.source not in summary['top_providers']:
+            summary['top_providers'][cert.source] = 0
+        summary['top_providers'][cert.source] += 1
+    
+    return summary
+
+
+def generate_verification_code(student_obj):
+    """Generate unique verification code for portfolio"""
+    import hashlib
+    from datetime import datetime
+    
+    data = f"{student_obj.username}_{datetime.now().strftime('%Y%m%d')}"
+    return hashlib.md5(data.encode()).hexdigest()[:8]
+
+
+def generate_pdf_portfolio(portfolio_data):
+    """Generate PDF portfolio using reportlab"""
+    try:
+        from reportlab.lib.pagesizes import letter
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+        from io import BytesIO
+        
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+        
+        styles = getSampleStyleSheet()
+        story = []
+        
+        # Title
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            spaceAfter=30,
+            alignment=1,  # Center alignment
+            textColor=colors.HexColor('#2E86AB')
+        )
+        story.append(Paragraph(f"Academic Portfolio - {portfolio_data['student'].first_name} {portfolio_data['student'].last_name}", title_style))
+        story.append(Spacer(1, 12))
+        
+        # Student Information
+        student_info = [
+            ['Name:', f"{portfolio_data['student'].first_name} {portfolio_data['student'].last_name}"],
+            ['Roll Number:', portfolio_data['student'].roll_no],
+            ['Department:', portfolio_data['student'].dept],
+            ['Year:', str(portfolio_data['student'].year)],
+            ['Email:', portfolio_data['student'].email],
+            ['Current CGPA:', str(portfolio_data['academic_summary']['current_cgpa'] or 'N/A')],
+        ]
+        
+        student_table = Table(student_info, colWidths=[2*inch, 3*inch])
+        student_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        
+        story.append(student_table)
+        story.append(Spacer(1, 20))
+        
+        # Achievement Summary
+        story.append(Paragraph("Achievement Summary", styles['Heading2']))
+        achievement_data = portfolio_data['achievement_summary']
+        story.append(Paragraph(f"Total Achievements: {achievement_data['total_achievements']}", styles['Normal']))
+        story.append(Paragraph(f"Total Points Earned: {achievement_data['total_points']}", styles['Normal']))
+        story.append(Spacer(1, 12))
+        
+        # Project Summary
+        story.append(Paragraph("Project Portfolio", styles['Heading2']))
+        project_data = portfolio_data['project_highlights']
+        story.append(Paragraph(f"Total Projects: {project_data['total_projects']}", styles['Normal']))
+        story.append(Paragraph(f"Completed Projects: {project_data['completed_projects']}", styles['Normal']))
+        story.append(Spacer(1, 12))
+        
+        # Verification
+        story.append(Spacer(1, 20))
+        story.append(Paragraph(f"Verification Code: {portfolio_data['verification_code']}", styles['Normal']))
+        story.append(Paragraph(f"Generated on: {portfolio_data['generated_date'].strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+        
+        doc.build(story)
+        buffer.seek(0)
+        
+        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="portfolio_{portfolio_data["student"].username}.pdf"'
+        return response
+        
+    except ImportError:
+        messages.error(request, 'PDF generation not available. Please install reportlab.')
+        return redirect('dashboard')
+    except Exception as e:
+        logging.error(f"Error generating PDF: {e}")
+        messages.error(request, 'Error generating PDF portfolio.')
+        return redirect('dashboard')
+
+
+# Compliance and Accreditation Reports
+@login_required
+def compliance_reports(request):
+    """Generate compliance reports for NAAC, NBA, AICTE, NIRF"""
+    if not request.user.is_superuser and request.user.type() != "Faculty":
+        return HttpResponse("Unauthorized", status=403)
+    
+    report_type = request.GET.get('type', 'naac')
+    year = request.GET.get('year', datetime.now().year)
+    
+    try:
+        if report_type == 'naac':
+            data = generate_naac_report(year)
+        elif report_type == 'nba':
+            data = generate_nba_report(year)
+        elif report_type == 'aicte':
+            data = generate_aicte_report(year)
+        elif report_type == 'nirf':
+            data = generate_nirf_report(year)
+        else:
+            data = generate_custom_report(request)
+        
+        return render(request, 'compliance_reports.html', {
+            'report_type': report_type,
+            'year': year,
+            'data': data,
+            'generated_at': timezone.now()
+        })
+        
+    except Exception as e:
+        logging.error(f"Error generating compliance report: {e}")
+        messages.error(request, 'Error generating compliance report.')
+        return redirect('admin_dashboard')
+
+
+def generate_naac_report(year):
+    """Generate NAAC compliance report"""
+    total_students = student.objects.filter(admission_year=year).count()
+    
+    # Student participation metrics
+    participation_metrics = {
+        'total_students': total_students,
+        'students_with_achievements': Achievement.objects.filter(
+            student__admission_year=year, 
+            status='approved'
+        ).values('student').distinct().count(),
+        'students_with_certifications': Certificate.objects.filter(
+            rollno__admission_year=year
+        ).values('rollno').distinct().count(),
+        'students_with_projects': Projects.objects.filter(
+            contributors__admission_year=year
+        ).values('contributors').distinct().count(),
+    }
+    
+    # Calculate participation percentages
+    participation_metrics['achievement_participation_rate'] = (
+        participation_metrics['students_with_achievements'] / total_students * 100
+    ) if total_students > 0 else 0
+    
+    participation_metrics['certification_participation_rate'] = (
+        participation_metrics['students_with_certifications'] / total_students * 100
+    ) if total_students > 0 else 0
+    
+    # Quality metrics
+    quality_metrics = {
+        'avg_cgpa': student.objects.filter(admission_year=year).aggregate(
+            Avg('current_cgpa')
+        )['current_cgpa__avg'] or 0,
+        'students_above_8_cgpa': student.objects.filter(
+            admission_year=year, 
+            current_cgpa__gte=8.0
+        ).count(),
+        'placement_rate': calculate_placement_rate(year),
+    }
+    
+    # Co-curricular activities
+    cocurricular_metrics = {
+        'technical_events': Achievement.objects.filter(
+            student__admission_year=year,
+            category__name__icontains='technical'
+        ).count(),
+        'cultural_events': Achievement.objects.filter(
+            student__admission_year=year,
+            category__name__icontains='cultural'
+        ).count(),
+        'sports_events': Achievement.objects.filter(
+            student__admission_year=year,
+            category__name__icontains='sports'
+        ).count(),
+    }
+    
+    return {
+        'participation_metrics': participation_metrics,
+        'quality_metrics': quality_metrics,
+        'cocurricular_metrics': cocurricular_metrics,
+        'year': year
+    }
+
+
+def generate_nba_report(year):
+    """Generate NBA outcome-based education report"""
+    students = student.objects.filter(admission_year=year)
+    
+    # Program Outcomes assessment
+    program_outcomes = {
+        'engineering_knowledge': assess_engineering_knowledge(students),
+        'problem_analysis': assess_problem_analysis(students),
+        'design_solutions': assess_design_solutions(students),
+        'research_skills': assess_research_skills(students),
+        'modern_tools': assess_modern_tools(students),
+        'professional_ethics': assess_professional_ethics(students),
+        'communication': assess_communication_skills(students),
+        'project_management': assess_project_management(students),
+        'lifelong_learning': assess_lifelong_learning(students),
+    }
+    
+    # Course outcomes mapping
+    course_outcomes = map_course_outcomes(students)
+    
+    # Assessment methods
+    assessment_data = {
+        'continuous_assessment': get_continuous_assessment_data(students),
+        'project_assessment': get_project_assessment_data(students),
+        'industry_assessment': get_industry_assessment_data(students),
+    }
+    
+    return {
+        'program_outcomes': program_outcomes,
+        'course_outcomes': course_outcomes,
+        'assessment_data': assessment_data,
+        'year': year
+    }
+
+
+def calculate_placement_rate(year):
+    """Calculate placement rate for given year"""
+    total_students = student.objects.filter(
+        admission_year=year,
+        graduation_status='current'
+    ).count()
+    
+    placed_students = PlacementOffer.objects.filter(
+        student__admission_year=year
+    ).values('student').distinct().count()
+    
+    return (placed_students / total_students * 100) if total_students > 0 else 0
+
+
+# Helper functions for NBA assessment
+def assess_engineering_knowledge(students):
+    """Assess engineering knowledge through technical certifications and projects"""
+    total = students.count()
+    if total == 0:
+        return 0
+    
+    qualified = 0
+    for student in students:
+        tech_certs = Certificate.objects.filter(rollno=student, category='technical').count()
+        projects = Projects.objects.filter(contributors=student).count()
+        
+        # Criteria: At least 2 technical certifications OR 3 completed projects
+        if tech_certs >= 2 or projects >= 3:
+            qualified += 1
+    
+    return (qualified / total) * 100
+
+
+def assess_problem_analysis(students):
+    """Assess problem analysis through project complexity and research"""
+    total = students.count()
+    if total == 0:
+        return 0
+    
+    qualified = 0
+    for student in students:
+        complex_projects = Projects.objects.filter(
+            contributors=student,
+            status='Completed'
+        ).count()
+        
+        research_achievements = Achievement.objects.filter(
+            student=student,
+            category__name__icontains='research',
+            status='approved'
+        ).count()
+        
+        if complex_projects >= 2 or research_achievements >= 1:
+            qualified += 1
+    
+    return (qualified / total) * 100
+
+
+# Continue with other assessment functions...
+def assess_design_solutions(students):
+    return 75  # Placeholder
+
+def assess_research_skills(students):
+    return 70  # Placeholder
+
+def assess_modern_tools(students):
+    return 80  # Placeholder
+
+def assess_professional_ethics(students):
+    return 85  # Placeholder
+
+def assess_communication_skills(students):
+    return 75  # Placeholder
+
+def assess_project_management(students):
+    return 70  # Placeholder
+
+def assess_lifelong_learning(students):
+    return 90  # Placeholder
+
+def map_course_outcomes(students):
+    return {}  # Placeholder
+
+def get_continuous_assessment_data(students):
+    return {}  # Placeholder
+
+def get_project_assessment_data(students):
+    return {}  # Placeholder
+
+def get_industry_assessment_data(students):
+    return {}  # Placeholder
+
+def generate_aicte_report(year):
+    """Generate AICTE compliance report"""
+    return {'message': 'AICTE report coming soon'}
+
+def generate_nirf_report(year):
+    """Generate NIRF ranking report"""
+    return {'message': 'NIRF report coming soon'}
+
+def generate_custom_report(request):
+    """Generate custom report based on user requirements"""
+    return {'message': 'Custom report builder coming soon'}
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -454,18 +1434,73 @@ def add_certification(request):
     try:
         if request.method == 'POST':
             rollno = request.user
-            course_type = request.POST.get('type')
-            title = request.POST.get('course-name')
-            source = request.POST.get('provider')
-            status = request.POST.get('status')
-            course_link = request.POST.get('course-link')
-            new_course = Certificate(rollno=rollno, title=title, source=source, course_link=course_link, category=course_type)
-            new_course.save()
+            
+            # Get form data with new field names
+            category = request.POST.get('category', 'technical')
+            title = request.POST.get('title')
+            source = request.POST.get('source')
+            year_and_sem = request.POST.get('year_and_sem')
+            course_link = request.POST.get('course_link', '')
+            
+            # Optional fields for comprehensive form
+            course_provider = request.POST.get('course_provider', '')
+            domain = request.POST.get('domain', '')
+            duration = request.POST.get('duration', '')
+            event_type = request.POST.get('event_type', 'others')
+            fest_name = request.POST.get('fest_name', '')
+            recognition = request.POST.get('recognition', '')
+            rank = request.POST.get('rank', None)
+            
+            # Convert empty rank to None
+            if rank == '':
+                rank = None
+            elif rank:
+                rank = int(rank)
+            
+            # Create certificate instance
+            new_certificate = Certificate(
+                rollno=rollno,
+                title=title,
+                source=source,
+                category=category,
+                year_and_sem=year_and_sem,
+                course_link=course_link,
+                course_provider=course_provider,
+                domain=domain,
+                duration=duration,
+                event_type=event_type,
+                fest_name=fest_name,
+                recognition=recognition,
+                rank=rank
+            )
+            
+            # Handle file upload
+            if 'certificate' in request.FILES:
+                new_certificate.certificate = request.FILES['certificate']
+            
+            new_certificate.save()
+            
+            # Handle technologies (only for technical certificates)
+            if category == 'technical':
+                technologies_data = request.POST.get('technologies', '')
+                if technologies_data:
+                    technology_ids = technologies_data.split(',')
+                    for tech_id in technology_ids:
+                        if tech_id.strip():
+                            try:
+                                technology = Technology.objects.get(id=int(tech_id.strip()))
+                                new_certificate.technologies.add(technology)
+                            except (Technology.DoesNotExist, ValueError):
+                                pass
+            
+            messages.success(request, f"{category.replace('_', ' ').title()} certificate added successfully!")
             return redirect('dashboard')
+            
         return render(request, 'dashboard.html')
     except Exception as e:
         logging.error(f"Error in add_certification: {e}")
-        return HttpResponse("An error occurred.")
+        messages.error(request, f"An error occurred while adding the certificate: {str(e)}")
+        return redirect('dashboard')
 
 def CustomLogin(request):
     print("LoginBlock")
@@ -473,12 +1508,15 @@ def CustomLogin(request):
         if request.user.is_authenticated:
             print(request.user)
             if request.user.is_superuser:
-                return redirect('admin')
-            if request.user.type() == "student":
+                return redirect('admin_dashboard')
+            try:
+                if hasattr(request.user, 'type') and request.user.type() == "student":
+                    return redirect('dashboard')
+                elif hasattr(request.user, 'type') and request.user.type() == "Faculty":
+                    return redirect('faculty')
+            except:
+                # If user doesn't have type method, redirect to dashboard
                 return redirect('dashboard')
-            if request.user.type() == "Faculty":
-                return redirect('faculty')
-
 
         if request.method == 'POST':
             rollno = request.POST.get('rollno')
@@ -488,10 +1526,15 @@ def CustomLogin(request):
             print(user)
             if user is not None:
                 login(request, user)
-                if user.type() == "student":
+                try:
+                    if hasattr(user, 'type') and user.type() == "student":
+                        return redirect('dashboard')
+                    elif hasattr(user, 'type') and user.type() == "Faculty":
+                        return redirect('faculty')
+                    else:
+                        return redirect('dashboard')
+                except:
                     return redirect('dashboard')
-                if user.type() == "Faculty":
-                    return redirect('faculty')
         return render(request, 'login.html')
     except Exception as e:
         logging.error(f"Error in CustomLogin: {e}")
@@ -571,7 +1614,7 @@ def student_model_instances(request, model_name):
 
     model_map = {
         "certificate": Certificate,
-        "project": Project,
+        "project": Projects,
     }
 
     model = model_map.get(model_name)
@@ -698,14 +1741,13 @@ from django.db.models import Count, Avg
 @login_required
 def faculty(request):
     try:
-        from .models import student, Certificate, Technology, Projects, Faculty  # or whatever your model is called
+        from .models import student, Certificate, Technology, Projects, Faculty
 
         # Get unique values for filter options
         certificate_providers = list(Certificate.objects.exclude(source='').values_list('source', flat=True).distinct().order_by('source'))
-        course_providers = list(Certificate.objects.exclude(course_provider='').values_list('course_provider', flat=True).distinct().order_by('course_provider'))
         
-        # Combine both source and course_provider into one list for the filter
-        all_providers = sorted(list(set(certificate_providers + course_providers)))
+        # Combine both source into one list for the filter (removed course_provider as it doesn't exist)
+        all_providers = sorted(list(set(certificate_providers)))
         
         # Get all technologies
         technologies = list(Technology.objects.all().values_list('name', flat=True).distinct().order_by('name'))
@@ -751,8 +1793,6 @@ def faculty(request):
             for cert in student_certificates:
                 if cert.source:
                     student_providers.append(cert.source)
-                if cert.course_provider:
-                    student_providers.append(cert.course_provider)
                 if cert.domain:
                     student_domains.append(cert.domain)
                 student_cert_categories.append(cert.category)
@@ -761,7 +1801,7 @@ def faculty(request):
             student_data['domains'] = list(set(student_domains))
             student_data['certificate_categories'] = list(set(student_cert_categories))
             
-            # Technology information from projects and certificates
+            # Technology information from projects only (certificates don't have technologies field)
             student_technologies = []
             
             # Get technologies from projects
@@ -769,11 +1809,6 @@ def faculty(request):
             for project in student_projects:
                 project_techs = project.technologies.all().values_list('name', flat=True)
                 student_technologies.extend(project_techs)
-            
-            # Get technologies from certificates
-            for cert in student_certificates:
-                cert_techs = cert.technologies.all().values_list('name', flat=True)
-                student_technologies.extend(cert_techs)
             
             student_data['technologies'] = list(set(student_technologies))
             
@@ -963,7 +1998,7 @@ def delete_project(request, primary_key):
     try:
         project = Projects.objects.get(id=primary_key)
         project.delete()
-        return JSONResponse({'status': 'success', 'message': 'Project deleted successfully', 'status_code': 200})
+        return JsonResponse({'status': 'success', 'message': 'Project deleted successfully', 'status_code': 200})
     except Exception as e:
         logging.error(f"Error in delete_project: {e}")
         return HttpResponse("An error occurred.")
@@ -972,7 +2007,7 @@ def delete_certification(request, primary_key):
     try:
         project = Certificate.objects.get(id=primary_key)
         project.delete()
-        return JSONResponse({'status': 'success', 'message': 'Certification deleted successfully', 'status_code': 200})
+        return JsonResponse({'status': 'success', 'message': 'Certification deleted successfully', 'status_code': 200})
     except Exception as e:
         logging.error(f"Error in delete_certification: {e}")
         return HttpResponse("An error occurred.")
@@ -1208,8 +2243,18 @@ def upload_students(request):
     return render(request, 'upload_students.html')
 
 
+def placement_coordinator_required(view_func):
+    """Decorator that requires user to be a placement coordinator"""
+    @login_required
+    def wrapper(request, *args, **kwargs):
+        if not is_placement_coordinator(request.user):
+            from django.shortcuts import render
+            return render(request, '403.html', status=403)
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 ######################################################################################
+@placement_coordinator_required
 def placement_dashboard(request):
     year = request.GET.get('year')
     tech = request.GET.get('tech')
@@ -1603,9 +2648,30 @@ from django.http import JsonResponse
 from .models import student, Certificate, Projects, PlacementOffer, LeetCode
 import requests
 import os
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.exceptions import PermissionDenied
 
 def is_coordinator(user):
     return hasattr(user, 'coordinatorrole') and user.coordinatorrole is not None
+
+def is_placement_coordinator(user):
+    """Check if user is a placement coordinator with placement viewing permissions"""
+    if not user.is_authenticated:
+        return False
+    
+    if user.is_superuser:
+        return True
+    
+    # Check if user is faculty and has placement coordinator role
+    try:
+        if hasattr(user, 'coordinator_roles'):
+            for role in user.coordinator_roles.all():
+                if role.can_view_placement:
+                    return True
+    except:
+        pass
+    
+    return False
 
 # FlexOn Dashboard Implementation
 from django.views.decorators.csrf import csrf_exempt
@@ -1614,44 +2680,145 @@ import traceback
 
 def generate_orm_from_query(query):
     """
-    Simple query-to-ORM mapping for common FlexOn queries.
-    Returns a basic ORM string based on keywords in the query.
+    Advanced query-to-ORM mapping using Google Gemini AI.
+    Converts natural language queries to Django ORM strings with better accuracy.
+    """
+    import google.generativeai as genai
+    import os
+    from django.conf import settings
+    
+    try:
+        # Configure Gemini AI
+        genai.configure(api_key=getattr(settings, 'GEMINI_API_KEY', os.environ.get('GEMINI_API_KEY')))
+        model = genai.GenerativeModel('gemini-pro')
+        
+        # Database schema context for better ORM generation
+        schema_context = """
+        Available Django Models and their fields:
+        
+        1. student (Main student model):
+           - roll_no, name, email, dept, year, sem, phone, mentor
+           - Related: projects, certificate, leetcode, placementoffer
+        
+        2. Projects:
+           - rollno (FK to student), title, description, github_link, year, sem
+           - Related: technologies (M2M with Technology)
+        
+        3. Certificate:
+           - rollno (FK to student), title, source, course_provider, category, year, sem
+        
+        4. LeetCode:
+           - rollno (FK to student), TotalProblems, Easy, Medium, Hard
+        
+        5. Technology:
+           - name (unique technology name like 'Python', 'Java', etc.)
+        
+        6. Placement:
+           - rollno (FK to student), company, package, status
+        
+        7. PlacementOffer:
+           - rollno (FK to student), company, package, offer_type
+        
+        8. Faculty:
+           - name, email, department, designation
+        
+        Common Django ORM patterns:
+        - Filtering: Model.objects.filter(field__condition=value)
+        - Annotations: Model.objects.annotate(alias=Count/Sum/Avg('related_field'))
+        - Ordering: .order_by('field') or .order_by('-field') for descending
+        - Relationships: Use double underscore __ for foreign keys
+        - Aggregation functions: Count, Sum, Avg, Max, Min
+        - Q objects for complex queries: Q(condition1) & Q(condition2)
+        
+        Important: Only generate READ-ONLY ORM queries. No create, update, delete operations.
+        """
+        
+        prompt = f"""
+        {schema_context}
+        
+        Convert this natural language query to Django ORM code:
+        "{query}"
+        
+        Requirements:
+        1. Return ONLY the ORM query string, no explanations
+        2. Use proper Django ORM syntax
+        3. Handle relationships correctly with double underscores
+        4. Apply appropriate filters, annotations, and ordering
+        5. Limit results to 50 records maximum using [:50] if needed
+        6. Use select_related() for foreign keys when appropriate
+        7. Use prefetch_related() for many-to-many relationships when needed
+        
+        Example outputs:
+        - "student.objects.filter(dept='CSE').order_by('roll_no')[:50]"
+        - "LeetCode.objects.select_related('rollno').order_by('-TotalProblems')[:10]"
+        - "Projects.objects.prefetch_related('technologies').filter(technologies__name__icontains='python')"
+        
+        Query: {query}
+        ORM:
+        """
+        
+        response = model.generate_content(prompt)
+        orm_query = response.text.strip()
+        
+        # Clean up the response - remove any markdown formatting or extra text
+        if '```' in orm_query:
+            import re
+            code_blocks = re.findall(r'```(?:python)?\s*(.*?)\s*```', orm_query, re.DOTALL)
+            if code_blocks:
+                orm_query = code_blocks[0].strip()
+        
+        # Remove any leading/trailing quotes
+        orm_query = orm_query.strip('"\'')
+        
+        # Validate that it's a proper ORM query
+        if not orm_query or not any(model in orm_query for model in ['student.objects', 'Projects.objects', 'Certificate.objects', 'LeetCode.objects', 'Placement.objects', 'Technology.objects', 'Faculty.objects']):
+            raise ValueError("Invalid ORM query generated")
+        
+        return orm_query
+        
+    except Exception as e:
+        print(f"Gemini AI error: {e}")
+        # Fallback to basic keyword matching if Gemini fails
+        return _generate_fallback_orm(query)
+
+def _generate_fallback_orm(query):
+    """
+    Fallback query generation when Gemini AI is unavailable.
     """
     query_lower = query.lower()
     
     # Basic query patterns
     if 'top' in query_lower and 'leetcode' in query_lower:
-        return "LeetCode.objects.order_by('-TotalProblems')[:10]"
+        return "LeetCode.objects.select_related('rollno').order_by('-TotalProblems')[:10]"
     
     elif 'students' in query_lower and 'python' in query_lower and 'projects' in query_lower:
-        return "student.objects.annotate(python_projects=Count('projects', filter=Q(projects__technologies__name__icontains='python'))).filter(python_projects__gt=0)"
+        return "student.objects.annotate(python_projects=Count('projects', filter=Q(projects__technologies__name__icontains='python'))).filter(python_projects__gt=0)[:50]"
     
     elif 'placement' in query_lower and 'offers' in query_lower:
-        return "student.objects.annotate(offer_count=Count('placementoffer')).filter(offer_count__gt=0)"
+        return "student.objects.annotate(offer_count=Count('placementoffer')).filter(offer_count__gt=0)[:50]"
     
     elif 'cloud' in query_lower and ('cert' in query_lower or 'certificate' in query_lower):
-        return "Certificate.objects.filter(Q(source__icontains='cloud') | Q(title__icontains='cloud'))"
+        return "Certificate.objects.filter(Q(source__icontains='cloud') | Q(title__icontains='cloud'))[:50]"
     
     elif 'placement' in query_lower and 'stats' in query_lower:
         return "student.objects.values('dept').annotate(total=Count('id'), placed=Count('placementoffer')).order_by('dept')"
     
     elif 'students' in query_lower and 'projects' in query_lower:
-        return "student.objects.annotate(project_count=Count('projects')).filter(project_count__gt=0)"
+        return "student.objects.annotate(project_count=Count('projects')).filter(project_count__gt=0)[:50]"
     
     elif 'certificates' in query_lower:
-        return "Certificate.objects.values('rollno__dept', 'category').annotate(count=Count('id')).order_by('rollno__dept')"
+        return "Certificate.objects.select_related('rollno').order_by('-id')[:50]"
     
     elif 'leetcode' in query_lower:
-        return "LeetCode.objects.select_related('rollno').order_by('-TotalProblems')"
+        return "LeetCode.objects.select_related('rollno').order_by('-TotalProblems')[:50]"
     
     elif 'projects' in query_lower:
-        return "Projects.objects.select_related('rollno').order_by('-id')"
+        return "Projects.objects.select_related('rollno').prefetch_related('technologies').order_by('-id')[:50]"
     
     elif 'students' in query_lower:
-        return "student.objects.all().order_by('roll_no')"
+        return "student.objects.all().order_by('roll_no')[:50]"
     
     else:
-        # Default fallback
         return "student.objects.all()[:20]"
 
 
@@ -1808,65 +2975,4 @@ def flexon_dashboard(request):
         })
 
     return render(request, 'flexon_dashboard.html')
-# flexapp/views.py
-from django.shortcuts import render
-from django.http import JsonResponse
-from django.db.models import Count, Avg, Sum, Max, Min, Q
-from .models import student, Faculty, Projects, Certificate, LeetCode, Placement, Technology, publications, certifications
 
-MODEL_MAP = {
-    "Student": student,
-    "Faculty": Faculty,
-    "Projects": Projects,
-    "Certificate": Certificate,
-    "LeetCode": LeetCode,
-    "Placement": Placement,
-    "Technology": Technology,
-    "publications": publications,
-    "certifications": certifications,
-}
-from django.apps import apps
-from django.http import JsonResponse
-from django.shortcuts import render
-
-def query_builder(request):
-    if request.method == "POST":
-        import json
-        config = json.loads(request.body.decode("utf-8"))
-
-        model_name = config.get("model")
-        filters = config.get("filters", [])
-
-        if not model_name or model_name not in MODEL_MAP:
-            return JsonResponse({"error": "Invalid model selected"}, status=400)
-
-        Model = MODEL_MAP[model_name]
-        qs = Model.objects.all()
-
-        # Apply filters
-        from django.db.models import Q
-        q_obj = Q()
-        for f in filters:
-            field = f.get("field")
-            operator = f.get("operator")
-            value = f.get("value")
-            if field and operator and value != "":
-                lookup = f"{field}__{operator}"
-                q_obj &= Q(**{lookup: value})
-        qs = qs.filter(q_obj)
-
-        results = list(qs.values()[:50])
-        return JsonResponse({"results": results})
-
-    # GET: load UI
-    return render(request, "query_builder.html", {"models": list(MODEL_MAP.keys())})
-
-
-def get_model_fields(request, model_name):
-    """Return list of fields for a given model."""
-    if model_name not in MODEL_MAP:
-        return JsonResponse({"error": "Invalid model"}, status=400)
-
-    Model = MODEL_MAP[model_name]
-    fields = [f.name for f in Model._meta.get_fields()]
-    return JsonResponse({"fields": fields})

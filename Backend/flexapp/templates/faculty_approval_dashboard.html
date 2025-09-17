@@ -1,0 +1,444 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Faculty Approval Dashboard - MITS FLEX{% endblock %}
+{% block page_title %}Faculty Approval Dashboard{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'faculty' %}">Faculty Dashboard</a></li>
+<li class="breadcrumb-item active">Approvals</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-1"><i class="fas fa-check-circle me-2"></i>Achievement Approval Center</h2>
+                        <p class="mb-0">Review and approve student achievements with comprehensive evaluation tools</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="d-flex justify-content-end gap-2">
+                            <span class="badge bg-warning fs-5 px-3 py-2">
+                                <i class="fas fa-clock me-1"></i>{{ pending_count }} Pending
+                            </span>
+                            <div class="dropdown">
+                                <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown">
+                                    <i class="fas fa-cog me-1"></i>Actions
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="approveAll()"><i class="fas fa-check-double me-2"></i>Bulk Approve</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="exportApprovals()"><i class="fas fa-download me-2"></i>Export Report</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'faculty' %}"><i class="fas fa-arrow-left me-2"></i>Back to Dashboard</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="text-warning mb-1">{{ pending_count }}</h3>
+                    <p class="mb-0 text-muted">Pending Reviews</p>
+                </div>
+                <div class="text-warning">
+                    <i class="fas fa-clock fa-2x"></i>
+                </div>
+            </div>
+            <div class="progress mt-2" style="height: 5px;">
+                <div class="progress-bar bg-warning" style="width: 100%"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="text-success mb-1">{{ approved_today }}</h3>
+                    <p class="mb-0 text-muted">Approved Today</p>
+                </div>
+                <div class="text-success">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+            </div>
+            <div class="progress mt-2" style="height: 5px;">
+                <div class="progress-bar bg-success" style="width: 85%"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="text-info mb-1">{{ total_reviewed }}</h3>
+                    <p class="mb-0 text-muted">Total Reviewed</p>
+                </div>
+                <div class="text-info">
+                    <i class="fas fa-chart-bar fa-2x"></i>
+                </div>
+            </div>
+            <div class="progress mt-2" style="height: 5px;">
+                <div class="progress-bar bg-info" style="width: 75%"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="text-primary mb-1">{{ avg_review_time|default:'2.5' }}</h3>
+                    <p class="mb-0 text-muted">Avg Review Time (hrs)</p>
+                </div>
+                <div class="text-primary">
+                    <i class="fas fa-clock fa-2x"></i>
+                </div>
+            </div>
+            <div class="progress mt-2" style="height: 5px;">
+                <div class="progress-bar bg-primary" style="width: 60%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Filter Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filter & Search Achievements</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label for="statusFilter" class="form-label">Status</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="pending" selected>Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="categoryFilter" class="form-label">Category</label>
+                        <select class="form-select" id="categoryFilter">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                                <option value="{{ category.name }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="levelFilter" class="form-label">Level</label>
+                        <select class="form-select" id="levelFilter">
+                            <option value="">All Levels</option>
+                            <option value="institutional">Institutional</option>
+                            <option value="state">State</option>
+                            <option value="national">National</option>
+                            <option value="international">International</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="departmentFilter" class="form-label">Department</label>
+                        <select class="form-select" id="departmentFilter">
+                            <option value="">All Departments</option>
+                            <option value="CSE">CSE</option>
+                            <option value="ECE">ECE</option>
+                            <option value="EEE">EEE</option>
+                            <option value="MECH">MECH</option>
+                            <option value="CIVIL">CIVIL</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="yearFilter" class="form-label">Year</label>
+                        <select class="form-select" id="yearFilter">
+                            <option value="">All Years</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="searchInput" class="form-label">Search</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Student/Title...">
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-secondary" id="clearFilters">
+                            <i class="fas fa-times me-1"></i>Clear Filters
+                        </button>
+                        <button class="btn btn-outline-info ms-2" id="saveFilters">
+                            <i class="fas fa-save me-1"></i>Save View
+                        </button>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-primary active" id="cardView">
+                                <i class="fas fa-th-large"></i> Cards
+                            </button>
+                            <button class="btn btn-outline-primary" id="tableView">
+                                <i class="fas fa-table"></i> Table
+                            </button>
+                        </div>
+                        <div class="btn-group ms-2" role="group">
+                            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="fas fa-sort me-1"></i>Sort
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="sortBy('date')">Date (Recent First)</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="sortBy('title')">Title (A-Z)</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="sortBy('level')">Level</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="sortBy('student')">Student Name</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Achievements for Review -->
+    <div class="row" id="achievementsContainer">
+        {% for achievement in achievements %}
+            <div class="col-md-6 mb-3 achievement-card" 
+                 data-status="{{ achievement.status }}" 
+                 data-category="{{ achievement.category.name }}"
+                 data-level="{{ achievement.level }}">
+                <div class="card h-100 {% if achievement.status == 'pending' %}border-warning{% elif achievement.status == 'approved' %}border-success{% else %}border-danger{% endif %}">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ achievement.title }}</h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-user me-1"></i>{{ achievement.student.first_name }} {{ achievement.student.last_name }}
+                                    ({{ achievement.student.username }})
+                                </small>
+                            </div>
+                            <span class="badge bg-{% if achievement.status == 'approved' %}success{% elif achievement.status == 'pending' %}warning{% else %}danger{% endif %}">
+                                {{ achievement.status|title }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <small class="text-muted">Category:</small><br>
+                                <span class="badge bg-secondary">{{ achievement.category.name }}</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Level:</small><br>
+                                <span class="badge bg-info">{{ achievement.level|title }}</span>
+                            </div>
+                        </div>
+                        
+                        <p class="card-text">{{ achievement.description|truncatewords:15 }}</p>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <small class="text-muted">Date:</small><br>
+                                {{ achievement.achievement_date }}
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Organization:</small><br>
+                                {{ achievement.issuing_organization|truncatechars:20 }}
+                            </div>
+                        </div>
+
+                        {% if achievement.position %}
+                        <div class="mb-2">
+                            <small class="text-muted">Position:</small>
+                            <span class="fw-bold">{{ achievement.position }}</span>
+                        </div>
+                        {% endif %}
+
+                        {% if achievement.team_size %}
+                        <div class="mb-2">
+                            <small class="text-muted">Team Size:</small>
+                            <span class="badge bg-light text-dark">{{ achievement.team_size }}</span>
+                        </div>
+                        {% endif %}
+
+                        <!-- Verification Documents -->
+                        {% if achievement.verification_document %}
+                        <div class="mb-2">
+                            <a href="{{ achievement.verification_document.url }}" 
+                               target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-file-alt me-1"></i>View Document
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        {% if achievement.external_link %}
+                        <div class="mb-2">
+                            <a href="{{ achievement.external_link }}" 
+                               target="_blank" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-external-link-alt me-1"></i>External Link
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        {% if achievement.tags %}
+                        <div class="mb-2">
+                            <small class="text-muted">Tags:</small><br>
+                            {% for tag in achievement.tags|split:',' %}
+                                <span class="badge bg-light text-dark me-1">{{ tag.strip }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                Submitted: {{ achievement.created_at|timesince }} ago
+                            </small>
+                        </div>
+                        
+                        {% if achievement.status == 'pending' %}
+                        <!-- Quick Approval Form -->
+                        <form method="post" action="{% url 'approve_achievement' achievement.id %}" class="approval-form">
+                            {% csrf_token %}
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <label for="points_{{ achievement.id }}" class="form-label">Points:</label>
+                                    <input type="number" class="form-control form-control-sm" 
+                                           id="points_{{ achievement.id }}" name="points_awarded" 
+                                           value="{{ achievement.category.default_points }}" min="0" max="100">
+                                </div>
+                                <div class="col-6">
+                                    <label for="status_{{ achievement.id }}" class="form-label">Decision:</label>
+                                    <select class="form-select form-select-sm" 
+                                            id="status_{{ achievement.id }}" name="status" required>
+                                        <option value="">Select</option>
+                                        <option value="approved">Approve</option>
+                                        <option value="rejected">Reject</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label for="comments_{{ achievement.id }}" class="form-label">Comments:</label>
+                                <textarea class="form-control form-control-sm" 
+                                          id="comments_{{ achievement.id }}" name="faculty_comments" 
+                                          rows="2" placeholder="Optional comments..."></textarea>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-check me-1"></i>Submit Review
+                                </button>
+                            </div>
+                        </form>
+                        {% else %}
+                        <!-- Already Reviewed -->
+                        <div class="text-center">
+                            <small class="text-muted">
+                                Reviewed by {{ achievement.reviewed_by.first_name }} 
+                                on {{ achievement.reviewed_at|date:'M d, Y H:i' }}
+                            </small>
+                            {% if achievement.faculty_comments %}
+                            <div class="alert alert-sm alert-info mt-2 mb-0">
+                                <small><strong>Comments:</strong> {{ achievement.faculty_comments }}</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No achievements to review</h4>
+                    <p class="text-muted">All submissions have been processed!</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusFilter = document.getElementById('statusFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const levelFilter = document.getElementById('levelFilter');
+    const searchInput = document.getElementById('searchInput');
+    const achievementCards = document.querySelectorAll('.achievement-card');
+
+    function filterAchievements() {
+        const statusValue = statusFilter.value.toLowerCase();
+        const categoryValue = categoryFilter.value.toLowerCase();
+        const levelValue = levelFilter.value.toLowerCase();
+        const searchValue = searchInput.value.toLowerCase();
+
+        achievementCards.forEach(card => {
+            const status = card.dataset.status.toLowerCase();
+            const category = card.dataset.category.toLowerCase();
+            const level = card.dataset.level.toLowerCase();
+            const text = card.textContent.toLowerCase();
+
+            const statusMatch = !statusValue || status.includes(statusValue);
+            const categoryMatch = !categoryValue || category.includes(categoryValue);
+            const levelMatch = !levelValue || level.includes(levelValue);
+            const searchMatch = !searchValue || text.includes(searchValue);
+
+            if (statusMatch && categoryMatch && levelMatch && searchMatch) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    statusFilter.addEventListener('change', filterAchievements);
+    categoryFilter.addEventListener('change', filterAchievements);
+    levelFilter.addEventListener('change', filterAchievements);
+    searchInput.addEventListener('input', filterAchievements);
+
+    // Form submission confirmation
+    document.querySelectorAll('.approval-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const status = this.querySelector('select[name="status"]').value;
+            if (!status) {
+                e.preventDefault();
+                alert('Please select a decision (Approve/Reject)');
+                return false;
+            }
+            
+            const action = status === 'approved' ? 'approve' : 'reject';
+            if (!confirm(`Are you sure you want to ${action} this achievement?`)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

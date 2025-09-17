@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 from .views import upload_students, search_students
 
@@ -19,8 +19,7 @@ urlpatterns = [
     path('delete_certification/<int:primary_key>', views.delete_certification, name="delete_certification"),
     path('edit_certification', views.edit_certification, name="edit_certification"),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
-    path('flexon/', views.query_builder, name='flexon_dashboard'),
-    path("query-builder/", views.query_builder, name="query_builder"),
+    path('flexon/', views.flexon_dashboard, name='flexon_dashboard'),
     path('admin-create-student/', views.admin_create_student, name='admin_create_student'),
     path('admin-update-student/<int:student_id>/', views.admin_update_student, name='admin_update_student'),
     path('admin-delete-student/<int:student_id>/', views.admin_delete_student, name='admin_delete_student'),
@@ -70,4 +69,25 @@ urlpatterns = [
     path("api/student-models/<str:model_name>/", views.student_model_instances),
     path('add_placement_offer_faculty/', views.add_placement_offer_faculty, name='add_placement_offer_faculty'),
     path('add_placement_offer_student/', views.add_placement_offer_student, name='add_placement_offer_student'),
+    
+    # Achievement System URLs
+    path('achievements/add/', views.add_achievement, name='add_achievement'),
+    path('achievements/', views.achievement_list, name='achievement_list'),
+    path('faculty/approvals/', views.faculty_approval_dashboard, name='faculty_approval_dashboard'),
+    path('achievements/approve/<int:achievement_id>/', views.approve_achievement, name='approve_achievement'),
+    
+    # Export URLs
+    path('export/students/<str:format_type>/', views.export_students_data, name='export_students'),
+    path('export/achievements/<str:format_type>/', views.export_achievements_data, name='export_achievements'),
+    path('export/certificates/<str:format_type>/', views.export_certificates_data, name='export_certificates'),
+    path('export/projects/<str:format_type>/', views.export_projects_data, name='export_projects'),
+    
+    # Portfolio Generation URLs
+    path('portfolio/generate/', views.generate_portfolio, name='generate_portfolio'),
+    
+    # Compliance Reports URLs
+    path('reports/compliance/', views.compliance_reports, name='compliance_reports'),
+    
+    # REST API URLs
+    path('', include('flexapp.api_urls')),
 ]

@@ -81,7 +81,7 @@
                                     required>
                                 <option value="">-- Select Certificate --</option>
                                 {% for cert in model_instances.certificate %}
-                                <option value="{{ cert.id }}" data-preview="{{ cert.certificate.url }}">
+                                <option value="{{ cert.id }}">
                                     {{ cert.title }} ({{ cert.issued_by }})
                                 </option>
                                 {% endfor %}
