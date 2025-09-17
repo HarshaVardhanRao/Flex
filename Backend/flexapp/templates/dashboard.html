@@ -65,6 +65,38 @@
 				margin-right: 5px;
 				color: #f39c12;
 			}
+			
+			/* Enhanced dropdown list styling */
+			.dropdown-list {
+				display: none;
+				position: absolute;
+				top: 100%;
+				left: 0;
+				right: 0;
+				max-height: 200px;
+				overflow-y: auto;
+				border: 1px solid #ced4da;
+				border-radius: 0.375rem;
+				background-color: rgba(255, 255, 255, 0.95);
+				z-index: 1050;
+				margin-top: 2px;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+			}
+			
+			.dropdown-item {
+				padding: 0.5rem 1rem;
+				cursor: pointer;
+				transition: background-color 0.2s ease;
+				border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+			}
+			
+			.dropdown-item:hover {
+				background-color: rgba(255, 215, 0, 0.1);
+			}
+			
+			.dropdown-item:last-child {
+				border-bottom: none;
+			}
 		</style>
 	</head>
 
@@ -82,32 +114,14 @@
 
 		<main>
 			<div class="profile">
-				<div
-					style="
-						display: flex;
-						align-items: center;
-						justify-content: center;
-					"
-				>
-					<a
-						href="{% url 'profile' %}"
-						class="profile-icon"
-						style="
-							display: flex;
-							align-items: center;
-							justify-content: left;
-							height: inherit;
-							width: 50%;
-							text-decoration: none;
-							color: #f1c40f;
-						"
-					>
+				<div class="profile-info">
+					<a href="{% url 'profile' %}" class="profile-icon">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
-							style="width: 50%"
 							fill="currentColor"
 							class="bi bi-person-vcard-fill"
 							viewBox="0 0 16 16"
+							aria-hidden="true"
 						>
 							<path
 								d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm9 1.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 0-1h-4a.5.5 0 0 0-.5.5M9 8a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 0-1h-4A.5.5 0 0 0 9 8m1 2.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 0-1h-3a.5.5 0 0 0-.5.5m-1 2C9 10.567 7.21 9 5 9c-2.086 0-3.8 1.398-3.984 3.181A1 1 0 0 0 2 13h6.96q.04-.245.04-.5M7 6a2 2 0 1 0-4 0 2 2 0 0 0 4 0"
@@ -115,15 +129,11 @@
 						</svg>
 					</a>
 					<div class="detail">
-						<p style="white-space: nowrap">
-							<a
-								href="{% url 'profile' %}"
-								style="text-decoration: none; color: white"
-								>{{ name }}<i
-									class="bi bi-pencil"
-									style="margin-left: 5px; font-size: 1rem"
-								></i
-							></a>
+						<p class="profile-name">
+							<a href="{% url 'profile' %}" class="profile-link">
+								{{ name }}
+								<i class="bi bi-pencil profile-edit-icon" aria-hidden="true"></i>
+							</a>
 						</p>
 						<p>{{ rollno }}</p>
 						<p>{{ dept }} - {{ section }}</p>
@@ -208,7 +218,7 @@
 						<!-- Example project list items -->
 						{% comment %} {% for certi in projects %}
 						<li>
-							<h5><a href="#">{{ certi.title }}</a></h5>
+							<h5 class="item-title">{{ certi.title }}</h5>
 							<p>Desripton: {{ certi.description }}</p>
 							<p>
 								<a
@@ -233,8 +243,10 @@
 					<button
 						data-category="projects"
 						onclick="new_item(this);"
+						title="Add a new project"
+						aria-label="Add new project to your portfolio"
 					>
-						<i class="bi bi-plus"></i>
+						<i class="bi bi-plus" aria-hidden="true"></i>
 						Project
 					</button>
 				</div>
@@ -270,8 +282,10 @@
 					<button
 						data-category="languages"
 						onclick="new_item(this);"
+						title="Add a new foreign language"
+						aria-label="Add foreign language certification to your profile"
 					>
-						<i class="bi bi-plus"></i>
+						<i class="bi bi-plus" aria-hidden="true"></i>
 						Language
 					</button>
 				</div>
@@ -306,23 +320,40 @@
 					<button
 						data-category="certificates"
 						onclick="new_item(this);"
+						title="Add a technical certification"
+						aria-label="Add technical certification to your profile"
 					>
-						<i class="bi bi-plus"></i>
+						<i class="bi bi-plus" aria-hidden="true"></i>
 						Certification
 					</button>
 				</div>
 			</div>
 		</main>
 		<div class="form-check-label">
-			<button id="FormToggle"><i class="bi bi-document"></i></button>
-			<button id="themeToggle"><i class="bi bi-moon-fill"></i></button>
-			<button id="logout"><i class="bi bi-box-arrow-right"></i></button>
+			<button id="FormToggle" title="View Forms" aria-label="Navigate to forms page"><i class="bi bi-document" aria-hidden="true"></i></button>
+			<button id="themeToggle" title="Toggle theme" aria-label="Switch between dark and light theme"><i class="bi bi-moon-fill" aria-hidden="true"></i></button>
+			<button id="logout" title="Logout" aria-label="Logout from application"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></button>
 		</div>
 
 		<script>
-					const projects = {{ projects| safe }};
-					const technicals = {{ Technical| safe }};
-					const Foreign_languages = {{ Foreign_languages| safe }};
+					// Django template variables - properly handled
+					let projects = [];
+					let technicals = [];
+					let Foreign_languages = [];
+					
+					try {
+						// Parse Django template variables safely using escapejs filter
+						// This prevents JavaScript linting errors while maintaining functionality
+						projects = JSON.parse('{{ projects|escapejs }}') || [];
+						technicals = JSON.parse('{{ Technical|escapejs }}') || [];
+						Foreign_languages = JSON.parse('{{ Foreign_languages|escapejs }}') || [];
+					} catch (error) {
+						console.error('Error parsing Django template variables:', error);
+						projects = [];
+						technicals = [];
+						Foreign_languages = [];
+					}
+					
 					const projects_ul = document.querySelector('#projects');
 					const technical_ul = document.querySelector('#technical_certificates');
 					const foreign_languages_ul = document.querySelector('#foreign_languages');
@@ -349,7 +380,7 @@
 
 						projects.forEach(project => {
 							projects_ul.innerHTML += `<li>
-										<h5><a href="#">${project.fields.title}</a></h5>
+										<h5 class="item-title">${project.fields.title}</h5>
 										<p>Desripton: ${project.fields.description}</p>
 										<p>${project.fields.year_and_sem}</p>
 										<p>
@@ -357,11 +388,11 @@
 											</a>
 										</p>
 										<div class="buttons">
-											<button class="edit" onclick="return edit(${project.pk}, 'project')">
-												<i class="bi bi-pencil"></i>
+											<button class="edit" onclick="return edit(${project.pk}, 'project')" aria-label="Edit project" title="Edit this project">
+												<i class="bi bi-pencil" aria-hidden="true"></i>
 											</button>
-											<button class="delete" onclick="return delete_item(${project.pk}, 'project')">
-												<i class="bi bi-x"></i>
+											<button class="delete" onclick="return delete_item(${project.pk}, 'project')" aria-label="Delete project" title="Delete this project">
+												<i class="bi bi-x" aria-hidden="true"></i>
 											</button>
 										</div>
 									</li>
@@ -375,11 +406,11 @@
 						                      <p>Provider : ${technical.fields.source}</p>
 						                      <p>${technical.fields.year_and_sem}</p>
 						                      <div class="buttons">
-						                          <button class="edit" onclick="return edit(${technical.pk}, 'technical')">
-						                              <i class="bi bi-pencil"></i>
+						                          <button class="edit" onclick="return edit(${technical.pk}, 'technical')" aria-label="Edit technical skill" title="Edit this technical skill">
+						                              <i class="bi bi-pencil" aria-hidden="true"></i>
 						                          </button>
-						                          <button class="delete" onclick="return delete_item(${technical.pk}, 'technical')">
-						                              <i class="bi bi-x"></i>
+						                          <button class="delete" onclick="return delete_item(${technical.pk}, 'technical')" aria-label="Delete technical skill" title="Delete this technical skill">
+						                              <i class="bi bi-x" aria-hidden="true"></i>
 						                          </button>
 						                      </div>
 						                  </li>
@@ -393,11 +424,11 @@
 										<p>Provider : ${language.fields.source}</p>
 										<p>${language.fields.year_and_sem}</p>
 										<div class="buttons">
-											<button class="edit" onclick="return edit(${language.pk}, 'language')">
-												<i class="bi bi-pencil"></i>
+											<button class="edit" onclick="return edit(${language.pk}, 'language')" aria-label="Edit language certification" title="Edit this language certification">
+												<i class="bi bi-pencil" aria-hidden="true"></i>
 											</button>
-											<button class="delete" onclick="return delete_item(${language.pk}, 'language')">
-												<i class="bi bi-x"></i>
+											<button class="delete" onclick="return delete_item(${language.pk}, 'language')" aria-label="Delete language certification" title="Delete this language certification">
+												<i class="bi bi-x" aria-hidden="true"></i>
 											</button>
 										</div>
 									</li>
@@ -460,11 +491,13 @@
 			            <h2>Add a Project</h2>
 			            <hr>
 			            {% csrf_token %}
-			            <label for="project-name">Project Name</label>
-			            <input type="text" name="project-name" id="project-name" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">
+			            <label for="project-name">Project Name <span class="required">*</span></label>
+			            <input type="text" name="project-name" id="project-name" required aria-describedby="project-name-help" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">
+			            <small id="project-name-help" class="form-text text-muted">Enter a descriptive name for your project</small>
 
-			            <label for="description">Description</label>
-			            <textarea name="description" id="description" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" cols="30" rows="5"></textarea>
+			            <label for="description">Description <span class="required">*</span></label>
+			            <textarea name="description" id="description" required aria-describedby="description-help" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" cols="30" rows="5"></textarea>
+			            <small id="description-help" class="form-text text-muted">Provide a detailed description of your project</small>
 
 			            <label for="year-and-sem">Year and Semester</label>
 			            <select name="year-and-sem" id="year-and-sem" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">
@@ -499,7 +532,7 @@
 			            </select>
 
 			            <label for="github">GitHub Link</label>
-			            <input type="text" name="github" id="github" class="${body.classList.contains("light-theme") ? "light-theme" : ""}">
+			            <input type="url" name="github" id="github" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" placeholder="https://github.com/username/repo">>
 
 			            <input type="submit" class="${body.classList.contains("light-theme") ? "light-theme" : ""}" value="Create">
 			            <button type="button" class="close-form-btn ${body.classList.contains("light-theme") ? "light-theme" : ""}" onclick="return remove_form()">
@@ -953,7 +986,7 @@
 								}">Initialized</option>
 							           </select>
 							           <label for='github'>Github Link</label>
-							           <input type="text" value="${project.fields.github_link}" name="github" id="github" class="${body.classList.contains("light-theme")
+							           <input type="url" value="${project.fields.github_link}" name="github" id="github" placeholder="https://github.com/username/repo" class="${body.classList.contains("light-theme")
 									? "light-theme"
 									: ""
 								}">

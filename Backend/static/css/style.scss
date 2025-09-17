@@ -438,6 +438,99 @@ i {
 		}
 	}
 
+	// Profile info styling
+	.profile-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		
+		h4 {
+			margin: 0;
+			color: $accent-color;
+			font-weight: 600;
+			
+			&.light-theme {
+				color: $light-accent-color;
+			}
+		}
+		
+		p {
+			margin: 0;
+			color: $text-color;
+			font-size: 1rem;
+			
+			&.light-theme {
+				color: $light-text-color;
+			}
+		}
+	}
+
+	// Profile icon styling
+	.profile-icon {
+		background-color: $accent-color;
+		border-radius: 50%;
+		width: 60px;
+		height: 60px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: white;
+		font-size: 1.5rem;
+		font-weight: bold;
+		transition: transform 0.3s ease, box-shadow 0.3s ease;
+		
+		&:hover {
+			transform: scale(1.1);
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+		}
+		
+		&.light-theme {
+			background-color: $light-accent-color;
+			color: white;
+		}
+	}
+
+	// Profile link styling
+	.profile-link {
+		color: $accent-color;
+		text-decoration: none;
+		font-weight: 500;
+		transition: color 0.3s ease;
+		
+		&:hover {
+			color: lighten($accent-color, 10%);
+			text-decoration: underline;
+		}
+		
+		&.light-theme {
+			color: $light-accent-color;
+			
+			&:hover {
+				color: darken($light-accent-color, 10%);
+			}
+		}
+	}
+
+	// Profile edit icon styling
+	.profile-edit-icon {
+		color: $text-color;
+		font-size: 1.2rem;
+		transition: color 0.3s ease, transform 0.3s ease;
+		
+		&:hover {
+			color: $accent-color;
+			transform: scale(1.1);
+		}
+		
+		&.light-theme {
+			color: $light-text-color;
+			
+			&:hover {
+				color: $light-accent-color;
+			}
+		}
+	}
+
 	.leetcode {
 		display: flex;
 		flex-direction: column;
@@ -465,6 +558,119 @@ i {
 				height: 100%;
 			}
 		}
+	}
+}
+
+// Required field indicator styling
+.required {
+	color: #dc3545;
+	font-weight: bold;
+	margin-left: 2px;
+}
+
+// Form help text styling
+.form-text {
+	font-size: 0.875rem;
+	margin-top: 0.25rem;
+	color: #6c757d;
+	
+	&.light-theme {
+		color: #495057;
+	}
+}
+
+// Enhanced dropdown list styling
+.dropdown-list {
+	position: relative;
+	max-height: 200px;
+	overflow-y: auto;
+	border: 1px solid #ced4da;
+	border-radius: 0.375rem;
+	background-color: $primary-light;
+	z-index: 1050;
+	margin-top: 2px;
+	
+	&.light-theme {
+		background-color: white;
+		border-color: #dee2e6;
+	}
+	
+	.dropdown-item {
+		padding: 0.5rem 1rem;
+		cursor: pointer;
+		transition: background-color 0.2s ease;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		
+		&:hover {
+			background-color: rgba(255, 215, 0, 0.1);
+		}
+		
+		&.light-theme:hover {
+			background-color: rgba(52, 152, 219, 0.1);
+		}
+		
+		&:last-child {
+			border-bottom: none;
+		}
+	}
+}
+
+// Item title styling for better accessibility
+.item-title {
+	color: $accent-color;
+	font-weight: 600;
+	margin-bottom: 0.5rem;
+	transition: color 0.3s ease;
+	
+	&:hover {
+		color: lighten($accent-color, 10%);
+		cursor: pointer;
+	}
+	
+	&.light-theme {
+		color: $light-accent-color;
+		
+		&:hover {
+			color: darken($light-accent-color, 10%);
+		}
+	}
+}
+
+// Improved button accessibility and styling
+.btn-outline-warning, .btn-outline-success, .btn-outline-danger {
+	transition: all 0.3s ease;
+	border-width: 2px;
+	font-weight: 500;
+	
+	&:focus {
+		outline: 2px solid #007bff;
+		outline-offset: 2px;
+	}
+	
+	&:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+}
+
+// Enhanced form accessibility
+.form-control, .form-select {
+	transition: border-color 0.3s ease, box-shadow 0.3s ease;
+	
+	&:focus {
+		border-color: $accent-color;
+		box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.25);
+		outline: none;
+		
+		&.light-theme {
+			border-color: $light-accent-color;
+			box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+		}
+	}
+	
+	&.is-invalid {
+		border-color: #dc3545;
+		box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
 	}
 }
 
