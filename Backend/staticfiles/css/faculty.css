@@ -21,10 +21,6 @@ body {
   color: #f5f5f5;
   line-height: 1.6;
 }
-body.light-theme {
-  background-color: rgb(255, 249, 240);
-  color: #333333;
-}
 
 header {
   background-color: #1a1a1a;

@@ -105,7 +105,7 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: var(--primary-gold);
+            background: black;
             color: var(--darker-bg);
             border: none;
             font-size: 1.2rem;
@@ -537,9 +537,6 @@
         </div>
         
         <div class="header-actions">
-            <button class="action-btn" id="themeBtn" title="Toggle Theme">
-                <i class="bi bi-moon-fill"></i>
-            </button>
             <button class="action-btn" id="formsBtn" title="Forms">
                 <i class="bi bi-card-text"></i>
             </button>
@@ -579,44 +576,6 @@
                     </div>
                 </div>
                 <div class="stat-label">LeetCode (E/M/H)</div>
-            </div>
-        </div>
-
-        <!-- Quick Info Card -->
-        <div class="quick-info-card">
-            <div class="info-grid">
-                <div class="info-item">
-                    <i class="bi bi-person-circle"></i>
-                    <div>
-                        <strong>Class</strong>
-                        <span>{{ request.user.student.year}} Year - {{ request.user.student.section }} Section</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <i class="bi bi-building"></i>
-                    <div>
-                        <strong>Department</strong>
-                        <span>{{ request.user.student.dept }}</span>
-                    </div>
-                </div>
-                {% if request.user.student.current_cgpa %}
-                <div class="info-item">
-                    <i class="bi bi-star"></i>
-                    <div>
-                        <strong>CGPA</strong>
-                        <span>{{ request.user.student.current_cgpa }}</span>
-                    </div>
-                </div>
-                {% endif %}
-                {% if request.user.student.phone %}
-                <div class="info-item">
-                    <i class="bi bi-telephone"></i>
-                    <div>
-                        <strong>Phone</strong>
-                        <span>{{ request.user.student.phone }}</span>
-                    </div>
-                </div>
-                {% endif %}
             </div>
         </div>
 
@@ -861,14 +820,6 @@
         }
 
         function setupEventListeners() {
-            // Theme toggle
-            document.getElementById('themeBtn').addEventListener('click', function() {
-                document.body.classList.toggle('light-theme');
-                const icon = this.querySelector('i');
-                icon.classList.toggle('bi-moon-fill');
-                icon.classList.toggle('bi-brightness-high-fill');
-            });
-
             // Forms button
             document.getElementById('formsBtn').addEventListener('click', function() {
                 window.location.href = "{% url 'fillout' %}";

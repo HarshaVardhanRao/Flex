@@ -24,10 +24,6 @@ body {
 body::-webkit-scrollbar {
   display: none;
 }
-body.light-theme {
-  background-color: rgb(255, 249, 240);
-  color: #333333;
-}
 
 .blur {
   min-height: 100vh;
