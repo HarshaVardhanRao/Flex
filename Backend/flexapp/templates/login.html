@@ -19,6 +19,125 @@
 			main{
 				flex-direction: column;
 			}
+			/* Demo Credentials Help Box Styles */
+			.demo-help {
+				margin-top: 1.5rem;
+				background-color: rgba(241, 196, 15, 0.1);
+				border: 1px solid #f1c40f;
+				border-radius: 10px;
+				padding: 1.5rem;
+				max-width: 500px;
+				margin-left: auto;
+				margin-right: auto;
+			}
+
+			.demo-help h4 {
+				color: #f1c40f;
+				margin-bottom: 1rem;
+				font-size: 1.1rem;
+				font-weight: 600;
+				text-align: center;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 0.5rem;
+			}
+
+			.light-theme .demo-help h4 {
+				color: #f39c12;
+			}
+
+			.credentials-grid {
+				display: grid;
+				grid-template-columns: 1fr;
+				gap: 1rem;
+				margin-bottom: 1rem;
+			}
+
+			.credential-item {
+				background-color: rgba(255, 255, 255, 0.05);
+				padding: 0.8rem;
+				border-radius: 6px;
+				border-left: 3px solid #f1c40f;
+				cursor: pointer;
+				transition: all 0.3s ease;
+			}
+
+			.credential-item:hover {
+				background-color: rgba(241, 196, 15, 0.15);
+				transform: translateX(5px);
+			}
+
+			.light-theme .credential-item {
+				background-color: rgba(241, 196, 15, 0.05);
+			}
+
+			.light-theme .credential-item:hover {
+				background-color: rgba(241, 196, 15, 0.15);
+			}
+
+			.credential-label {
+				color: #f1c40f;
+				font-weight: 600;
+				font-size: 0.9rem;
+				margin-bottom: 0.3rem;
+			}
+
+			.light-theme .credential-label {
+				color: #f39c12;
+			}
+
+			.credential-details {
+				font-family: 'Courier New', monospace;
+				font-size: 0.85rem;
+				color: #ecf0f1;
+				line-height: 1.4;
+			}
+
+			.light-theme .credential-details {
+				color: #2c3e50;
+			}
+
+			.demo-note {
+				text-align: center;
+				font-size: 0.8rem;
+				color: #95a5a6;
+				font-style: italic;
+				margin-top: 1rem;
+				padding-top: 1rem;
+				border-top: 1px solid rgba(241, 196, 15, 0.3);
+			}
+
+			.light-theme .demo-note {
+				color: #7f8c8d;
+			}
+
+			.toggle-help {
+				background: none;
+				border: none;
+				color: #f1c40f;
+				cursor: pointer;
+				font-size: 0.9rem;
+				text-decoration: underline;
+				margin-bottom: 1rem;
+				margin-top: 1rem;
+				display: block;
+				margin-left: auto;
+				margin-right: auto;
+			}
+
+			.light-theme .toggle-help {
+				color: #f39c12;
+			}
+
+			.toggle-help:hover {
+				color: #f7dc6f;
+			}
+
+			.light-theme .toggle-help:hover {
+				color: #f1c40f;
+			}
+
 			/* Public Access Section Styles */
 			.public-access {
 				margin-top: 2rem;
@@ -126,6 +245,55 @@
 				{% endcomment %}
 			</form>
 			
+			<!-- Demo Login Credentials Help Box -->
+			<button type="button" class="toggle-help" onclick="toggleDemoHelp()">
+				<i class="bi bi-info-circle"></i> Show Demo Login Credentials
+			</button>
+			
+			<div id="demoHelp" class="demo-help" style="display: none;">
+				<h4>
+					<i class="bi bi-person-check"></i>
+					Demo Login Credentials
+				</h4>
+				
+				<div class="credentials-grid">
+					<div class="credential-item" title="Click to auto-fill login form">
+						<div class="credential-label">👨‍🎓 Student Accounts</div>
+						<div class="credential-details">
+							Username: 22691A05B5 (Mahesh Kumar - 3rd Year)<br>
+							Username: 22691A05C3 (Priya Sharma - 2nd Year)<br>
+							Username: 22691A05D7 (Arjun Reddy - 4th Year)<br>
+							Password: student123
+						</div>
+					</div>
+					
+					<div class="credential-item" title="Click to auto-fill login form">
+						<div class="credential-label">👨‍🏫 Faculty Account</div>
+						<div class="credential-details">
+							Username: faculty001 (Dr. Jane Smith)<br>
+							Password: faculty123
+						</div>
+					</div>
+					
+					<div class="credential-item" title="Click to auto-fill login form">
+						<div class="credential-label">🔧 Admin Account</div>
+						<div class="credential-details">
+							Username: admin<br>
+							Password: admin123<br>
+							<small>(Access: <a href="/admin/" target="_blank" style="color: #f1c40f;">Admin Panel</a>)</small>
+						</div>
+					</div>
+				</div>
+				
+				<div class="demo-note">
+					<i class="bi bi-lightbulb"></i>
+					These are demo credentials for testing the Flex prototype. Each account type provides different features and access levels.
+					<br><br>
+					<i class="bi bi-hand-index"></i>
+					<strong>Tip:</strong> Click on any credential box above to auto-fill the login form!
+				</div>
+			</div>
+			
 			<!-- Public Access Section -->
 			<div class="public-access">
 				<h3>Public Access</h3>
@@ -138,4 +306,59 @@
 			</div>
 		</main>
 	</body>
+	
+	<script>
+		function toggleDemoHelp() {
+			const helpBox = document.getElementById('demoHelp');
+			const toggleBtn = document.querySelector('.toggle-help');
+			
+			if (helpBox.style.display === 'none' || helpBox.style.display === '') {
+				helpBox.style.display = 'block';
+				toggleBtn.innerHTML = '<i class="bi bi-info-circle-fill"></i> Hide Demo Login Credentials';
+			} else {
+				helpBox.style.display = 'none';
+				toggleBtn.innerHTML = '<i class="bi bi-info-circle"></i> Show Demo Login Credentials';
+			}
+		}
+		
+		// Auto-fill demo credentials when clicking on a credential item
+		document.addEventListener('DOMContentLoaded', function() {
+			const credentialItems = document.querySelectorAll('.credential-item');
+			const rollnoInput = document.getElementById('rollno');
+			const passwordInput = document.getElementById('password');
+			
+			credentialItems.forEach(item => {
+				item.addEventListener('click', function() {
+					const details = this.querySelector('.credential-details').textContent;
+					
+					// Extract username and password
+					if (details.includes('22691A05B5')) {
+						rollnoInput.value = '22691A05B5';
+						passwordInput.value = 'student123';
+					} else if (details.includes('22691A05C3')) {
+						rollnoInput.value = '22691A05C3';
+						passwordInput.value = 'student123';
+					} else if (details.includes('22691A05D7')) {
+						rollnoInput.value = '22691A05D7';
+						passwordInput.value = 'student123';
+					} else if (details.includes('faculty001')) {
+						rollnoInput.value = 'faculty001';
+						passwordInput.value = 'faculty123';
+					} else if (details.includes('admin')) {
+						rollnoInput.value = 'admin';
+						passwordInput.value = 'admin123';
+					}
+					
+					// Add visual feedback
+					rollnoInput.style.backgroundColor = 'rgba(46, 204, 113, 0.1)';
+					passwordInput.style.backgroundColor = 'rgba(46, 204, 113, 0.1)';
+					
+					setTimeout(() => {
+						rollnoInput.style.backgroundColor = '';
+						passwordInput.style.backgroundColor = '';
+					}, 1000);
+				});
+			});
+		});
+	</script>
 </html>
