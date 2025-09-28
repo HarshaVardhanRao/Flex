@@ -2,6 +2,7 @@
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.utils import timezone
 from .forms import *
 import logging
 from django.contrib.auth.decorators import login_required
@@ -386,9 +387,9 @@ def getStudentDetails(student):
 
 def get_monthly_activity(student):
     """Get monthly activity data for the last 12 months"""
-    from datetime import datetime, timedelta
+    from datetime import timedelta
     
-    end_date = datetime.now()
+    end_date = timezone.now()
     start_date = end_date - timedelta(days=365)
     
     # Get activity counts by month
@@ -941,9 +942,8 @@ def get_certification_summary(student_obj):
 def generate_verification_code(student_obj):
     """Generate unique verification code for portfolio"""
     import hashlib
-    from datetime import datetime
     
-    data = f"{student_obj.username}_{datetime.now().strftime('%Y%m%d')}"
+    data = f"{student_obj.username}_{timezone.now().strftime('%Y%m%d')}"
     return hashlib.md5(data.encode()).hexdigest()[:8]
 
 
@@ -1043,7 +1043,7 @@ def compliance_reports(request):
         return HttpResponse("Unauthorized", status=403)
     
     report_type = request.GET.get('type', 'naac')
-    year = request.GET.get('year', datetime.now().year)
+    year = request.GET.get('year', timezone.now().year)
     
     try:
         if report_type == 'naac':
