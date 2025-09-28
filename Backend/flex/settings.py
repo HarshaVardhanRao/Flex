@@ -56,11 +56,11 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'flexapp.middleware.SecurityMiddleware',
     'flexapp.middleware.AuditLogMiddleware',
     # 'flexapp.middleware.RoleBasedAccessMiddleware',  # Temporarily disabled to fix redirect loop
     'flexapp.middleware.SessionTimeoutMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 

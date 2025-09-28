@@ -73,8 +73,12 @@ urlpatterns = [
     # Achievement System URLs
     path('achievements/add/', views.add_achievement, name='add_achievement'),
     path('achievements/', views.achievement_list, name='achievement_list'),
+    path('achievements/edit/<int:achievement_id>/', views.edit_achievement, name='edit_achievement'),
+    path('achievements/delete/<int:achievement_id>/', views.delete_achievement, name='delete_achievement'),
     path('faculty/approvals/', views.faculty_approval_dashboard, name='faculty_approval_dashboard'),
     path('achievements/approve/<int:achievement_id>/', views.approve_achievement, name='approve_achievement'),
+    path('projects/approve/<int:project_id>/', views.approve_project, name='approve_project'),
+    path('certificates/approve/<int:certificate_id>/', views.approve_certificate, name='approve_certificate'),
     
     # Export URLs
     path('export/students/<str:format_type>/', views.export_students_data, name='export_students'),
@@ -87,6 +91,9 @@ urlpatterns = [
     
     # Compliance Reports URLs
     path('reports/compliance/', views.compliance_reports, name='compliance_reports'),
+    
+    # NAAC Report Generation
+    path('reports/naac/generate/', views.generate_naac_report, name='generate_naac_report'),
     
     # REST API URLs
     path('', include('flexapp.api_urls')),

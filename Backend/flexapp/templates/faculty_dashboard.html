@@ -242,6 +242,10 @@
 				</aside>
 				<br />
 				<button onclick="return downloadData()">Download</button>
+				<br />
+				<button onclick="return generateNAACReport()" style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; border: none; padding: 12px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; margin-top: 10px; width: 100%;">
+					<i class="bi bi-file-earmark-text"></i> Generate NAAC Report
+				</button>
 			</div>
 			<div class="right-bar">
 			<!-- Advanced Filters Section Above Table -->
@@ -389,9 +393,10 @@
 			</div>
 		</main>
 		<div class="form-check-label">
-			<button id="FormToggle"><i class="bi bi-book-fill"></i></button>
-			<button id="Gear"><i class="bi bi-gear"></i></button>
-			<button id="logout"><i class="bi bi-box-arrow-right"></i></button>
+			<button id="FormToggle" title="Forms"><i class="bi bi-book-fill"></i></button>
+			<button id="ApprovalsBtn" title="Approvals"><i class="bi bi-check-circle"></i></button>
+			<button id="Gear" title="Settings"><i class="bi bi-gear"></i></button>
+			<button id="logout" title="Logout"><i class="bi bi-box-arrow-right"></i></button>
 		</div>
 		<script>
 			var None = 0;
@@ -649,6 +654,13 @@
 						console.error('Error:', error);
 					});
 			});
+			
+			document.querySelector('#ApprovalsBtn').addEventListener('click', () => {
+				console.log('Approvals button clicked');
+				console.log('URL: {% url "faculty_approval_dashboard" %}');
+				window.location.href = "{% url 'faculty_approval_dashboard' %}";
+			});
+			
 			document.querySelector('#logout').addEventListener('click', () => {
 				fetch("{% url 'logout' %}", {
 					method: 'GET',
@@ -667,6 +679,48 @@
 						console.error('Error:', error);
 					});
 					});
+
+			function generateNAACReport() {
+				// Show loading state
+				const button = event.target;
+				const originalText = button.innerHTML;
+				button.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating Report...';
+				button.disabled = true;
+
+				const data = Array.from(document.querySelectorAll('input[name="select-student"]:checked')).map((checkbox) => checkbox.value);
+				
+				fetch("{% url 'generate_naac_report' %}", {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-CSRFToken': '{{ csrf_token }}',
+					},
+					body: JSON.stringify({
+						students: data,
+						include_all: data.length === 0 // If no students selected, include all
+					}),
+				})
+				.then((response) => response.blob())
+				.then((blob) => {
+					const url = window.URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = `NAAC_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+					document.body.appendChild(a);
+					a.click();
+					a.remove();
+					window.URL.revokeObjectURL(url);
+				})
+				.catch((error) => {
+					console.error('Error generating NAAC report:', error);
+					alert('Error generating NAAC report. Please try again.');
+				})
+				.finally(() => {
+					// Restore button state
+					button.innerHTML = originalText;
+					button.disabled = false;
+				});
+			}
 
 		</script>
 	</body>

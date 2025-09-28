@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Achievement - MITS FLEX{% endblock %}
+
+{% block content %}
+<div class="edit-container">
+    <div class="edit-header">
+        <h1>Edit Achievement</h1>
+        <p>Update your achievement details below</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="edit-form">
+        {% csrf_token %}
+        
+        <div class="form-section">
+            <h3>Achievement Information</h3>
+            
+            <div class="form-group">
+                <label for="category">Category *</label>
+                <select name="category" id="category" required>
+                    {% for cat in achievement_categories %}
+                        <option value="{{ cat.id }}" {% if cat.id == achievement.category.id %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="title">Achievement Title *</label>
+                <input type="text" name="title" id="title" value="{{ achievement.title }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description *</label>
+                <textarea name="description" id="description" rows="4" required>{{ achievement.description }}</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="achievement_date">Achievement Date *</label>
+                <input type="date" name="achievement_date" id="achievement_date" value="{{ achievement.achievement_date|date:'Y-m-d' }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="verification_method">Verification Method</label>
+                <select name="verification_method" id="verification_method">
+                    <option value="">Select Verification Method</option>
+                    <option value="certificate" {% if achievement.verification_method == 'certificate' %}selected{% endif %}>Certificate/Document</option>
+                    <option value="website" {% if achievement.verification_method == 'website' %}selected{% endif %}>Official Website</option>
+                    <option value="news" {% if achievement.verification_method == 'news' %}selected{% endif %}>News Article</option>
+                    <option value="social_media" {% if achievement.verification_method == 'social_media' %}selected{% endif %}>Social Media Post</option>
+                    <option value="faculty_verification" {% if achievement.verification_method == 'faculty_verification' %}selected{% endif %}>Faculty Verification</option>
+                    <option value="other" {% if achievement.verification_method == 'other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="supporting_documents">Supporting Documents</label>
+                <input type="file" name="supporting_documents" id="supporting_documents" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                {% if achievement.supporting_documents %}
+                    <small>Current file: <a href="{{ achievement.supporting_documents.url }}" target="_blank">{{ achievement.supporting_documents.name }}</a></small>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="additional_notes">Additional Notes</label>
+                <textarea name="additional_notes" id="additional_notes" rows="2">{{ achievement.faculty_comments|default:'' }}</textarea>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Update Achievement</button>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --primary-gold: #f1c40f;
+        --secondary-gold: #f39c12;
+        --darker-bg: #000000;
+        --dark-card: #1a1a1a;
+        --text-light: #f5f5f5;
+        --border-gold: rgba(241, 196, 15, 0.3);
+    }
+
+    body {
+        background-color: var(--darker-bg);
+        color: var(--text-light);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .edit-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .edit-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 30px;
+        background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+        border-radius: 15px;
+        color: var(--darker-bg);
+    }
+    
+    .edit-header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    
+    .edit-header p {
+        margin: 10px 0 0 0;
+        font-size: 1.1rem;
+        opacity: 0.8;
+    }
+    
+    .edit-form {
+        background: var(--dark-card);
+        border-radius: 15px;
+        padding: 30px;
+        border: 2px solid var(--border-gold);
+    }
+    
+    .form-section h3 {
+        color: var(--primary-gold);
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--primary-gold);
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text-light);
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid var(--border-gold);
+        border-radius: 8px;
+        background-color: var(--darker-bg);
+        color: var(--text-light);
+        font-size: 14px;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--primary-gold);
+        box-shadow: 0 0 15px rgba(241, 196, 15, 0.3);
+    }
+    
+    .form-group textarea {
+        resize: vertical;
+        font-family: inherit;
+    }
+    
+    .form-group small {
+        display: block;
+        margin-top: 5px;
+        color: var(--primary-gold);
+        font-size: 0.8rem;
+    }
+    
+    .form-group small a {
+        color: var(--primary-gold);
+        text-decoration: none;
+    }
+    
+    .form-group small a:hover {
+        text-decoration: underline;
+    }
+    
+    .form-actions {
+        margin-top: 30px;
+        text-align: center;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+    
+    .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+        color: var(--darker-bg);
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(241, 196, 15, 0.4);
+    }
+    
+    .btn-secondary {
+        background-color: transparent;
+        color: var(--text-light);
+        border: 2px solid var(--border-gold);
+    }
+    
+    .btn-secondary:hover {
+        background-color: var(--border-gold);
+        color: var(--darker-bg);
+        transform: translateY(-2px);
+    }
+    
+    @media (max-width: 768px) {
+        .edit-container {
+            padding: 10px;
+        }
+        
+        .edit-form {
+            padding: 20px;
+        }
+        
+        .edit-header h1 {
+            font-size: 2rem;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .btn {
+            width: 200px;
+        }
+    }
+</style>
+{% endblock %}

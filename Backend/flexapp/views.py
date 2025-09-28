@@ -5,13 +5,17 @@ from django.contrib.auth import authenticate, login, logout
 from .forms import *
 import logging
 from django.contrib.auth.decorators import login_required
-from .models import Projects, Certificate, student, LeetCode, Faculty,FillOutForm, FillOutField, student, Technology, AuditLog, Achievement, AchievementCategory, ApprovalWorkflow, AcademicPerformance, EnhancedNotification, NotificationTemplate
+from .models import Projects, Certificate, student, LeetCode, Faculty,FillOutForm, FillOutField, student, Technology, AuditLog, Achievement, AchievementCategory, ApprovalWorkflow, AcademicPerformance, EnhancedNotification, NotificationTemplate, PlacementOffer
 import requests
 from django.http import HttpResponse, JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.core import serializers
 import pandas as pd
+import io
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from datetime import datetime
 from django.core.mail import send_mail
 import random
 from flex import settings
@@ -23,6 +27,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import StudentSerializer, ProjectSerializer, CertificateSerializer, TechnologySerializer
 from django.db.models import F, Sum, Count, Avg
 from .forms import PlacementOfferForm
+from django.utils import timezone
+from datetime import timedelta
 
 # Faculty: Add placement offer for any student
 @login_required
@@ -294,6 +300,12 @@ def getStudentDetails(student):
         co_curricular_certificates = Certificate.objects.filter(rollno=student, category="co_curricular")
         extra_curricular_certificates = Certificate.objects.filter(rollno=student, category="extra_curricular")
         
+        # Debug: Log certificate counts
+        logging.info(f"Certificates for {student}: Technical={technical_certificates.count()}, "
+                    f"Foreign={foreign_language_certificates.count()}, "
+                    f"Co-curricular={co_curricular_certificates.count()}, "
+                    f"Extra-curricular={extra_curricular_certificates.count()}")
+        
         # Get projects summary
         projects_summary = {
             'total': projects.count(),
@@ -356,9 +368,11 @@ def getStudentDetails(student):
             'profile_completion': profile_completion,
             'academic_records': academic_records,
             'latest_academic': latest_academic,
-            'achievements': achievements,
+            'achievements': serializers.serialize('json', achievements),
             'achievements_summary': achievements_summary,
+            'achievement_points': analytics.get('achievement_points', 0),  # Add achievement_points at top level
             'projects': serializers.serialize('json', projects),
+            'projects_length': len(projects),
             'projects_summary': projects_summary,
             'technical_certificates': serializers.serialize('json', technical_certificates),
             'foreign_language_certificates': serializers.serialize('json', foreign_language_certificates),
@@ -386,26 +400,44 @@ def getStudentDetails(student):
 
 def get_monthly_activity(student):
     """Get monthly activity data for the last 12 months"""
-    from datetime import datetime, timedelta
     
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=365)
-    
-    # Get activity counts by month
+    now = timezone.now()
     activities = []
+    
     for i in range(12):
-        month_start = start_date + timedelta(days=30*i)
-        month_end = month_start + timedelta(days=30)
+        # Calculate proper month boundaries
+        target_month = now.month - i
+        target_year = now.year
+        
+        # Handle year rollover
+        while target_month <= 0:
+            target_month += 12
+            target_year -= 1
+        
+        # Create proper timezone-aware month boundaries
+        month_start = timezone.datetime(target_year, target_month, 1, tzinfo=now.tzinfo)
+        
+        # Calculate next month for end boundary
+        if target_month == 12:
+            next_month = 1
+            next_year = target_year + 1
+        else:
+            next_month = target_month + 1
+            next_year = target_year
+            
+        month_end = timezone.datetime(next_year, next_month, 1, tzinfo=now.tzinfo)
         
         # Count various activities for this month
         certificates = Certificate.objects.filter(
             rollno=student,
-            uploaded_at__range=[month_start, month_end]
+            uploaded_at__gte=month_start,
+            uploaded_at__lt=month_end
         ).count()
         
         achievements = Achievement.objects.filter(
             student=student,
-            submission_date__range=[month_start, month_end]
+            submission_date__gte=month_start,
+            submission_date__lt=month_end
         ).count()
         
         activities.append({
@@ -494,7 +526,17 @@ def calculate_percentile(peers, student_value, metric_type):
 def dashboard(request):
     try:
         context = getStudentDetails(request.user)
-        return render(request, 'dashboard.html', context)
+        
+        # Add achievement categories for the modal form
+        from .models import AchievementCategory
+        context['achievement_categories'] = AchievementCategory.objects.filter(is_active=True)
+        
+        response = render(request, 'dashboard.html', context)
+        # Add cache control headers to prevent caching issues
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
     except Exception as e:
         logging.error(f"Error in dashboard: {e}")
         return HttpResponse("An error occurred.")
@@ -506,6 +548,9 @@ def add_achievement(request):
     """Add new achievement for approval"""
     if request.method == 'POST':
         try:
+            from datetime import datetime
+            from django.contrib import messages
+            
             # Create achievement
             achievement = Achievement.objects.create(
                 student=request.user,
@@ -514,56 +559,114 @@ def add_achievement(request):
                 title=request.POST.get('title'),
                 description=request.POST.get('description'),
                 achievement_date=request.POST.get('achievement_date'),
-                verification_method=request.POST.get('verification_method', '')
+                verification_method=request.POST.get('verification_method', ''),
+                status='pending'  # Set initial status as pending
             )
+            
+            # Handle optional fields
+            if request.POST.get('additional_notes'):
+                achievement.faculty_comments = request.POST.get('additional_notes')
             
             # Handle file upload
             if 'supporting_documents' in request.FILES:
                 achievement.supporting_documents = request.FILES['supporting_documents']
-                achievement.save()
             
-            # Create approval workflow
-            ApprovalWorkflow.objects.create(
-                content_type='achievement',
-                object_id=achievement.id,
-                student=request.user,
-                current_status='pending'
-            )
+            achievement.save()
             
-            # Log the action
-            AuditLog.objects.create(
-                user=request.user,
-                action='create',
-                model_name='Achievement',
-                object_id=achievement.id,
-                description=f"Created achievement: {achievement.title}"
-            )
+            messages.success(request, f'Achievement "{achievement.title}" has been submitted for approval!')
             
-            # Create notification for faculty
-            faculty_members = Faculty.objects.filter(
-                coordinator_roles__name__icontains='academic'
-            )
-            for faculty in faculty_members:
-                EnhancedNotification.objects.create(
-                    recipient_faculty=faculty,
-                    title='New Achievement Submission',
-                    message=f'Student {request.user.username} submitted achievement: {achievement.title}',
-                    notification_type='new_submission',
-                    related_object_type='achievement',
-                    related_object_id=achievement.id
-                )
-            
-            messages.success(request, 'Achievement submitted successfully for approval!')
-            return redirect('dashboard')
+            # Redirect to dashboard with cache busting parameter
+            from django.urls import reverse
+            import time
+            return redirect(f"{reverse('dashboard')}?t={int(time.time())}")
             
         except Exception as e:
             logging.error(f"Error adding achievement: {e}")
-            messages.error(request, 'Error submitting achievement. Please try again.')
+            messages.error(request, f'Error adding achievement: {str(e)}')
             return redirect('dashboard')
     
-    categories = AchievementCategory.objects.filter(is_active=True)
-    return render(request, 'add_achievement.html', {'categories': categories})
+    # If GET request, redirect to dashboard
+    return redirect('dashboard')
 
+@login_required
+def edit_achievement(request, achievement_id):
+    """Edit achievement - only allowed for pending achievements"""
+    try:
+        achievement = get_object_or_404(Achievement, id=achievement_id, student=request.user)
+        
+        # Only allow editing of pending achievements
+        if achievement.status != 'pending':
+            messages.error(request, 'You can only edit pending achievements.')
+            return redirect('dashboard')
+        
+        if request.method == 'POST':
+            # Update achievement fields
+            achievement.title = request.POST.get('title', achievement.title)
+            achievement.description = request.POST.get('description', achievement.description)
+            achievement.achievement_date = request.POST.get('achievement_date', achievement.achievement_date)
+            achievement.verification_method = request.POST.get('verification_method', achievement.verification_method)
+            
+            # Update category if provided
+            if request.POST.get('category'):
+                achievement.category_id = request.POST.get('category')
+            
+            # Handle file upload
+            if 'supporting_documents' in request.FILES:
+                achievement.supporting_documents = request.FILES['supporting_documents']
+            
+            # Handle additional notes
+            if request.POST.get('additional_notes'):
+                achievement.faculty_comments = request.POST.get('additional_notes')
+            
+            achievement.save()
+            
+            messages.success(request, f'Achievement "{achievement.title}" has been updated successfully!')
+            return redirect('dashboard')
+        
+        # For GET request, render edit form
+        from .models import AchievementCategory
+        achievement_categories = AchievementCategory.objects.filter(is_active=True)
+        
+        return render(request, 'edit_achievement.html', {
+            'achievement': achievement,
+            'achievement_categories': achievement_categories
+        })
+        
+    except Exception as e:
+        logging.error(f"Error editing achievement: {e}")
+        messages.error(request, f'Error editing achievement: {str(e)}')
+        return redirect('dashboard')
+
+@login_required
+def delete_achievement(request, achievement_id):
+    """Delete achievement - only allowed for pending achievements"""
+    try:
+        achievement = get_object_or_404(Achievement, id=achievement_id, student=request.user)
+        
+        # Only allow deletion of pending achievements
+        if achievement.status != 'pending':
+            return JsonResponse({
+                'success': False, 
+                'error': 'You can only delete pending achievements.'
+            })
+        
+        if request.method == 'POST':
+            title = achievement.title
+            achievement.delete()
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'Achievement "{title}" has been deleted successfully!'
+            })
+        
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+        
+    except Exception as e:
+        logging.error(f"Error deleting achievement: {e}")
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error deleting achievement: {str(e)}'
+        })
 
 @login_required
 def achievement_list(request):
@@ -576,105 +679,140 @@ def achievement_list(request):
 @login_required 
 def faculty_approval_dashboard(request):
     """Faculty dashboard for managing approvals"""
-    if request.user.type() != "Faculty":
-        return HttpResponse("Unauthorized", status=403)
+    print("Faculty approval dashboard accessed")  # Debug log
     
-    # Get pending approvals
-    pending_workflows = ApprovalWorkflow.objects.filter(
-        current_status__in=['pending', 'under_review']
-    ).order_by('submitted_at')
-    
-    # Get recent activity
-    recent_activities = AuditLog.objects.filter(
-        action__in=['approve', 'reject']
-    ).order_by('-timestamp')[:10]
-    
-    # Get summary statistics
-    summary = {
-        'pending_count': pending_workflows.filter(current_status='pending').count(),
-        'under_review_count': pending_workflows.filter(current_status='under_review').count(),
-        'total_pending': pending_workflows.count(),
-    }
-    
-    return render(request, 'faculty_approval_dashboard.html', {
-        'pending_workflows': pending_workflows,
-        'recent_activities': recent_activities,
-        'summary': summary
-    })
+    try:
+        # Start with minimal data
+        context = {
+            'achievements': [],
+            'projects': [],
+            'certificates': [],
+            'categories': [],
+            'pending_count': 0,
+            'approved_today': 0,
+            'total_reviewed': 0,
+            'avg_review_time': '2.5'
+        }
+        
+        # Try to load achievements
+        try:
+            achievements = Achievement.objects.all().order_by('-id')[:20]  # Limit for performance
+            context['achievements'] = achievements
+            print(f"Loaded {len(achievements)} achievements")
+        except Exception as e:
+            print(f"Error loading achievements: {e}")
+        
+        # Try to load projects
+        try:
+            projects = Projects.objects.filter(approval_status='pending').order_by('-id')[:20]
+            context['projects'] = projects
+            print(f"Loaded {len(projects)} projects")
+        except Exception as e:
+            print(f"Error loading projects: {e}")
+        
+        # Try to load certificates
+        try:
+            certificates = Certificate.objects.filter(approval_status='pending').order_by('-id')[:20]
+            context['certificates'] = certificates
+            print(f"Loaded {len(certificates)} certificates")
+        except Exception as e:
+            print(f"Error loading certificates: {e}")
+        
+        # Try to load categories
+        try:
+            categories = AchievementCategory.objects.all()
+            context['categories'] = categories
+            print(f"Loaded {len(categories)} categories")
+        except Exception as e:
+            print(f"Error loading categories: {e}")
+            
+        # Try to get pending count
+        try:
+            pending_count = Achievement.objects.filter(status='pending').count()
+            context['pending_count'] = pending_count
+            print(f"Pending count: {pending_count}")
+        except Exception as e:
+            print(f"Error getting pending count: {e}")
+            
+        # Try to get reviewed count
+        try:
+            total_reviewed = Achievement.objects.exclude(status='pending').count()
+            context['total_reviewed'] = total_reviewed
+            print(f"Total reviewed: {total_reviewed}")
+        except Exception as e:
+            print(f"Error getting reviewed count: {e}")
+        
+        print("Rendering template...")
+        return render(request, 'faculty_approval_dashboard.html', context)
+        
+    except Exception as e:
+        import traceback
+        error_msg = f'Critical error in faculty_approval_dashboard: {str(e)}\n{traceback.format_exc()}'
+        print(error_msg)
+        
+        # Return error page with debugging info
+        from django.http import HttpResponse
+        return HttpResponse(f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Approval Dashboard Error</title>
+            <style>
+                body {{ font-family: Arial; padding: 20px; background: #1a1a1a; color: #f5f5f5; }}
+                .error {{ background: #000; padding: 15px; border: 1px solid #f1c40f; border-radius: 5px; }}
+                .back-btn {{ color: #f1c40f; text-decoration: none; padding: 10px 20px; border: 1px solid #f1c40f; border-radius: 5px; display: inline-block; margin-top: 20px; }}
+            </style>
+        </head>
+        <body>
+            <h1 style="color: #f1c40f;">🚫 Approval Dashboard Error</h1>
+            <p>There was an error loading the approval dashboard. Debug information:</p>
+            <div class="error">
+                <pre>{error_msg}</pre>
+            </div>
+            <a href="/faculty" class="back-btn">← Back to Faculty Dashboard</a>
+            
+            <h3 style="color: #f1c40f; margin-top: 30px;">Troubleshooting:</h3>
+            <ul>
+                <li>Check if Achievement and AchievementCategory models exist</li>
+                <li>Check database connections</li>
+                <li>Check template file exists at: flexapp/templates/faculty_approval_dashboard.html</li>
+                <li>Check console logs for JavaScript errors</li>
+            </ul>
+        </body>
+        </html>
+        """, status=500)
 
 
 @login_required
 def approve_achievement(request, achievement_id):
-    """Approve an achievement"""
-    if request.user.type() != "Faculty":
-        return HttpResponse("Unauthorized", status=403)
-    
+    """Approve or reject an achievement"""
     try:
         achievement = get_object_or_404(Achievement, id=achievement_id)
-        workflow = ApprovalWorkflow.objects.get(
-            content_type='achievement',
-            object_id=achievement_id
-        )
         
         if request.method == 'POST':
-            action = request.POST.get('action')
-            comments = request.POST.get('comments', '')
+            status = request.POST.get('status')
+            comments = request.POST.get('faculty_comments', '')
+            points_awarded = request.POST.get('points_awarded', 0)
             
-            if action == 'approve':
+            if status == 'approved':
                 achievement.status = 'approved'
                 achievement.approved_by = request.user
                 achievement.approval_date = timezone.now()
                 achievement.faculty_comments = comments
-                
-                # Award points
-                achievement.points_awarded = achievement.category.points
+                achievement.points_awarded = int(points_awarded) if points_awarded else 0
                 achievement.is_verified = True
                 
-                workflow.current_status = 'approved'
-                workflow.approver_comments = comments
+                messages.success(request, f'Achievement "{achievement.title}" approved successfully!')
                 
-                # Create notification for student
-                EnhancedNotification.objects.create(
-                    recipient_student=achievement.student,
-                    title='Achievement Approved!',
-                    message=f'Your achievement "{achievement.title}" has been approved and {achievement.points_awarded} points awarded.',
-                    notification_type='achievement_approved',
-                    priority='high'
-                )
-                
-                messages.success(request, 'Achievement approved successfully!')
-                
-            elif action == 'reject':
+            elif status == 'rejected':
                 achievement.status = 'rejected'
                 achievement.reviewed_by = request.user
                 achievement.review_date = timezone.now()
                 achievement.rejection_reason = comments
                 
-                workflow.current_status = 'rejected'
-                workflow.reviewer_comments = comments
-                
-                # Create notification for student
-                EnhancedNotification.objects.create(
-                    recipient_student=achievement.student,
-                    title='Achievement Needs Revision',
-                    message=f'Your achievement "{achievement.title}" needs revision. Reason: {comments}',
-                    notification_type='achievement_rejected',
-                    priority='medium'
-                )
-                
-                messages.warning(request, 'Achievement rejected.')
-                
-            achievement.save()
-            workflow.save()
+                messages.warning(request, f'Achievement "{achievement.title}" rejected.')
             
-            # Log the action
-            AuditLog.objects.create(
-                faculty=request.user,
-                action=action,
-                model_name='Achievement',
-                object_id=achievement.id,
-                description=f"{action.title()} achievement: {achievement.title}"
-            )
+            achievement.save()
             
             return redirect('faculty_approval_dashboard')
     
@@ -682,10 +820,85 @@ def approve_achievement(request, achievement_id):
         logging.error(f"Error in approval: {e}")
         messages.error(request, 'Error processing approval. Please try again.')
     
-    return render(request, 'approve_achievement.html', {
-        'achievement': achievement,
-        'workflow': workflow
-    })
+    return redirect('faculty_approval_dashboard')
+
+
+@login_required
+def approve_project(request, project_id):
+    """Faculty view to approve/reject projects"""
+    if request.user.type() != "Faculty" and not request.user.is_superuser:
+        return HttpResponse("Unauthorized", status=403)
+    
+    try:
+        project = Projects.objects.get(id=project_id)
+        
+        if request.method == 'POST':
+            status = request.POST.get('status')
+            comments = request.POST.get('faculty_comments', '')
+            
+            if status == 'approved':
+                project.approval_status = 'approved'
+                project.approved_by = request.user
+                project.approval_date = timezone.now()
+                project.faculty_comments = comments
+                
+                messages.success(request, f'Project "{project.title}" approved successfully!')
+                
+            elif status == 'rejected':
+                project.approval_status = 'rejected'
+                project.approved_by = request.user
+                project.approval_date = timezone.now()
+                project.faculty_comments = comments
+                
+                messages.warning(request, f'Project "{project.title}" rejected.')
+            
+            project.save()
+            return redirect('faculty_approval_dashboard')
+    
+    except Exception as e:
+        logging.error(f"Error in project approval: {e}")
+        messages.error(request, 'Error processing project approval. Please try again.')
+    
+    return redirect('faculty_approval_dashboard')
+
+
+@login_required
+def approve_certificate(request, certificate_id):
+    """Faculty view to approve/reject certificates"""
+    if request.user.type() != "Faculty" and not request.user.is_superuser:
+        return HttpResponse("Unauthorized", status=403)
+    
+    try:
+        certificate = Certificate.objects.get(id=certificate_id)
+        
+        if request.method == 'POST':
+            status = request.POST.get('status')
+            comments = request.POST.get('faculty_comments', '')
+            
+            if status == 'approved':
+                certificate.approval_status = 'approved'
+                certificate.approved_by = request.user
+                certificate.approval_date = timezone.now()
+                certificate.faculty_comments = comments
+                
+                messages.success(request, f'Certificate "{certificate.title}" approved successfully!')
+                
+            elif status == 'rejected':
+                certificate.approval_status = 'rejected'
+                certificate.approved_by = request.user
+                certificate.approval_date = timezone.now()
+                certificate.faculty_comments = comments
+                
+                messages.warning(request, f'Certificate "{certificate.title}" rejected.')
+            
+            certificate.save()
+            return redirect('faculty_approval_dashboard')
+    
+    except Exception as e:
+        logging.error(f"Error in certificate approval: {e}")
+        messages.error(request, 'Error processing certificate approval. Please try again.')
+    
+    return redirect('faculty_approval_dashboard')
 
 
 # Bulk Operations and Data Export
@@ -717,7 +930,7 @@ def export_student_data(request):
         return HttpResponse("Error exporting data", status=500)
 
 
-def export_students_data(format_type):
+def export_students_data(request, format_type):
     """Export students data"""
     students = student.objects.all().values(
         'username', 'first_name', 'last_name', 'email', 'dept', 'year', 'section',
@@ -744,7 +957,7 @@ def export_students_data(format_type):
         return JsonResponse(list(students), safe=False)
 
 
-def export_achievements_data(format_type):
+def export_achievements_data(request, format_type):
     """Export achievements data"""
     achievements = Achievement.objects.select_related('student', 'category').values(
         'student__username', 'student__first_name', 'category__name',
@@ -762,7 +975,8 @@ def export_achievements_data(format_type):
     return JsonResponse(list(achievements), safe=False)
 
 
-def export_certificates_data(format_type):
+
+def export_certificates_data(request, format_type):
     """Export certificates data"""
     certificates = Certificate.objects.select_related('rollno').values(
         'rollno__username', 'rollno__first_name', 'title', 'category', 
@@ -780,7 +994,7 @@ def export_certificates_data(format_type):
     return JsonResponse(list(certificates), safe=False)
 
 
-def export_projects_data(format_type):
+def export_projects_data(request, format_type):
     """Export projects data"""
     projects = Projects.objects.select_related().values(
         'title', 'description', 'status', 'year_and_sem', 'github_link'
@@ -941,9 +1155,8 @@ def get_certification_summary(student_obj):
 def generate_verification_code(student_obj):
     """Generate unique verification code for portfolio"""
     import hashlib
-    from datetime import datetime
     
-    data = f"{student_obj.username}_{datetime.now().strftime('%Y%m%d')}"
+    data = f"{student_obj.username}_{timezone.now().strftime('%Y%m%d')}"
     return hashlib.md5(data.encode()).hexdigest()[:8]
 
 
@@ -1043,7 +1256,7 @@ def compliance_reports(request):
         return HttpResponse("Unauthorized", status=403)
     
     report_type = request.GET.get('type', 'naac')
-    year = request.GET.get('year', datetime.now().year)
+    year = request.GET.get('year', timezone.now().year)
     
     try:
         if report_type == 'naac':
@@ -1435,66 +1648,126 @@ def add_certification(request):
         if request.method == 'POST':
             rollno = request.user
             
-            # Get form data with new field names
+            # Get form data with validation
             category = request.POST.get('category', 'technical')
             title = request.POST.get('title')
             source = request.POST.get('source')
             year_and_sem = request.POST.get('year_and_sem')
             course_link = request.POST.get('course_link', '')
-            
-            # Optional fields for comprehensive form
-            course_provider = request.POST.get('course_provider', '')
             domain = request.POST.get('domain', '')
-            duration = request.POST.get('duration', '')
-            event_type = request.POST.get('event_type', 'others')
+            certificate_id = request.POST.get('certificate_id', '')
+            validity_period = request.POST.get('validity_period', '')
+            
+            # Category-specific fields
+            technologies = request.POST.get('technologies', '')  # For technical certificates
+            language_level = request.POST.get('language_level', '')  # For language certificates
+            event_type = request.POST.get('event_type', '')  # For co-curricular/extra-curricular
             fest_name = request.POST.get('fest_name', '')
             recognition = request.POST.get('recognition', '')
-            rank = request.POST.get('rank', None)
+            rank = request.POST.get('rank', '')
             
-            # Convert empty rank to None
-            if rank == '':
-                rank = None
-            elif rank:
-                rank = int(rank)
+            # Validate required fields
+            if not title or not title.strip():
+                messages.error(request, "Certificate title is required.")
+                return redirect('dashboard')
             
-            # Create certificate instance
+            if not source or not source.strip():
+                messages.error(request, "Source/Institution is required.")
+                return redirect('dashboard')
+                
+            if not year_and_sem:
+                messages.error(request, "Year and Semester is required.")
+                return redirect('dashboard')
+                
+            if not category:
+                messages.error(request, "Category is required.")
+                return redirect('dashboard')
+            
+            # Log the form data for debugging
+            logging.info(f"Creating certificate with data: title={title}, source={source}, category={category}, year_and_sem={year_and_sem}")
+            
+            # Convert rank to integer if provided
+            rank_int = None
+            if rank and rank.strip():
+                try:
+                    rank_int = int(rank)
+                except ValueError:
+                    messages.error(request, "Rank must be a valid number.")
+                    return redirect('dashboard')
+            
+            # Create certificate instance with only required fields first
+            print(f"DEBUG: About to create certificate with fields: rollno={rollno}, title={title}, source={source[:50]}, category={category}, year_and_sem={year_and_sem}")
             new_certificate = Certificate(
                 rollno=rollno,
                 title=title,
-                source=source,
+                source=source[:50],  # Truncate to max_length=50
                 category=category,
                 year_and_sem=year_and_sem,
-                course_link=course_link,
-                course_provider=course_provider,
-                domain=domain,
-                duration=duration,
-                event_type=event_type,
-                fest_name=fest_name,
-                recognition=recognition,
-                rank=rank
             )
+            
+            # Set optional fields separately (only fields that exist in the model)
+            if course_link:
+                new_certificate.course_link = course_link
+            if domain:
+                new_certificate.domain = domain
+            if certificate_id:
+                new_certificate.certificate_id = certificate_id
+            if validity_period:
+                new_certificate.validity_period = validity_period
+            
+            # Handle category-specific data
+            if category == 'technical' and technologies:
+                # For technical certificates, we can store technologies info in domain field
+                if domain:
+                    new_certificate.domain = f"{domain} - Technologies: {technologies}"
+                else:
+                    new_certificate.domain = f"Technologies: {technologies}"
+            elif category == 'foreign_language' and language_level:
+                # For language certificates, store level info in domain
+                if domain:
+                    new_certificate.domain = f"{domain} - Level: {language_level}"
+                else:
+                    new_certificate.domain = f"Language Level: {language_level}"
+            elif category in ['co_curricular', 'extra_curricular']:
+                # For event-based certificates, compile event info
+                event_info = []
+                if event_type:
+                    event_info.append(f"Type: {event_type}")
+                if fest_name:
+                    event_info.append(f"Event: {fest_name}")
+                if recognition:
+                    event_info.append(f"Recognition: {recognition}")
+                if rank_int:
+                    event_info.append(f"Rank: {rank_int}")
+                
+                if event_info:
+                    event_details = " | ".join(event_info)
+                    if domain:
+                        new_certificate.domain = f"{domain} - {event_details}"
+                    else:
+                        new_certificate.domain = event_details
             
             # Handle file upload
             if 'certificate' in request.FILES:
                 new_certificate.certificate = request.FILES['certificate']
             
-            new_certificate.save()
-            
-            # Handle technologies (only for technical certificates)
-            if category == 'technical':
-                technologies_data = request.POST.get('technologies', '')
-                if technologies_data:
-                    technology_ids = technologies_data.split(',')
-                    for tech_id in technology_ids:
-                        if tech_id.strip():
-                            try:
-                                technology = Technology.objects.get(id=int(tech_id.strip()))
-                                new_certificate.technologies.add(technology)
-                            except (Technology.DoesNotExist, ValueError):
-                                pass
+            # Save the certificate to database
+            try:
+                new_certificate.save()
+                # Debug: Log the certificate creation
+                logging.info(f"Certificate created successfully: {new_certificate.title} for user {rollno} with ID: {new_certificate.id}")
+            except Exception as save_error:
+                logging.error(f"Error saving certificate to database: {save_error}")
+                messages.error(request, f"Failed to save certificate: {str(save_error)}")
+                return redirect('dashboard')
             
             messages.success(request, f"{category.replace('_', ' ').title()} certificate added successfully!")
-            return redirect('dashboard')
+            # Add a timestamp to prevent caching issues
+            from django.urls import reverse
+            from django.http import HttpResponseRedirect
+            import time
+            dashboard_url = reverse('dashboard')
+            return HttpResponseRedirect(f"{dashboard_url}?t={int(time.time())}")
             
         return render(request, 'dashboard.html')
     except Exception as e:
@@ -2157,9 +2430,10 @@ def student_profile(request):
     user = request.user  # Get the currently logged-in user
 
     if request.method == "POST":
-        # Only update fields provided in the POST request
+        # Track which fields were updated
         updated_fields = {}
 
+        # Basic Information Fields
         if 'name' in request.POST:
             name = request.POST.get("name")
             if name and name != user.first_name:
@@ -2172,16 +2446,45 @@ def student_profile(request):
                 user.username = username
                 updated_fields['username'] = username
 
-        if 'leetcode_user' in request.POST:
-            leetcode_user = request.POST.get("leetcode_user")
-            if leetcode_user and leetcode_user != user.leetcode_user:
-                user.leetcode_user = leetcode_user
-                updated_fields['leetcode_user'] = leetcode_user
+        if 'personal_email' in request.POST:
+            personal_email = request.POST.get("personal_email")
+            if personal_email != user.personal_email:
+                user.personal_email = personal_email or None
+                updated_fields['personal_email'] = personal_email
+
+        if 'phone' in request.POST:
+            phone = request.POST.get("phone")
+            if phone != user.phone:
+                user.phone = phone or None
+                updated_fields['phone'] = phone
+
+        if 'date_of_birth' in request.POST:
+            date_of_birth = request.POST.get("date_of_birth")
+            if date_of_birth and date_of_birth != str(user.date_of_birth):
+                try:
+                    from datetime import datetime
+                    user.date_of_birth = datetime.strptime(date_of_birth, '%Y-%m-%d').date()
+                    updated_fields['date_of_birth'] = date_of_birth
+                except ValueError:
+                    pass  # Invalid date format, skip
+
+        # Academic Information Fields
+        if 'roll_no' in request.POST:
+            roll_no = request.POST.get("roll_no")
+            if roll_no and roll_no != user.roll_no:
+                user.roll_no = roll_no
+                updated_fields['roll_no'] = roll_no
+
+        if 'dept' in request.POST:
+            dept = request.POST.get("dept")
+            if dept and dept != user.dept:
+                user.dept = dept
+                updated_fields['dept'] = dept
 
         if 'year' in request.POST:
             year = request.POST.get("year")
             if year and str(year) != str(user.year):
-                user.year = year
+                user.year = int(year)
                 updated_fields['year'] = year
 
         if 'section' in request.POST:
@@ -2190,16 +2493,115 @@ def student_profile(request):
                 user.section = section
                 updated_fields['section'] = section
 
+        if 'current_cgpa' in request.POST:
+            current_cgpa = request.POST.get("current_cgpa")
+            if current_cgpa:
+                try:
+                    cgpa_value = float(current_cgpa)
+                    if 0 <= cgpa_value <= 10:
+                        user.current_cgpa = cgpa_value
+                        updated_fields['current_cgpa'] = current_cgpa
+                except ValueError:
+                    pass  # Invalid CGPA format, skip
+
+        if 'admission_year' in request.POST:
+            admission_year = request.POST.get("admission_year")
+            if admission_year:
+                try:
+                    year_value = int(admission_year)
+                    user.admission_year = year_value
+                    updated_fields['admission_year'] = admission_year
+                except ValueError:
+                    pass  # Invalid year format, skip
+
+        # Professional Links
+        if 'leetcode_user' in request.POST:
+            leetcode_user = request.POST.get("leetcode_user")
+            if leetcode_user != user.leetcode_user:
+                user.leetcode_user = leetcode_user or "Username"
+                updated_fields['leetcode_user'] = leetcode_user
+
+        if 'githublink' in request.POST:
+            githublink = request.POST.get("githublink")
+            if githublink != str(user.githublink or ''):
+                user.githublink = githublink or None
+                updated_fields['githublink'] = githublink
+
+        if 'linkedin_url' in request.POST:
+            linkedin_url = request.POST.get("linkedin_url")
+            if linkedin_url != str(user.linkedin_url or ''):
+                user.linkedin_url = linkedin_url or None
+                updated_fields['linkedin_url'] = linkedin_url
+
+        if 'portfolio_url' in request.POST:
+            portfolio_url = request.POST.get("portfolio_url")
+            if portfolio_url != str(user.portfolio_url or ''):
+                user.portfolio_url = portfolio_url or None
+                updated_fields['portfolio_url'] = portfolio_url
+
+        # Skills and Career Information
+        if 'technical_skills' in request.POST:
+            technical_skills = request.POST.get("technical_skills")
+            if technical_skills != str(user.technical_skills or ''):
+                user.technical_skills = technical_skills or None
+                updated_fields['technical_skills'] = technical_skills
+
+        if 'soft_skills' in request.POST:
+            soft_skills = request.POST.get("soft_skills")
+            if soft_skills != str(user.soft_skills or ''):
+                user.soft_skills = soft_skills or None
+                updated_fields['soft_skills'] = soft_skills
+
+        if 'career_interests' in request.POST:
+            career_interests = request.POST.get("career_interests")
+            if career_interests != str(user.career_interests or ''):
+                user.career_interests = career_interests or None
+                updated_fields['career_interests'] = career_interests
+
+        # Guardian Information
+        if 'guardian_name' in request.POST:
+            guardian_name = request.POST.get("guardian_name")
+            if guardian_name != str(user.guardian_name or ''):
+                user.guardian_name = guardian_name or None
+                updated_fields['guardian_name'] = guardian_name
+
+        if 'guardian_phone' in request.POST:
+            guardian_phone = request.POST.get("guardian_phone")
+            if guardian_phone != str(user.guardian_phone or ''):
+                user.guardian_phone = guardian_phone or None
+                updated_fields['guardian_phone'] = guardian_phone
+
+        if 'address' in request.POST:
+            address = request.POST.get("address")
+            if address != str(user.address or ''):
+                user.address = address or None
+                updated_fields['address'] = address
+
+        # Save changes if any fields were updated
         if updated_fields:
             try:
+                # Update profile completion percentage
+                total_fields = 20  # Total number of profile fields
+                filled_fields = sum([
+                    1 for field in [
+                        user.first_name, user.username, user.email, user.personal_email,
+                        user.phone, user.date_of_birth, user.roll_no, user.dept,
+                        user.year, user.section, user.current_cgpa, user.admission_year,
+                        user.leetcode_user, user.githublink, user.linkedin_url, user.portfolio_url,
+                        user.technical_skills, user.career_interests, user.guardian_name, user.address
+                    ] if field and str(field).strip() not in ['', 'Username']
+                ])
+                user.profile_completion_percentage = int((filled_fields / total_fields) * 100)
+                
                 user.save()
-                messages.success(request, "Profile updated successfully.")
+                messages.success(request, f"Profile updated successfully! {len(updated_fields)} field(s) changed.")
             except Exception as e:
-                messages.error(request, f"An error occurred: {e}")
+                messages.error(request, f"An error occurred while saving: {e}")
         else:
-            messages.info(request, "No changes were made.")
+            messages.info(request, "No changes were made to your profile.")
 
         return redirect('profile')
+    
     return render(request, 'student_profile_edit.html', {'user': user})
 
 
@@ -2975,4 +3377,577 @@ def flexon_dashboard(request):
         })
 
     return render(request, 'flexon_dashboard.html')
+
+
+########################### NAAC Report Generation ###########################
+from django.views.decorators.http import require_POST
+
+@csrf_exempt
+@require_POST
+def generate_naac_report(request):
+    """Generate comprehensive NAAC compliance report for students"""
+    try:
+        # Parse request data
+        data = json.loads(request.body)
+        selected_students = data.get('students', [])
+        include_all = data.get('include_all', False)
+        
+        # Get student queryset
+        if include_all or not selected_students:
+            students_queryset = student.objects.filter(is_superuser=False)
+        else:
+            students_queryset = student.objects.filter(roll_no__in=selected_students)
+        
+        # Verify we have students to process
+        if not students_queryset.exists():
+            return JsonResponse({'error': 'No students found to generate report'}, status=400)
+        
+        # Create Excel workbook
+        wb = openpyxl.Workbook()
+        
+        # Remove default sheet
+        if wb.active:
+            wb.remove(wb.active)
+        
+        # Generate basic student summary sheet first - this is essential
+        try:
+            generate_student_summary_sheet(wb, students_queryset)
+        except Exception as e:
+            print(f"Critical error in student summary: {e}")
+            # Create a simple fallback sheet
+            ws = wb.create_sheet(title="Student Data")
+            ws.cell(row=1, column=1, value="Roll Number")
+            ws.cell(row=1, column=2, value="Name")
+            ws.cell(row=1, column=3, value="Department")
+            
+            for row, student_obj in enumerate(students_queryset, 2):
+                ws.cell(row=row, column=1, value=getattr(student_obj, 'roll_no', 'N/A'))
+                ws.cell(row=row, column=2, value=f"{getattr(student_obj, 'first_name', '')} {getattr(student_obj, 'last_name', '')}".strip())
+                ws.cell(row=row, column=3, value=getattr(student_obj, 'dept', 'N/A'))
+        
+        # Try to generate other sheets, but don't fail if there are issues
+        try:
+            generate_academic_performance_sheet(wb, students_queryset)
+        except Exception as e:
+            print(f"Error generating academic performance sheet: {e}")
+        
+        try:
+            generate_projects_sheet(wb, students_queryset)
+        except Exception as e:
+            print(f"Error generating projects sheet: {e}")
+        
+        try:
+            generate_certifications_sheet(wb, students_queryset)
+        except Exception as e:
+            print(f"Error generating certifications sheet: {e}")
+        
+        try:
+            generate_achievements_sheet(wb, students_queryset)
+        except Exception as e:
+            print(f"Error generating achievements sheet: {e}")
+        
+        try:
+            generate_placement_analytics_sheet(wb, students_queryset)
+        except Exception as e:
+            print(f"Error generating placement analytics sheet: {e}")
+        
+        try:
+            generate_skills_analytics_sheet(wb, students_queryset)
+        except Exception as e:
+            print(f"Error generating skills analytics sheet: {e}")
+        
+        try:
+            generate_naac_metrics_sheet(wb, students_queryset)
+        except Exception as e:
+            print(f"Error generating NAAC metrics sheet: {e}")
+        
+        # Ensure we have at least one sheet
+        if len(wb.worksheets) == 0:
+            ws = wb.create_sheet(title="Error")
+            ws.cell(row=1, column=1, value="Error: No data could be generated")
+        
+        # Create a BytesIO object to save the workbook
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        # Create response
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="NAAC_Report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+        
+        return response
+        
+    except Exception as e:
+        import traceback
+        error_msg = f"Error generating NAAC report: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)  # For debugging
+        return JsonResponse({'error': error_msg}, status=500)
+
+def generate_student_summary_sheet(wb, students_queryset):
+    """Generate student summary sheet for NAAC report"""
+    ws = wb.create_sheet(title="Student Summary")
+    
+    # Headers
+    headers = [
+        'Roll Number', 'Name', 'Department', 'Year', 'Section', 'Email',
+        'CGPA', 'Projects Count', 'Certificates Count', 'Achievements Count',
+        'LeetCode Problems', 'Mentor', 'Phone', 'GitHub Link'
+    ]
+    
+    # Apply header styling
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        try:
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill(start_color="2F75B5", end_color="2F75B5", fill_type="solid")
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = Border(
+                left=Side(style='thin'), right=Side(style='thin'),
+                top=Side(style='thin'), bottom=Side(style='thin')
+            )
+        except Exception as e:
+            # If styling fails, just set the value
+            pass
+    
+    # Data rows
+    for row, student_obj in enumerate(students_queryset, 2):
+        try:
+            # Get counts with error handling
+            projects_count = 0
+            certificates_count = 0
+            achievements_count = 0
+            
+            try:
+                projects_count = Projects.objects.filter(contributors=student_obj).count()
+            except:
+                pass
+            
+            try:
+                certificates_count = Certificate.objects.filter(rollno=student_obj).count()
+            except:
+                pass
+            
+            try:
+                achievements_count = Achievement.objects.filter(student=student_obj).count()
+            except:
+                pass
+            
+            # Get LeetCode count
+            leetcode_count = 0
+            try:
+                if hasattr(student_obj, 'studentrollno') and student_obj.studentrollno:
+                    leetcode_count = student_obj.studentrollno.TotalProblems or 0
+            except:
+                pass
+            
+            # Get mentor info safely
+            mentor_name = 'N/A'
+            try:
+                if student_obj.mentor:
+                    mentor_name = f"{student_obj.mentor.first_name} {student_obj.mentor.last_name}".strip()
+            except:
+                pass
+            
+            data = [
+                getattr(student_obj, 'roll_no', 'N/A'),
+                f"{getattr(student_obj, 'first_name', '')} {getattr(student_obj, 'last_name', '')}".strip() or 'N/A',
+                getattr(student_obj, 'dept', 'N/A'),
+                getattr(student_obj, 'year', 'N/A'),
+                getattr(student_obj, 'section', 'N/A'),
+                getattr(student_obj, 'email', 'N/A'),
+                getattr(student_obj, 'current_cgpa', 'N/A') or 'N/A',
+                projects_count,
+                certificates_count,
+                achievements_count,
+                leetcode_count,
+                mentor_name,
+                getattr(student_obj, 'phone', 'N/A') or 'N/A',
+                getattr(student_obj, 'github_link', 'N/A') or 'N/A'
+            ]
+            
+            for col, value in enumerate(data, 1):
+                cell = ws.cell(row=row, column=col, value=value)
+                try:
+                    cell.border = Border(
+                        left=Side(style='thin'), right=Side(style='thin'),
+                        top=Side(style='thin'), bottom=Side(style='thin')
+                    )
+                    if col > 7:  # Numeric columns
+                        cell.alignment = Alignment(horizontal="center")
+                except:
+                    pass
+        except Exception as e:
+            # If there's an error with this student, add an error row
+            ws.cell(row=row, column=1, value=f"Error processing student: {str(e)}")
+    
+    # Auto-adjust column widths
+    try:
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+    except Exception as e:
+        # If auto-adjustment fails, continue without it
+        pass
+
+def generate_academic_performance_sheet(wb, students_queryset):
+    """Generate academic performance analytics sheet"""
+    ws = wb.create_sheet(title="Academic Performance")
+    
+    # Performance summary data
+    dept_stats = {}
+    year_stats = {}
+    
+    for student_obj in students_queryset:
+        dept = student_obj.dept
+        year = student_obj.year
+        cgpa = student_obj.current_cgpa or 0
+        
+        # Department statistics
+        if dept not in dept_stats:
+            dept_stats[dept] = {'count': 0, 'total_cgpa': 0, 'students': []}
+        dept_stats[dept]['count'] += 1
+        dept_stats[dept]['total_cgpa'] += float(cgpa) if cgpa != 'N/A' and cgpa else 0
+        dept_stats[dept]['students'].append(student_obj)
+        
+        # Year statistics
+        if year not in year_stats:
+            year_stats[year] = {'count': 0, 'total_cgpa': 0}
+        year_stats[year]['count'] += 1
+        year_stats[year]['total_cgpa'] += float(cgpa) if cgpa != 'N/A' and cgpa else 0
+    
+    # Department-wise performance
+    ws.cell(row=1, column=1, value="Department-wise Academic Performance").font = Font(size=14, bold=True)
+    headers = ['Department', 'Student Count', 'Average CGPA', 'Projects/Student', 'Certificates/Student']
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=3, column=col, value=header)
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    
+    row = 4
+    for dept, stats in dept_stats.items():
+        avg_cgpa = stats['total_cgpa'] / stats['count'] if stats['count'] > 0 else 0
+        
+        # Calculate projects and certificates per student
+        total_projects = sum(Projects.objects.filter(contributors=s).count() for s in stats['students'])
+        total_certificates = sum(Certificate.objects.filter(rollno=s).count() for s in stats['students'])
+        
+        projects_per_student = total_projects / stats['count'] if stats['count'] > 0 else 0
+        certificates_per_student = total_certificates / stats['count'] if stats['count'] > 0 else 0
+        
+        ws.cell(row=row, column=1, value=dept)
+        ws.cell(row=row, column=2, value=stats['count'])
+        ws.cell(row=row, column=3, value=round(avg_cgpa, 2))
+        ws.cell(row=row, column=4, value=round(projects_per_student, 1))
+        ws.cell(row=row, column=5, value=round(certificates_per_student, 1))
+        row += 1
+
+def generate_projects_sheet(wb, students_queryset):
+    """Generate projects analysis sheet"""
+    ws = wb.create_sheet(title="Projects Analysis")
+    
+    # Get all projects for selected students
+    all_projects = Projects.objects.filter(contributors__in=students_queryset).distinct()
+    
+    headers = [
+        'Project Title', 'Description', 'Status', 'Year/Semester', 'Contributors Count',
+        'Technologies', 'GitHub Link', 'Department'
+    ]
+    
+    # Apply header styling
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color="70AD47", end_color="70AD47", fill_type="solid")
+    
+    # Data rows
+    for row, project in enumerate(all_projects, 2):
+        contributors = project.contributors.all()
+        contributor_names = ', '.join([f"{c.first_name} {c.last_name}" for c in contributors])
+        technologies = ', '.join([tech.name for tech in project.technologies.all()])
+        departments = ', '.join(list(set([c.dept for c in contributors])))
+        
+        data = [
+            project.title,
+            project.description[:100] + '...' if len(project.description) > 100 else project.description,
+            project.status,
+            project.year_and_sem,
+            contributors.count(),
+            technologies,
+            project.github_link or 'N/A',
+            departments
+        ]
+        
+        for col, value in enumerate(data, 1):
+            ws.cell(row=row, column=col, value=value)
+
+def generate_certifications_sheet(wb, students_queryset):
+    """Generate certifications analysis sheet"""
+    ws = wb.create_sheet(title="Certifications Analysis")
+    
+    try:
+        # Get all certificates for selected students
+        all_certificates = Certificate.objects.filter(rollno__in=students_queryset)
+    except Exception as e:
+        ws.cell(row=1, column=1, value=f"Error accessing certificate data: {str(e)}")
+        return
+    
+    headers = [
+        'Student Roll No', 'Student Name', 'Certificate Title', 'Category',
+        'Source/Provider', 'Domain', 'Year/Semester', 'Validity Period'
+    ]
+    
+    # Apply header styling
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        try:
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill(start_color="E74C3C", end_color="E74C3C", fill_type="solid")
+        except:
+            pass
+    
+    # Data rows
+    try:
+        for row, cert in enumerate(all_certificates, 2):
+            try:
+                data = [
+                    getattr(cert.rollno, 'roll_no', 'N/A') if cert.rollno else 'N/A',
+                    f"{getattr(cert.rollno, 'first_name', '')} {getattr(cert.rollno, 'last_name', '')}".strip() if cert.rollno else 'N/A',
+                    getattr(cert, 'title', 'N/A'),
+                    cert.get_category_display() if hasattr(cert, 'get_category_display') else getattr(cert, 'category', 'N/A'),
+                    getattr(cert, 'source', 'N/A') or 'N/A',
+                    getattr(cert, 'domain', 'N/A') or 'N/A',
+                    getattr(cert, 'year_and_sem', 'N/A'),
+                    getattr(cert, 'validity_period', 'N/A') or 'N/A'
+                ]
+                
+                for col, value in enumerate(data, 1):
+                    ws.cell(row=row, column=col, value=value)
+            except Exception as e:
+                ws.cell(row=row, column=1, value=f"Error processing certificate: {str(e)}")
+    except Exception as e:
+        ws.cell(row=2, column=1, value=f"Error processing certificates: {str(e)}")
+    
+    # If no certificates found
+    if all_certificates.count() == 0:
+        ws.cell(row=2, column=1, value="No certificates found for selected students")
+
+def generate_achievements_sheet(wb, students_queryset):
+    """Generate achievements analysis sheet"""
+    ws = wb.create_sheet(title="Achievements Analysis")
+    
+    # Get all achievements for selected students
+    all_achievements = Achievement.objects.filter(student__in=students_queryset)
+    
+    headers = [
+        'Student Roll No', 'Student Name', 'Achievement Title', 'Category',
+        'Description', 'Achievement Date', 'Status', 'Points Awarded',
+        'Verification Method'
+    ]
+    
+    # Apply header styling
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color="F39C12", end_color="F39C12", fill_type="solid")
+    
+    # Data rows
+    for row, achievement in enumerate(all_achievements, 2):
+        data = [
+            achievement.student.roll_no,
+            f"{achievement.student.first_name} {achievement.student.last_name}",
+            achievement.title,
+            achievement.category.name if achievement.category else 'N/A',
+            achievement.description[:100] + '...' if len(achievement.description) > 100 else achievement.description,
+            achievement.achievement_date.strftime('%Y-%m-%d') if achievement.achievement_date else 'N/A',
+            achievement.get_status_display() if hasattr(achievement, 'get_status_display') else achievement.status,
+            achievement.points_awarded or 0,
+            achievement.verification_method or 'N/A'
+        ]
+        
+        for col, value in enumerate(data, 1):
+            ws.cell(row=row, column=col, value=value)
+
+def generate_placement_analytics_sheet(wb, students_queryset):
+    """Generate placement analytics sheet"""
+    ws = wb.create_sheet(title="Placement Analytics")
+    
+    try:
+        # Get placement data
+        placement_offers = PlacementOffer.objects.filter(student__in=students_queryset)
+    except Exception as e:
+        # If there's an error with placement data, create empty sheet with message
+        ws.cell(row=1, column=1, value="No placement data available or error accessing placement records")
+        return
+    
+    headers = [
+        'Student Roll No', 'Student Name', 'Company', 'Package (LPA)',
+        'Position', 'Placement Date', 'Department', 'Year'
+    ]
+    
+    # Apply header styling
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color="8E44AD", end_color="8E44AD", fill_type="solid")
+    
+    # Data rows
+    try:
+        for row, offer in enumerate(placement_offers, 2):
+            data = [
+                offer.student.roll_no if offer.student else 'N/A',
+                f"{offer.student.first_name} {offer.student.last_name}" if offer.student else 'N/A',
+                getattr(offer, 'company_name', 'N/A'),
+                getattr(offer, 'package_lpa', 'N/A'),
+                getattr(offer, 'position', 'N/A'),
+                offer.placement_date.strftime('%Y-%m-%d') if hasattr(offer, 'placement_date') and offer.placement_date else 'N/A',
+                offer.student.dept if offer.student else 'N/A',
+                offer.student.year if offer.student else 'N/A'
+            ]
+            
+            for col, value in enumerate(data, 1):
+                ws.cell(row=row, column=col, value=value)
+    except Exception as e:
+        # If data access fails, add error message
+        ws.cell(row=2, column=1, value=f"Error accessing placement data: {str(e)}")
+    
+    # If no data, add message
+    if placement_offers.count() == 0:
+        ws.cell(row=2, column=1, value="No placement offers found for selected students")
+
+def generate_skills_analytics_sheet(wb, students_queryset):
+    """Generate skills and technology analytics sheet"""
+    ws = wb.create_sheet(title="Skills Analytics")
+    
+    # Technology usage statistics
+    tech_stats = {}
+    domain_stats = {}
+    
+    for student_obj in students_queryset:
+        # Get technologies from projects
+        student_projects = Projects.objects.filter(contributors=student_obj)
+        for project in student_projects:
+            for tech in project.technologies.all():
+                tech_stats[tech.name] = tech_stats.get(tech.name, 0) + 1
+        
+        # Get domains from certificates
+        student_certificates = Certificate.objects.filter(rollno=student_obj)
+        for cert in student_certificates:
+            if cert.domain:
+                domain_stats[cert.domain] = domain_stats.get(cert.domain, 0) + 1
+    
+    # Technology statistics
+    ws.cell(row=1, column=1, value="Technology Usage Statistics").font = Font(size=14, bold=True)
+    ws.cell(row=3, column=1, value="Technology").font = Font(bold=True)
+    ws.cell(row=3, column=2, value="Usage Count").font = Font(bold=True)
+    
+    row = 4
+    for tech, count in sorted(tech_stats.items(), key=lambda x: x[1], reverse=True):
+        ws.cell(row=row, column=1, value=tech)
+        ws.cell(row=row, column=2, value=count)
+        row += 1
+    
+    # Domain statistics
+    start_row = row + 2
+    ws.cell(row=start_row, column=1, value="Certificate Domain Statistics").font = Font(size=14, bold=True)
+    ws.cell(row=start_row + 2, column=1, value="Domain").font = Font(bold=True)
+    ws.cell(row=start_row + 2, column=2, value="Certificate Count").font = Font(bold=True)
+    
+    row = start_row + 3
+    for domain, count in sorted(domain_stats.items(), key=lambda x: x[1], reverse=True):
+        ws.cell(row=row, column=1, value=domain)
+        ws.cell(row=row, column=2, value=count)
+        row += 1
+
+def generate_naac_metrics_sheet(wb, students_queryset):
+    """Generate NAAC-specific metrics sheet"""
+    ws = wb.create_sheet(title="NAAC Metrics")
+    
+    total_students = students_queryset.count()
+    
+    # Calculate key metrics with proper error handling
+    try:
+        students_with_projects = 0
+        students_with_certificates = 0
+        students_with_achievements = 0
+        students_with_placements = 0
+        
+        for student_obj in students_queryset:
+            # Check projects
+            if Projects.objects.filter(contributors=student_obj).exists():
+                students_with_projects += 1
+            
+            # Check certificates
+            if Certificate.objects.filter(rollno=student_obj).exists():
+                students_with_certificates += 1
+            
+            # Check achievements
+            if Achievement.objects.filter(student=student_obj).exists():
+                students_with_achievements += 1
+            
+            # Check placements
+            if PlacementOffer.objects.filter(student=student_obj).exists():
+                students_with_placements += 1
+        
+        total_projects = Projects.objects.filter(contributors__in=students_queryset).distinct().count()
+        total_certificates = Certificate.objects.filter(rollno__in=students_queryset).count()
+        total_achievements = Achievement.objects.filter(student__in=students_queryset).count()
+        
+    except Exception as e:
+        # Fallback values if queries fail
+        students_with_projects = 0
+        students_with_certificates = 0
+        students_with_achievements = 0
+        students_with_placements = 0
+        total_projects = 0
+        total_certificates = 0
+        total_achievements = 0
+    
+    # Average calculations
+    avg_projects_per_student = total_projects / total_students if total_students > 0 else 0
+    avg_certificates_per_student = total_certificates / total_students if total_students > 0 else 0
+    avg_achievements_per_student = total_achievements / total_students if total_students > 0 else 0
+    
+    # Create metrics table
+    metrics = [
+        ["NAAC Key Performance Indicators", ""],
+        ["", ""],
+        ["Total Students", total_students],
+        ["Students with Projects", f"{students_with_projects} ({(students_with_projects/total_students*100):.1f}%)" if total_students > 0 else "0"],
+        ["Students with Certificates", f"{students_with_certificates} ({(students_with_certificates/total_students*100):.1f}%)" if total_students > 0 else "0"],
+        ["Students with Achievements", f"{students_with_achievements} ({(students_with_achievements/total_students*100):.1f}%)" if total_students > 0 else "0"],
+        ["Students with Placements", f"{students_with_placements} ({(students_with_placements/total_students*100):.1f}%)" if total_students > 0 else "0"],
+        ["", ""],
+        ["Total Projects", total_projects],
+        ["Total Certificates", total_certificates],
+        ["Total Achievements", total_achievements],
+        ["", ""],
+        ["Average Projects per Student", f"{avg_projects_per_student:.2f}"],
+        ["Average Certificates per Student", f"{avg_certificates_per_student:.2f}"],
+        ["Average Achievements per Student", f"{avg_achievements_per_student:.2f}"],
+    ]
+    
+    for row, (metric, value) in enumerate(metrics, 1):
+        ws.cell(row=row, column=1, value=metric)
+        ws.cell(row=row, column=2, value=value)
+        
+        if row == 1:  # Title row
+            ws.cell(row=row, column=1).font = Font(size=16, bold=True)
+        elif metric and value != "":  # Data rows
+            ws.cell(row=row, column=1).font = Font(bold=True)
+    
+    # Auto-adjust column widths
+    ws.column_dimensions['A'].width = 35
+    ws.column_dimensions['B'].width = 25
 

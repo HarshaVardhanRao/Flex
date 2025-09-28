@@ -1,341 +1,467 @@
-{% extends 'base.html' %}
+{% load static %}
 {% load custom_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Approval Dashboard - MITS FLEX</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --primary-gold: #f1c40f;
+            --secondary-gold: #e67e22;
+            --dark-bg: #1a1a1a;
+            --darker-bg: #000000;
+            --text-light: #f5f5f5;
+            --card-bg: #2d2d2d;
+        }
 
-{% block title %}Faculty Approval Dashboard - MITS FLEX{% endblock %}
-{% block page_title %}Faculty Approval Dashboard{% endblock %}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-{% block breadcrumb_items %}
-<li class="breadcrumb-item"><a href="{% url 'faculty' %}">Faculty Dashboard</a></li>
-<li class="breadcrumb-item active">Approvals</li>
-{% endblock %}
+        body {
+            background-color: var(--darker-bg);
+            color: var(--text-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
 
-{% block content %}
-<!-- Header Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h2 class="mb-1"><i class="fas fa-check-circle me-2"></i>Achievement Approval Center</h2>
-                        <p class="mb-0">Review and approve student achievements with comprehensive evaluation tools</p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <div class="d-flex justify-content-end gap-2">
-                            <span class="badge bg-warning fs-5 px-3 py-2">
-                                <i class="fas fa-clock me-1"></i>{{ pending_count }} Pending
-                            </span>
-                            <div class="dropdown">
-                                <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown">
-                                    <i class="fas fa-cog me-1"></i>Actions
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" onclick="approveAll()"><i class="fas fa-check-double me-2"></i>Bulk Approve</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="exportApprovals()"><i class="fas fa-download me-2"></i>Export Report</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{% url 'faculty' %}"><i class="fas fa-arrow-left me-2"></i>Back to Dashboard</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--card-bg) 100%);
+            border: 2px solid var(--primary-gold);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 25px rgba(241, 196, 15, 0.2);
+        }
+
+        .header h1 {
+            color: var(--primary-gold);
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px rgba(241, 196, 15, 0.3);
+        }
+
+        .header p {
+            color: var(--text-light);
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--card-bg) 100%);
+            border: 2px solid var(--primary-gold);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(241, 196, 15, 0.3);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            color: var(--primary-gold);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-light);
+            margin: 0.5rem 0;
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            opacity: 0.9;
+        }
+
+        .filters-section {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--card-bg) 100%);
+            border: 2px solid var(--primary-gold);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            color: var(--primary-gold);
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            padding: 0.7rem;
+            background: var(--darker-bg);
+            border: 1px solid var(--primary-gold);
+            border-radius: 8px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--secondary-gold);
+            box-shadow: 0 0 10px rgba(241, 196, 15, 0.3);
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+            color: var(--darker-bg);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--secondary-gold), var(--primary-gold));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(241, 196, 15, 0.5);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary-gold);
+            border: 1px solid var(--primary-gold);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-gold);
+            color: var(--darker-bg);
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .achievement-card {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--card-bg) 100%);
+            border: 2px solid var(--primary-gold);
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .achievement-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(241, 196, 15, 0.3);
+        }
+
+        .achievement-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .achievement-title {
+            color: var(--primary-gold);
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .student-info {
+            color: var(--text-light);
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #f39c12;
+            color: white;
+        }
+
+        .status-approved {
+            background: #27ae60;
+            color: white;
+        }
+
+        .status-rejected {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .achievement-details {
+            margin: 1rem 0;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-label {
+            color: var(--primary-gold);
+            font-weight: bold;
+        }
+
+        .detail-value {
+            color: var(--text-light);
+        }
+
+        .description {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid var(--primary-gold);
+        }
+
+        .approval-form {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-light);
+            opacity: 0.7;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--primary-gold);
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .achievements-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Back to Faculty Dashboard Button -->
+    <a href="{% url 'faculty' %}" class="btn btn-secondary back-btn">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1><i class="bi bi-check-circle"></i> Achievement Approval Center</h1>
+            <p>Review and approve student achievements with comprehensive evaluation tools</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="bi bi-clock stat-icon"></i>
+                <div class="stat-value">{{ pending_count }}</div>
+                <div class="stat-label">Pending Reviews</div>
+            </div>
+            
+            <div class="stat-card">
+                <i class="bi bi-check-circle stat-icon"></i>
+                <div class="stat-value">{{ approved_today }}</div>
+                <div class="stat-label">Approved Today</div>
+            </div>
+            
+            <div class="stat-card">
+                <i class="bi bi-graph-up stat-icon"></i>
+                <div class="stat-value">{{ total_reviewed }}</div>
+                <div class="stat-label">Total Reviewed</div>
+            </div>
+            
+            <div class="stat-card">
+                <i class="bi bi-stopwatch stat-icon"></i>
+                <div class="stat-value">{{ avg_review_time }}</div>
+                <div class="stat-label">Avg Review Time (hrs)</div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filters-section">
+            <h3 style="color: var(--primary-gold); margin-bottom: 1rem;">
+                <i class="bi bi-funnel"></i> Filter & Search Achievements
+            </h3>
+            <div class="filters-grid">
+                <div class="form-group">
+                    <label for="statusFilter">Status</label>
+                    <select class="form-control" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="pending" selected>Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="categoryFilter">Category</label>
+                    <select class="form-control" id="categoryFilter">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.name }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="searchInput">Search</label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Student name or title...">
+                </div>
+                <div class="form-group" style="justify-content: flex-end; flex-direction: row; gap: 1rem; align-items: end;">
+                    <button class="btn btn-secondary" id="clearFilters">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
-
-<!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="stats-card warning">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h3 class="text-warning mb-1">{{ pending_count }}</h3>
-                    <p class="mb-0 text-muted">Pending Reviews</p>
-                </div>
-                <div class="text-warning">
-                    <i class="fas fa-clock fa-2x"></i>
-                </div>
-            </div>
-            <div class="progress mt-2" style="height: 5px;">
-                <div class="progress-bar bg-warning" style="width: 100%"></div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="stats-card success">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h3 class="text-success mb-1">{{ approved_today }}</h3>
-                    <p class="mb-0 text-muted">Approved Today</p>
-                </div>
-                <div class="text-success">
-                    <i class="fas fa-check-circle fa-2x"></i>
-                </div>
-            </div>
-            <div class="progress mt-2" style="height: 5px;">
-                <div class="progress-bar bg-success" style="width: 85%"></div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="stats-card info">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h3 class="text-info mb-1">{{ total_reviewed }}</h3>
-                    <p class="mb-0 text-muted">Total Reviewed</p>
-                </div>
-                <div class="text-info">
-                    <i class="fas fa-chart-bar fa-2x"></i>
-                </div>
-            </div>
-            <div class="progress mt-2" style="height: 5px;">
-                <div class="progress-bar bg-info" style="width: 75%"></div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="stats-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h3 class="text-primary mb-1">{{ avg_review_time|default:'2.5' }}</h3>
-                    <p class="mb-0 text-muted">Avg Review Time (hrs)</p>
-                </div>
-                <div class="text-primary">
-                    <i class="fas fa-clock fa-2x"></i>
-                </div>
-            </div>
-            <div class="progress mt-2" style="height: 5px;">
-                <div class="progress-bar bg-primary" style="width: 60%"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Enhanced Filter Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filter & Search Achievements</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-2">
-                        <label for="statusFilter" class="form-label">Status</label>
-                        <select class="form-select" id="statusFilter">
-                            <option value="">All Status</option>
-                            <option value="pending" selected>Pending</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="categoryFilter" class="form-label">Category</label>
-                        <select class="form-select" id="categoryFilter">
-                            <option value="">All Categories</option>
-                            {% for category in categories %}
-                                <option value="{{ category.name }}">{{ category.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="levelFilter" class="form-label">Level</label>
-                        <select class="form-select" id="levelFilter">
-                            <option value="">All Levels</option>
-                            <option value="institutional">Institutional</option>
-                            <option value="state">State</option>
-                            <option value="national">National</option>
-                            <option value="international">International</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="departmentFilter" class="form-label">Department</label>
-                        <select class="form-select" id="departmentFilter">
-                            <option value="">All Departments</option>
-                            <option value="CSE">CSE</option>
-                            <option value="ECE">ECE</option>
-                            <option value="EEE">EEE</option>
-                            <option value="MECH">MECH</option>
-                            <option value="CIVIL">CIVIL</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="yearFilter" class="form-label">Year</label>
-                        <select class="form-select" id="yearFilter">
-                            <option value="">All Years</option>
-                            <option value="1">1st Year</option>
-                            <option value="2">2nd Year</option>
-                            <option value="3">3rd Year</option>
-                            <option value="4">4th Year</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="searchInput" class="form-label">Search</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" class="form-control" id="searchInput" placeholder="Student/Title...">
-                        </div>
-                    </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <button class="btn btn-outline-secondary" id="clearFilters">
-                            <i class="fas fa-times me-1"></i>Clear Filters
-                        </button>
-                        <button class="btn btn-outline-info ms-2" id="saveFilters">
-                            <i class="fas fa-save me-1"></i>Save View
-                        </button>
-                    </div>
-                    <div class="col-md-6 text-end">
-                        <div class="btn-group" role="group">
-                            <button class="btn btn-outline-primary active" id="cardView">
-                                <i class="fas fa-th-large"></i> Cards
-                            </button>
-                            <button class="btn btn-outline-primary" id="tableView">
-                                <i class="fas fa-table"></i> Table
-                            </button>
-                        </div>
-                        <div class="btn-group ms-2" role="group">
-                            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                                <i class="fas fa-sort me-1"></i>Sort
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" onclick="sortBy('date')">Date (Recent First)</a></li>
-                                <li><a class="dropdown-item" href="#" onclick="sortBy('title')">Title (A-Z)</a></li>
-                                <li><a class="dropdown-item" href="#" onclick="sortBy('level')">Level</a></li>
-                                <li><a class="dropdown-item" href="#" onclick="sortBy('student')">Student Name</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-    <!-- Achievements for Review -->
-    <div class="row" id="achievementsContainer">
-        {% for achievement in achievements %}
-            <div class="col-md-6 mb-3 achievement-card" 
-                 data-status="{{ achievement.status }}" 
-                 data-category="{{ achievement.category.name }}"
-                 data-level="{{ achievement.level }}">
-                <div class="card h-100 {% if achievement.status == 'pending' %}border-warning{% elif achievement.status == 'approved' %}border-success{% else %}border-danger{% endif %}">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">{{ achievement.title }}</h6>
-                                <small class="text-muted">
-                                    <i class="fas fa-user me-1"></i>{{ achievement.student.first_name }} {{ achievement.student.last_name }}
-                                    ({{ achievement.student.username }})
-                                </small>
-                            </div>
-                            <span class="badge bg-{% if achievement.status == 'approved' %}success{% elif achievement.status == 'pending' %}warning{% else %}danger{% endif %}">
-                                {{ achievement.status|title }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="row mb-2">
-                            <div class="col-6">
-                                <small class="text-muted">Category:</small><br>
-                                <span class="badge bg-secondary">{{ achievement.category.name }}</span>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted">Level:</small><br>
-                                <span class="badge bg-info">{{ achievement.level|title }}</span>
+        <!-- Achievements Grid -->
+        <div class="achievements-grid" id="achievementsContainer">
+            {% for achievement in achievements %}
+                <div class="achievement-card" 
+                     data-status="{{ achievement.status }}" 
+                     data-category="{{ achievement.category.name|default:'uncategorized' }}"
+                     data-search="{{ achievement.title|lower }} {{ achievement.student.first_name|lower }} {{ achievement.student.last_name|lower }}">
+                    <div class="achievement-header">
+                        <div>
+                            <div class="achievement-title">{{ achievement.title }}</div>
+                            <div class="student-info">
+                                <i class="bi bi-person"></i> {{ achievement.student.first_name }} {{ achievement.student.last_name }}
+                                ({{ achievement.student.roll_no }})
                             </div>
                         </div>
-                        
-                        <p class="card-text">{{ achievement.description|truncatewords:15 }}</p>
-                        
-                        <div class="row mb-2">
-                            <div class="col-6">
-                                <small class="text-muted">Date:</small><br>
-                                {{ achievement.achievement_date }}
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted">Organization:</small><br>
-                                {{ achievement.issuing_organization|truncatechars:20 }}
-                            </div>
+                        <span class="status-badge status-{{ achievement.status }}">
+                            {{ achievement.status|title }}
+                        </span>
+                    </div>
+                    
+                    <div class="description">
+                        {{ achievement.description|truncatewords:20 }}
+                    </div>
+                    
+                    <div class="achievement-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Category:</span>
+                            <span class="detail-value">{{ achievement.category.name|default:'N/A' }}</span>
                         </div>
-
-                        {% if achievement.position %}
-                        <div class="mb-2">
-                            <small class="text-muted">Position:</small>
-                            <span class="fw-bold">{{ achievement.position }}</span>
+                        <div class="detail-row">
+                            <span class="detail-label">Date:</span>
+                            <span class="detail-value">{{ achievement.achievement_date|default:'N/A' }}</span>
                         </div>
-                        {% endif %}
-
-                        {% if achievement.team_size %}
-                        <div class="mb-2">
-                            <small class="text-muted">Team Size:</small>
-                            <span class="badge bg-light text-dark">{{ achievement.team_size }}</span>
+                        <div class="detail-row">
+                            <span class="detail-label">Department:</span>
+                            <span class="detail-value">{{ achievement.student.dept|default:'N/A' }}</span>
                         </div>
-                        {% endif %}
-
-                        <!-- Verification Documents -->
-                        {% if achievement.verification_document %}
-                        <div class="mb-2">
-                            <a href="{{ achievement.verification_document.url }}" 
-                               target="_blank" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-file-alt me-1"></i>View Document
+                        {% if achievement.supporting_documents %}
+                        <div class="detail-row">
+                            <span class="detail-label">Documents:</span>
+                            <a href="{{ achievement.supporting_documents.url }}" target="_blank" class="btn btn-secondary" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;">
+                                <i class="bi bi-file-earmark"></i> View
                             </a>
                         </div>
                         {% endif %}
-
-                        {% if achievement.external_link %}
-                        <div class="mb-2">
-                            <a href="{{ achievement.external_link }}" 
-                               target="_blank" class="btn btn-sm btn-outline-info">
-                                <i class="fas fa-external-link-alt me-1"></i>External Link
-                            </a>
-                        </div>
-                        {% endif %}
-
-                        {% if achievement.tags %}
-                        <div class="mb-2">
-                            <small class="text-muted">Tags:</small><br>
-                            {% for tag in achievement.tags|split:',' %}
-                                <span class="badge bg-light text-dark me-1">{{ tag.strip }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
                     </div>
-                    <div class="card-footer">
-                        <div class="mb-2">
-                            <small class="text-muted">
-                                Submitted: {{ achievement.created_at|timesince }} ago
-                            </small>
-                        </div>
-                        
-                        {% if achievement.status == 'pending' %}
-                        <!-- Quick Approval Form -->
-                        <form method="post" action="{% url 'approve_achievement' achievement.id %}" class="approval-form">
+
+                    {% if achievement.status == 'pending' %}
+                    <div class="approval-form">
+                        <form method="post" action="{% url 'approve_achievement' achievement.id %}">
                             {% csrf_token %}
-                            <div class="row mb-2">
-                                <div class="col-6">
-                                    <label for="points_{{ achievement.id }}" class="form-label">Points:</label>
-                                    <input type="number" class="form-control form-control-sm" 
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="points_{{ achievement.id }}">Points:</label>
+                                    <input type="number" class="form-control" 
                                            id="points_{{ achievement.id }}" name="points_awarded" 
-                                           value="{{ achievement.category.default_points }}" min="0" max="100">
+                                           value="{{ achievement.category.default_points|default:10 }}" min="0" max="100">
                                 </div>
-                                <div class="col-6">
-                                    <label for="status_{{ achievement.id }}" class="form-label">Decision:</label>
-                                    <select class="form-select form-select-sm" 
+                                <div class="form-group">
+                                    <label for="status_{{ achievement.id }}">Decision:</label>
+                                    <select class="form-control" 
                                             id="status_{{ achievement.id }}" name="status" required>
                                         <option value="">Select</option>
                                         <option value="approved">Approve</option>
@@ -343,102 +469,291 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="mb-2">
-                                <label for="comments_{{ achievement.id }}" class="form-label">Comments:</label>
-                                <textarea class="form-control form-control-sm" 
+                            <div class="form-group">
+                                <label for="comments_{{ achievement.id }}">Comments:</label>
+                                <textarea class="form-control" 
                                           id="comments_{{ achievement.id }}" name="faculty_comments" 
                                           rows="2" placeholder="Optional comments..."></textarea>
                             </div>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-check me-1"></i>Submit Review
-                                </button>
-                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                <i class="bi bi-check-lg"></i> Submit Review
+                            </button>
                         </form>
-                        {% else %}
-                        <!-- Already Reviewed -->
-                        <div class="text-center">
-                            <small class="text-muted">
-                                Reviewed by {{ achievement.reviewed_by.first_name }} 
-                                on {{ achievement.reviewed_at|date:'M d, Y H:i' }}
-                            </small>
-                            {% if achievement.faculty_comments %}
-                            <div class="alert alert-sm alert-info mt-2 mb-0">
-                                <small><strong>Comments:</strong> {{ achievement.faculty_comments }}</small>
-                            </div>
+                    </div>
+                    {% else %}
+                    <div style="text-align: center; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                        <small style="color: var(--text-light); opacity: 0.8;">
+                            {% if achievement.status == 'approved' %}
+                                <i class="bi bi-check-circle text-success"></i> Approved
+                                {% if achievement.points_awarded %} - {{ achievement.points_awarded }} points awarded{% endif %}
+                            {% else %}
+                                <i class="bi bi-x-circle text-danger"></i> Rejected
                             {% endif %}
+                        </small>
+                        {% if achievement.faculty_comments %}
+                        <div style="margin-top: 0.5rem; font-size: 0.8rem; font-style: italic;">
+                            "{{ achievement.faculty_comments }}"
                         </div>
                         {% endif %}
                     </div>
+                    {% endif %}
                 </div>
-            </div>
-        {% empty %}
-            <div class="col-12">
-                <div class="text-center py-5">
-                    <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
-                    <h4 class="text-muted">No achievements to review</h4>
-                    <p class="text-muted">All submissions have been processed!</p>
+            {% empty %}
+                <div style="grid-column: 1 / -1;">
+                    <div class="empty-state">
+                        <i class="bi bi-clipboard-check"></i>
+                        <h3>No achievements to review</h3>
+                        <p>All submissions have been processed!</p>
+                    </div>
                 </div>
+            {% endfor %}
+        </div>
+
+        <!-- Projects Section -->
+        <div style="margin-top: 3rem;">
+            <div class="header" style="margin-bottom: 1.5rem;">
+                <h2 style="color: var(--primary-gold); font-size: 1.8rem; margin-bottom: 0.5rem;">
+                    <i class="bi bi-laptop"></i> Project Approvals
+                </h2>
+                <p>Review and approve student projects</p>
             </div>
-        {% endfor %}
+
+            <div class="achievements-grid" id="projectsContainer">
+                {% for project in projects %}
+                    <div class="achievement-card" 
+                         data-status="{{ project.approval_status }}" 
+                         data-search="{{ project.title|lower }}">
+                        <div class="achievement-header">
+                            <div>
+                                <div class="achievement-title">{{ project.title }}</div>
+                                <div class="student-info">
+                                    <i class="bi bi-people"></i> 
+                                    {% for contributor in project.contributors.all %}
+                                        {{ contributor.first_name }} {{ contributor.last_name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <span class="status-badge status-{{ project.approval_status }}">
+                                {{ project.approval_status|title }}
+                            </span>
+                        </div>
+                        
+                        <div class="description">
+                            {{ project.description|truncatewords:20 }}
+                        </div>
+                        
+                        <div class="achievement-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Status:</span>
+                                <span class="detail-value">{{ project.status|default:'N/A' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Year & Sem:</span>
+                                <span class="detail-value">{{ project.year_and_sem|default:'N/A' }}</span>
+                            </div>
+                            {% if project.github_link %}
+                            <div class="detail-row">
+                                <span class="detail-label">GitHub:</span>
+                                <a href="{{ project.github_link }}" target="_blank" class="btn btn-secondary" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;">
+                                    <i class="bi bi-github"></i> View
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if project.approval_status == 'pending' %}
+                        <div class="approval-form">
+                            <form method="post" action="{% url 'approve_project' project.id %}">
+                                {% csrf_token %}
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="status_proj_{{ project.id }}">Decision:</label>
+                                        <select class="form-control" 
+                                                id="status_proj_{{ project.id }}" name="status" required>
+                                            <option value="">Select</option>
+                                            <option value="approved">Approve</option>
+                                            <option value="rejected">Reject</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="comments_proj_{{ project.id }}">Comments:</label>
+                                    <textarea class="form-control" 
+                                              id="comments_proj_{{ project.id }}" name="faculty_comments" 
+                                              rows="2" placeholder="Optional comments..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                    <i class="bi bi-check-lg"></i> Submit Review
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <div style="grid-column: 1 / -1;">
+                        <div class="empty-state">
+                            <i class="bi bi-laptop"></i>
+                            <h3>No projects to review</h3>
+                            <p>All project submissions have been processed!</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Certificates Section -->
+        <div style="margin-top: 3rem;">
+            <div class="header" style="margin-bottom: 1.5rem;">
+                <h2 style="color: var(--primary-gold); font-size: 1.8rem; margin-bottom: 0.5rem;">
+                    <i class="bi bi-award"></i> Certificate Approvals
+                </h2>
+                <p>Review and approve student certificates</p>
+            </div>
+
+            <div class="achievements-grid" id="certificatesContainer">
+                {% for certificate in certificates %}
+                    <div class="achievement-card" 
+                         data-status="{{ certificate.approval_status }}" 
+                         data-search="{{ certificate.title|lower }} {{ certificate.rollno.first_name|lower }} {{ certificate.rollno.last_name|lower }}">
+                        <div class="achievement-header">
+                            <div>
+                                <div class="achievement-title">{{ certificate.title }}</div>
+                                <div class="student-info">
+                                    <i class="bi bi-person"></i> {{ certificate.rollno.first_name }} {{ certificate.rollno.last_name }}
+                                    ({{ certificate.rollno.roll_no }})
+                                </div>
+                            </div>
+                            <span class="status-badge status-{{ certificate.approval_status }}">
+                                {{ certificate.approval_status|title }}
+                            </span>
+                        </div>
+                        
+                        <div class="description">
+                            Certificate from {{ certificate.source }}
+                        </div>
+                        
+                        <div class="achievement-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Institution:</span>
+                                <span class="detail-value">{{ certificate.source|default:'N/A' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Year & Sem:</span>
+                                <span class="detail-value">{{ certificate.year_and_sem|default:'N/A' }}</span>
+                            </div>
+                            {% if certificate.certificate %}
+                            <div class="detail-row">
+                                <span class="detail-label">Certificate:</span>
+                                <a href="{{ certificate.certificate.url }}" target="_blank" class="btn btn-secondary" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;">
+                                    <i class="bi bi-file-earmark-pdf"></i> View
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if certificate.approval_status == 'pending' %}
+                        <div class="approval-form">
+                            <form method="post" action="{% url 'approve_certificate' certificate.id %}">
+                                {% csrf_token %}
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="status_cert_{{ certificate.id }}">Decision:</label>
+                                        <select class="form-control" 
+                                                id="status_cert_{{ certificate.id }}" name="status" required>
+                                            <option value="">Select</option>
+                                            <option value="approved">Approve</option>
+                                            <option value="rejected">Reject</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="comments_cert_{{ certificate.id }}">Comments:</label>
+                                    <textarea class="form-control" 
+                                              id="comments_cert_{{ certificate.id }}" name="faculty_comments" 
+                                              rows="2" placeholder="Optional comments..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                    <i class="bi bi-check-lg"></i> Submit Review
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <div style="grid-column: 1 / -1;">
+                        <div class="empty-state">
+                            <i class="bi bi-award"></i>
+                            <h3>No certificates to review</h3>
+                            <p>All certificate submissions have been processed!</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const statusFilter = document.getElementById('statusFilter');
-    const categoryFilter = document.getElementById('categoryFilter');
-    const levelFilter = document.getElementById('levelFilter');
-    const searchInput = document.getElementById('searchInput');
-    const achievementCards = document.querySelectorAll('.achievement-card');
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusFilter = document.getElementById('statusFilter');
+            const categoryFilter = document.getElementById('categoryFilter');
+            const searchInput = document.getElementById('searchInput');
+            const clearFilters = document.getElementById('clearFilters');
+            const achievementCards = document.querySelectorAll('.achievement-card');
 
-    function filterAchievements() {
-        const statusValue = statusFilter.value.toLowerCase();
-        const categoryValue = categoryFilter.value.toLowerCase();
-        const levelValue = levelFilter.value.toLowerCase();
-        const searchValue = searchInput.value.toLowerCase();
+            function filterAchievements() {
+                const statusValue = statusFilter.value.toLowerCase();
+                const categoryValue = categoryFilter.value.toLowerCase();
+                const searchValue = searchInput.value.toLowerCase();
 
-        achievementCards.forEach(card => {
-            const status = card.dataset.status.toLowerCase();
-            const category = card.dataset.category.toLowerCase();
-            const level = card.dataset.level.toLowerCase();
-            const text = card.textContent.toLowerCase();
+                achievementCards.forEach(card => {
+                    const status = card.dataset.status.toLowerCase();
+                    const category = card.dataset.category.toLowerCase();
+                    const searchText = card.dataset.search.toLowerCase();
 
-            const statusMatch = !statusValue || status.includes(statusValue);
-            const categoryMatch = !categoryValue || category.includes(categoryValue);
-            const levelMatch = !levelValue || level.includes(levelValue);
-            const searchMatch = !searchValue || text.includes(searchValue);
+                    const statusMatch = !statusValue || status === statusValue;
+                    const categoryMatch = !categoryValue || category.includes(categoryValue);
+                    const searchMatch = !searchValue || searchText.includes(searchValue);
 
-            if (statusMatch && categoryMatch && levelMatch && searchMatch) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
+                    if (statusMatch && categoryMatch && searchMatch) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
             }
+
+            statusFilter.addEventListener('change', filterAchievements);
+            categoryFilter.addEventListener('change', filterAchievements);
+            searchInput.addEventListener('input', filterAchievements);
+
+            clearFilters.addEventListener('click', function() {
+                statusFilter.value = '';
+                categoryFilter.value = '';
+                searchInput.value = '';
+                filterAchievements();
+            });
+
+            // Form submission confirmation
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const status = this.querySelector('select[name="status"]').value;
+                    if (!status) {
+                        e.preventDefault();
+                        alert('Please select a decision (Approve/Reject)');
+                        return false;
+                    }
+                    
+                    const action = status === 'approved' ? 'approve' : 'reject';
+                    if (!confirm(`Are you sure you want to ${action} this achievement?`)) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            });
+
+            // Apply initial filter to show pending by default
+            filterAchievements();
         });
-    }
-
-    statusFilter.addEventListener('change', filterAchievements);
-    categoryFilter.addEventListener('change', filterAchievements);
-    levelFilter.addEventListener('change', filterAchievements);
-    searchInput.addEventListener('input', filterAchievements);
-
-    // Form submission confirmation
-    document.querySelectorAll('.approval-form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            const status = this.querySelector('select[name="status"]').value;
-            if (!status) {
-                e.preventDefault();
-                alert('Please select a decision (Approve/Reject)');
-                return false;
-            }
-            
-            const action = status === 'approved' ? 'approve' : 'reject';
-            if (!confirm(`Are you sure you want to ${action} this achievement?`)) {
-                e.preventDefault();
-                return false;
-            }
-        });
-    });
-});
-</script>
-{% endblock %}
+    </script>
+</body>
+</html>

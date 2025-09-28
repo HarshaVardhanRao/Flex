@@ -560,6 +560,17 @@ class Certificate(models.Model):
     is_verified = models.BooleanField(default=False)
     verified_by = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
     verification_date = models.DateTimeField(null=True, blank=True)
+    
+    # Approval workflow fields
+    APPROVAL_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS_CHOICES, default='pending')
+    approved_by = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_certificates')
+    approval_date = models.DateTimeField(null=True, blank=True)
+    faculty_comments = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.rollno.username} - {self.title}"
@@ -981,6 +992,17 @@ class Projects(models.Model):
     ]
     status = models.CharField(max_length=255, choices=status_choices, default="Initialized")
     technologies = models.ManyToManyField(Technology, related_name="projects", blank=True)
+    
+    # Approval workflow fields
+    APPROVAL_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS_CHOICES, default='pending')
+    approved_by = models.ForeignKey('Faculty', on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_projects')
+    approval_date = models.DateTimeField(null=True, blank=True)
+    faculty_comments = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.title

@@ -348,14 +348,25 @@ class RoleBasedAccessMiddleware(MiddlewareMixin):
         
         # Check role-based permissions for authenticated users
         elif not self._check_access_permission(request):
-            # Log permission denied
-            AuditLog.log_action(
-                user=request.user,
-                action_type='permission_denied',
-                description=f"Access denied to {request.path}",
-                request=request,
-                risk_level='medium'
-            )
+            # Log permission denied - DISABLED due to custom user model conflicts
+            # try:
+            #     if request.user.is_authenticated:
+            #         # Get the proper user instance for AuditLog
+            #         user_for_audit = request.user if hasattr(request.user, '_meta') and request.user._meta.model_name == 'user' else None
+            #         
+            #         AuditLog.log_action(
+            #             user=user_for_audit,
+            #             action_type='permission_denied',
+            #             description=f"Access denied to {request.path} for user: {request.user.username}",
+            #             request=request,
+            #             risk_level='medium'
+            #         )
+            # except Exception as e:
+            #     # Don't let audit logging break the application
+            #     import logging
+            #     logger = logging.getLogger(__name__)
+            #     logger.error(f"Failed to create audit log for permission denied: {e}")
+            
             
             if request.path.startswith('/api/'):
                 return JsonResponse({'error': 'Insufficient permissions'}, status=403)
@@ -428,13 +439,23 @@ class SessionTimeoutMiddleware(MiddlewareMixin):
             max_inactive = getattr(settings, 'SESSION_TIMEOUT', 3600)  # 1 hour default
             
             if inactive_duration > max_inactive:
-                # Log session timeout
-                AuditLog.log_action(
-                    user=request.user,
-                    action_type='session_expired',
-                    description='Session expired due to inactivity',
-                    request=request
-                )
+                # Log session timeout - DISABLED due to custom user model conflicts
+                # try:
+                #     if request.user.is_authenticated:
+                #         # Get the proper user instance for AuditLog
+                #         user_for_audit = request.user if hasattr(request.user, '_meta') and request.user._meta.model_name == 'user' else None
+                #         
+                #         AuditLog.log_action(
+                #             user=user_for_audit,
+                #             action_type='session_expired',
+                #             description=f'Session expired due to inactivity for user: {request.user.username}',
+                #             request=request
+                #         )
+                # except Exception as e:
+                #     # Don't let audit logging break the application
+                #     import logging
+                #     logger = logging.getLogger(__name__)
+                #     logger.error(f"Failed to create audit log for session timeout: {e}")
                 
                 # Mark session as inactive
                 session_key = request.session.session_key
@@ -447,7 +468,12 @@ class SessionTimeoutMiddleware(MiddlewareMixin):
                     )
                 
                 logout(request)
-                messages.warning(request, 'Your session has expired due to inactivity. Please log in again.')
+                # Check if messages framework is available before using it
+                try:
+                    messages.warning(request, 'Your session has expired due to inactivity. Please log in again.')
+                except Exception:
+                    # Fallback if messages framework is not ready
+                    pass
                 return redirect('login')
         
         # Update last activity
