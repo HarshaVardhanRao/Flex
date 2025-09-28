@@ -4,3 +4,4 @@ _pycache_/
 flex/flexapp/__pycache__/
 flex/flex/__pycache__/
 flex/flexapp/migrations/__pycache__/
+*/db.sqlite3
