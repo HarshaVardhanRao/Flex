@@ -2,6 +2,7 @@
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.utils import timezone
 from .forms import *
 import logging
 from django.contrib.auth.decorators import login_required
@@ -400,8 +401,12 @@ def getStudentDetails(student):
 
 def get_monthly_activity(student):
     """Get monthly activity data for the last 12 months"""
+    from datetime import timedelta
     
-    now = timezone.now()
+    end_date = timezone.now()
+    start_date = end_date - timedelta(days=365)
+    
+    # Get activity counts by month
     activities = []
     
     for i in range(12):
